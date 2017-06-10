@@ -99,6 +99,12 @@ typedef struct
    const e_arg_type in_args_types[];
 } s_request_info;
 
+typedef struct
+{
+   Eina_Stringshare *call;
+   Eina_Bool is_method;
+} s_rpc;
+
 
 
 
@@ -127,5 +133,7 @@ Eina_Bool api_init(void);
 void api_shutdown(void);
 e_api_key api_key_for_string_get(Eina_Stringshare *key);
 Eina_Bool api_version_set(const msgpack_object *obj, s_version *version);
+
+void api_functions_set(const msgpack_object *obj);
 
 #endif /* ! __ENVIM_H__ */

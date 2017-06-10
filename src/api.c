@@ -132,3 +132,41 @@ api_version_set(const msgpack_object *obj,
 
    return EINA_TRUE;
 }
+
+void
+api_functions_set(const msgpack_object *obj)
+{
+   if (obj->type != MSGPACK_OBJECT_ARRAY)
+     {
+        ERR("Expected map type of object");
+        return EINA_FALSE;
+     }
+   const msgpack_object_array *const funcs = &(obj->via.array);
+
+   for (unsigned int i = 0; i < funcs->size; i++)
+     {
+        if (funcs->ptr[i].type != MSGPACK_OBJECT_MAP)
+          {
+             ERR("Function item is not of type map. Skipping.");
+             continue;
+          }
+        const msgpack_object_map *const func = &(funcs->ptr[i].via.map);
+        for (unsigned int j = 0; j < func->size; j++)
+          {
+             if (func->ptr[j].key.type != MSGPACK_OBJECT_STR)
+               {
+                  ERR("Key is not of type string (0x%x). Skipping.",
+                      func->ptr[j].key.type);
+                  continue;
+               }
+             const msgpack_object_str *const key = &(func->ptr[j].key.via.str);
+
+             char buf[512];
+
+             memcpy(buf, key->ptr, key->size);
+             buf[key->size] = '\0';
+             INF("Key: %s", buf);
+          }
+
+     }
+}

@@ -66,6 +66,10 @@ _response_get_api_info(s_nvim *nvim,
                   nvim->api.version.patch);
               break;
 
+           case API_KEY_FUNCTIONS:
+              api_functions_set(val);
+              break;
+
            default:
               WRN("Unhandled key '%s'", key_str);
               break;
