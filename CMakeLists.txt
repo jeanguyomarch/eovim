@@ -8,6 +8,7 @@ set(BUILD_API_DIR "${CMAKE_BINARY_DIR}")
 
 find_package(PkgConfig REQUIRED)
 find_package(Eina REQUIRED)
+find_package(Evas REQUIRED)
 find_package(Ecore REQUIRED)
 find_package(Elementary REQUIRED)
 find_package(PythonInterp REQUIRED)
@@ -46,6 +47,7 @@ add_executable(envim
 target_include_directories(envim
    SYSTEM PRIVATE
    ${EINA_INCLUDE_DIRS}
+   ${EVAS_INCLUDE_DIRS}
    ${ECORE_INCLUDE_DIRS}
    ${ELEMENTARY_INCLUDE_DIRS}
    ${MSGPACK_INCLUDE_DIRS}
@@ -57,6 +59,7 @@ target_include_directories(envim
 )
 target_link_libraries(envim
    ${EINA_LIBRARIES}
+   ${EVAS_LIBRARIES}
    ${ECORE_LIBRARIES}
    ${ELEMENTARY_LIBRARIES}
    ${MSGPACK_LIBRARIES}

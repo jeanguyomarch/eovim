@@ -337,6 +337,7 @@ nvim_new(void)
         /* TODO ERROR */
      }
 
+   evas_object_show(nvim->win);
    return nvim;
 
 del_mem:
