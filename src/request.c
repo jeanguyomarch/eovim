@@ -22,63 +22,6 @@
 
 #include "Envim.h"
 
-#if 0
-#define CHECK_ARG_TYPE(ARG, TYPE, ...) \
-   do { \
-      if (ARG.type != TYPE) { \
-         ERR("Argument has a type value of 0x%x, but %s was expected", \
-             ARG.type, #TYPE); \
-         return __VA_ARGS__; \
-      } \
-   } while (0)
-
-static void
-_response_get_api_info(s_nvim *nvim,
-                       const s_request *req,
-                       const msgpack_object_array *args)
-{
-   /* 1st argument is the channel. We don't care */
-   /* 2nd argument is the metadata */
-   CHECK_ARG_TYPE(args->ptr[1], MSGPACK_OBJECT_MAP);
-
-   char buf[1024];
-   const msgpack_object_map *const map = &(args->ptr[1].via.map);
-   for (unsigned int i = 0; i < map->size; i++)
-     {
-        if (map->ptr[i].key.type != MSGPACK_OBJECT_STR)
-          {
-             ERR("Key is not of type string. Skipping.");
-             continue;
-          }
-        const msgpack_object_str *const key = &(map->ptr[i].key.via.str);
-        Eina_Stringshare *const key_str = eina_stringshare_add_length(
-           key->ptr, key->size
-        );
-        const msgpack_object *const val = &(map->ptr[i].val);
-
-        const e_api_key api_key = api_key_for_string_get(key_str);
-        switch (api_key)
-          {
-           case API_KEY_VERSION:
-              api_version_set(val, &nvim->api.version);
-              DBG("Neovim version: %u.%u.%u",
-                  nvim->api.version.major,
-                  nvim->api.version.minor,
-                  nvim->api.version.patch);
-              break;
-
-           case API_KEY_FUNCTIONS:
-              api_functions_set(val);
-              break;
-
-           default:
-              WRN("Unhandled key '%s'", key_str);
-              break;
-          }
-     }
-}
-#endif
-
 s_request *
 request_new(uint64_t req_uid,
             e_request req_type)
