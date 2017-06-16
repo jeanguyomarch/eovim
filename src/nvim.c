@@ -74,12 +74,6 @@ _nvim_request_find(const s_nvim *nvim,
    return it;
 }
 
-static uint64_t
-_nvim_get_next_uid(s_nvim *nvim)
-{
-   return nvim->request_id++;
-}
-
 static s_nvim *
 _nvim_get(const Ecore_Exe *exe)
 {
@@ -102,14 +96,14 @@ _handle_request_response(s_nvim *nvim,
    Eina_List *const req_item = _nvim_request_find(nvim, req_id);
    if (EINA_UNLIKELY(! req_item))
      {
-        CRI("Mh... received a response to request %"PRIu64", but is was not "
+        CRI("Uh... received a response to request %"PRIu64", but is was not "
             "registered. Something wrong happend somewhere!", req_id);
         goto fail;
      }
    DBG("Received response to request %"PRIu64, req_id);
 
    /* Found the request, we can now get the data contained within the list */
-   s_request *const req = eina_list_data_get(req_item);
+   const s_request *const req = eina_list_data_get(req_item);
 
    /* Now that we have found the request, we can remove it from the pending
     * list */
@@ -123,21 +117,8 @@ _handle_request_response(s_nvim *nvim,
      }
 
    /* And finally call the handler associated to the request type */
-   const s_request_info *const info = request_info_get(req);
    const msgpack_object_array *const out_args = &(args->ptr[3].via.array);
-
-   if ((out_args->size < info->out_min_args) ||
-       (out_args->size > info->out_max_args))
-     {
-        ERR("Invalid arguments in response to '%s': %u have been provided and"
-            " is not in range [%u,%u]",
-            info->method, out_args->size,
-            info->out_min_args, info->out_max_args);
-        goto fail;
-     }
-   info->handler(nvim, req, out_args);
-
-   return EINA_TRUE;
+   return nvim_api_response_dispatch(nvim, req, out_args);
 fail:
    return EINA_FALSE;
 }
@@ -306,6 +287,12 @@ nvim_shutdown(void)
    _nvim_instances = NULL;
 }
 
+uint64_t
+nvim_get_next_uid(s_nvim *nvim)
+{
+   return nvim->request_id++;
+}
+
 s_nvim *
 nvim_new(void)
 {
@@ -373,48 +360,423 @@ nvim_free(s_nvim *nvim)
      }
 }
 
+
+/*============================================================================*
+ *                                RPC Responses                               *
+ *============================================================================*/
+
 Eina_Bool
-nvim_rpc(s_nvim *nvim,
-         e_request request_type, ...)
+nvim_buf_line_count_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, t_int data EINA_UNUSED)
 {
-   /* Better be paranoid than dead */
-   EINA_SAFETY_ON_NULL_RETURN_VAL(nvim, EINA_FALSE);
-   EINA_SAFETY_ON_FALSE_RETURN_VAL((request_type > REQUEST_NONE) &&
-                                   (request_type < __REQUEST_LAST),
-                                   EINA_FALSE);
-
-   const uint64_t req_id = _nvim_get_next_uid(nvim);
-   msgpack_packer *const pk = &nvim->packer;
-   s_request *const req = request_new(req_id, request_type);
-   const s_request_info *const info = request_info_get(req);
-   const size_t method_len = (size_t)eina_stringshare_strlen(info->method);
-   Eina_Bool ok;
-
-   /*
-    * Pack the message! It is an array of four (4) items:
-    *  - the rpc type:
-    *    - 0 is a request
-    *  - the unique identifier for a request
-    *  - the method (API string)
-    *  - the arguments count as an array.
-    */
-   msgpack_pack_array(pk, 4);
-   msgpack_pack_int(pk, 0);
-   msgpack_pack_uint64(pk, req_id);
-   msgpack_pack_bin(pk, method_len);
-   msgpack_pack_bin_body(pk, info->method, method_len);
-   msgpack_pack_array(pk, info->in_args_count);
-
-   /* Keep the request around */
-   nvim->requests = eina_list_append(nvim->requests, req);
-
-   /* Finally, send that to the slave neovim process */
-   ok = ecore_exe_send(nvim->exe, nvim->sbuffer.data, (int)nvim->sbuffer.size);
-   if (EINA_UNLIKELY(! ok))
-     {
-        CRI("Failed to send %zu bytes to neovim", nvim->sbuffer.size);
-        return EINA_FALSE;
-     }
-
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_get_lines_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_List* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_set_lines_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_get_var_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_object* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_get_changedtick_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, t_int data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_get_keymap_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_List* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_set_var_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_del_var_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_get_option_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_object* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_set_option_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_get_name_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_Stringshare* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_set_name_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_is_valid_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_Bool data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_get_mark_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_position data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_add_highlight_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, t_int data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_buf_clear_highlight_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_tabpage_list_wins_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_List* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_tabpage_get_var_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_object* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_tabpage_set_var_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_tabpage_del_var_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_tabpage_get_win_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_window* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_tabpage_get_number_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, t_int data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_tabpage_is_valid_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_Bool data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_ui_attach_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_ui_detach_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_ui_try_resize_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_ui_set_option_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_command_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_feedkeys_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_input_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, t_int data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_replace_termcodes_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_Stringshare* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_command_output_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_Stringshare* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_eval_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_object* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_call_function_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_object* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_execute_lua_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_object* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_strwidth_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, t_int data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_list_runtime_paths_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_List* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_set_current_dir_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_get_current_line_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_Stringshare* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_set_current_line_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_del_current_line_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_get_var_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_object* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_set_var_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_del_var_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_get_vvar_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_object* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_get_option_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_object* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_set_option_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_out_write_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_err_write_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_err_writeln_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_list_bufs_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_List* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_get_current_buf_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_buffer* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_set_current_buf_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_list_wins_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_List* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_get_current_win_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_window* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_set_current_win_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_list_tabpages_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_List* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_get_current_tabpage_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_tabpage* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_set_current_tabpage_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_subscribe_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_unsubscribe_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_get_color_by_name_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, t_int data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_get_color_map_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_Hash* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_get_mode_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_Hash* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_get_keymap_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_List* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_get_api_info_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_List* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_call_atomic_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_List* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_get_buf_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_buffer* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_get_cursor_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_position data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_set_cursor_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_get_height_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, t_int data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_set_height_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_get_width_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, t_int data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_set_width_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_get_var_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_object* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_set_var_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_del_var_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_get_option_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_object* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_set_option_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_get_position_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_position data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_get_tabpage_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, s_tabpage* data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_get_number_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, t_int data EINA_UNUSED)
+{
+   return EINA_TRUE;
+}
+Eina_Bool
+nvim_win_is_valid_handler(s_nvim *nvim EINA_UNUSED, const s_request *req EINA_UNUSED, Eina_Bool data EINA_UNUSED)
+{
    return EINA_TRUE;
 }

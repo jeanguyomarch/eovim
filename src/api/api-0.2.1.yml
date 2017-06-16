@@ -1,0 +1,1285 @@
+error_types:
+  Exception: {id: 0}
+  Validation: {id: 1}
+functions:
+- method: true
+  name: nvim_buf_line_count
+  parameters:
+  - [Buffer, buffer]
+  return_type: Integer
+  since: 1
+- deprecated_since: 1
+  method: false
+  name: buffer_get_line
+  parameters:
+  - [Buffer, buffer]
+  - [Integer, index]
+  return_type: String
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: buffer_set_line
+  parameters:
+  - [Buffer, buffer]
+  - [Integer, index]
+  - [String, line]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: buffer_del_line
+  parameters:
+  - [Buffer, buffer]
+  - [Integer, index]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: buffer_get_line_slice
+  parameters:
+  - [Buffer, buffer]
+  - [Integer, start]
+  - [Integer, end]
+  - [Boolean, include_start]
+  - [Boolean, include_end]
+  return_type: ArrayOf(String)
+  since: 0
+- method: true
+  name: nvim_buf_get_lines
+  parameters:
+  - [Buffer, buffer]
+  - [Integer, start]
+  - [Integer, end]
+  - [Boolean, strict_indexing]
+  return_type: ArrayOf(String)
+  since: 1
+- deprecated_since: 1
+  method: false
+  name: buffer_set_line_slice
+  parameters:
+  - [Buffer, buffer]
+  - [Integer, start]
+  - [Integer, end]
+  - [Boolean, include_start]
+  - [Boolean, include_end]
+  - [ArrayOf(String), replacement]
+  return_type: void
+  since: 0
+- method: true
+  name: nvim_buf_set_lines
+  parameters:
+  - [Buffer, buffer]
+  - [Integer, start]
+  - [Integer, end]
+  - [Boolean, strict_indexing]
+  - [ArrayOf(String), replacement]
+  return_type: void
+  since: 1
+- method: true
+  name: nvim_buf_get_var
+  parameters:
+  - [Buffer, buffer]
+  - [String, name]
+  return_type: Object
+  since: 1
+- method: true
+  name: nvim_buf_get_changedtick
+  parameters:
+  - [Buffer, buffer]
+  return_type: Integer
+  since: 2
+- method: true
+  name: nvim_buf_get_keymap
+  parameters:
+  - [Buffer, buffer]
+  - [String, mode]
+  return_type: ArrayOf(Dictionary)
+  since: 3
+- method: true
+  name: nvim_buf_set_var
+  parameters:
+  - [Buffer, buffer]
+  - [String, name]
+  - [Object, value]
+  return_type: void
+  since: 1
+- method: true
+  name: nvim_buf_del_var
+  parameters:
+  - [Buffer, buffer]
+  - [String, name]
+  return_type: void
+  since: 1
+- deprecated_since: 1
+  method: false
+  name: buffer_set_var
+  parameters:
+  - [Buffer, buffer]
+  - [String, name]
+  - [Object, value]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: buffer_del_var
+  parameters:
+  - [Buffer, buffer]
+  - [String, name]
+  return_type: Object
+  since: 0
+- method: true
+  name: nvim_buf_get_option
+  parameters:
+  - [Buffer, buffer]
+  - [String, name]
+  return_type: Object
+  since: 1
+- method: true
+  name: nvim_buf_set_option
+  parameters:
+  - [Buffer, buffer]
+  - [String, name]
+  - [Object, value]
+  return_type: void
+  since: 1
+- deprecated_since: 2
+  method: true
+  name: nvim_buf_get_number
+  parameters:
+  - [Buffer, buffer]
+  return_type: Integer
+  since: 1
+- method: true
+  name: nvim_buf_get_name
+  parameters:
+  - [Buffer, buffer]
+  return_type: String
+  since: 1
+- method: true
+  name: nvim_buf_set_name
+  parameters:
+  - [Buffer, buffer]
+  - [String, name]
+  return_type: void
+  since: 1
+- method: true
+  name: nvim_buf_is_valid
+  parameters:
+  - [Buffer, buffer]
+  return_type: Boolean
+  since: 1
+- deprecated_since: 1
+  method: false
+  name: buffer_insert
+  parameters:
+  - [Buffer, buffer]
+  - [Integer, lnum]
+  - [ArrayOf(String), lines]
+  return_type: void
+  since: 0
+- method: true
+  name: nvim_buf_get_mark
+  parameters:
+  - [Buffer, buffer]
+  - [String, name]
+  return_type: ArrayOf(Integer, 2)
+  since: 1
+- method: true
+  name: nvim_buf_add_highlight
+  parameters:
+  - [Buffer, buffer]
+  - [Integer, src_id]
+  - [String, hl_group]
+  - [Integer, line]
+  - [Integer, col_start]
+  - [Integer, col_end]
+  return_type: Integer
+  since: 1
+- method: true
+  name: nvim_buf_clear_highlight
+  parameters:
+  - [Buffer, buffer]
+  - [Integer, src_id]
+  - [Integer, line_start]
+  - [Integer, line_end]
+  return_type: void
+  since: 1
+- method: true
+  name: nvim_tabpage_list_wins
+  parameters:
+  - [Tabpage, tabpage]
+  return_type: ArrayOf(Window)
+  since: 1
+- method: true
+  name: nvim_tabpage_get_var
+  parameters:
+  - [Tabpage, tabpage]
+  - [String, name]
+  return_type: Object
+  since: 1
+- method: true
+  name: nvim_tabpage_set_var
+  parameters:
+  - [Tabpage, tabpage]
+  - [String, name]
+  - [Object, value]
+  return_type: void
+  since: 1
+- method: true
+  name: nvim_tabpage_del_var
+  parameters:
+  - [Tabpage, tabpage]
+  - [String, name]
+  return_type: void
+  since: 1
+- deprecated_since: 1
+  method: false
+  name: tabpage_set_var
+  parameters:
+  - [Tabpage, tabpage]
+  - [String, name]
+  - [Object, value]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: tabpage_del_var
+  parameters:
+  - [Tabpage, tabpage]
+  - [String, name]
+  return_type: Object
+  since: 0
+- method: true
+  name: nvim_tabpage_get_win
+  parameters:
+  - [Tabpage, tabpage]
+  return_type: Window
+  since: 1
+- method: true
+  name: nvim_tabpage_get_number
+  parameters:
+  - [Tabpage, tabpage]
+  return_type: Integer
+  since: 1
+- method: true
+  name: nvim_tabpage_is_valid
+  parameters:
+  - [Tabpage, tabpage]
+  return_type: Boolean
+  since: 1
+- method: false
+  name: nvim_ui_attach
+  parameters:
+  - [Integer, width]
+  - [Integer, height]
+  - [Dictionary, options]
+  return_type: void
+  since: 1
+- deprecated_since: 1
+  method: false
+  name: ui_attach
+  parameters:
+  - [Integer, width]
+  - [Integer, height]
+  - [Boolean, enable_rgb]
+  return_type: void
+  since: 0
+- method: false
+  name: nvim_ui_detach
+  parameters: []
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_ui_try_resize
+  parameters:
+  - [Integer, width]
+  - [Integer, height]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_ui_set_option
+  parameters:
+  - [String, name]
+  - [Object, value]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_command
+  parameters:
+  - [String, command]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_feedkeys
+  parameters:
+  - [String, keys]
+  - [String, mode]
+  - [Boolean, escape_csi]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_input
+  parameters:
+  - [String, keys]
+  return_type: Integer
+  since: 1
+- method: false
+  name: nvim_replace_termcodes
+  parameters:
+  - [String, str]
+  - [Boolean, from_part]
+  - [Boolean, do_lt]
+  - [Boolean, special]
+  return_type: String
+  since: 1
+- method: false
+  name: nvim_command_output
+  parameters:
+  - [String, str]
+  return_type: String
+  since: 1
+- method: false
+  name: nvim_eval
+  parameters:
+  - [String, expr]
+  return_type: Object
+  since: 1
+- method: false
+  name: nvim_call_function
+  parameters:
+  - [String, fname]
+  - [Array, args]
+  return_type: Object
+  since: 1
+- method: false
+  name: nvim_execute_lua
+  parameters:
+  - [String, code]
+  - [Array, args]
+  return_type: Object
+  since: 3
+- method: false
+  name: nvim_strwidth
+  parameters:
+  - [String, str]
+  return_type: Integer
+  since: 1
+- method: false
+  name: nvim_list_runtime_paths
+  parameters: []
+  return_type: ArrayOf(String)
+  since: 1
+- method: false
+  name: nvim_set_current_dir
+  parameters:
+  - [String, dir]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_get_current_line
+  parameters: []
+  return_type: String
+  since: 1
+- method: false
+  name: nvim_set_current_line
+  parameters:
+  - [String, line]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_del_current_line
+  parameters: []
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_get_var
+  parameters:
+  - [String, name]
+  return_type: Object
+  since: 1
+- method: false
+  name: nvim_set_var
+  parameters:
+  - [String, name]
+  - [Object, value]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_del_var
+  parameters:
+  - [String, name]
+  return_type: void
+  since: 1
+- deprecated_since: 1
+  method: false
+  name: vim_set_var
+  parameters:
+  - [String, name]
+  - [Object, value]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_del_var
+  parameters:
+  - [String, name]
+  return_type: Object
+  since: 0
+- method: false
+  name: nvim_get_vvar
+  parameters:
+  - [String, name]
+  return_type: Object
+  since: 1
+- method: false
+  name: nvim_get_option
+  parameters:
+  - [String, name]
+  return_type: Object
+  since: 1
+- method: false
+  name: nvim_set_option
+  parameters:
+  - [String, name]
+  - [Object, value]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_out_write
+  parameters:
+  - [String, str]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_err_write
+  parameters:
+  - [String, str]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_err_writeln
+  parameters:
+  - [String, str]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_list_bufs
+  parameters: []
+  return_type: ArrayOf(Buffer)
+  since: 1
+- method: false
+  name: nvim_get_current_buf
+  parameters: []
+  return_type: Buffer
+  since: 1
+- method: false
+  name: nvim_set_current_buf
+  parameters:
+  - [Buffer, buffer]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_list_wins
+  parameters: []
+  return_type: ArrayOf(Window)
+  since: 1
+- method: false
+  name: nvim_get_current_win
+  parameters: []
+  return_type: Window
+  since: 1
+- method: false
+  name: nvim_set_current_win
+  parameters:
+  - [Window, window]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_list_tabpages
+  parameters: []
+  return_type: ArrayOf(Tabpage)
+  since: 1
+- method: false
+  name: nvim_get_current_tabpage
+  parameters: []
+  return_type: Tabpage
+  since: 1
+- method: false
+  name: nvim_set_current_tabpage
+  parameters:
+  - [Tabpage, tabpage]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_subscribe
+  parameters:
+  - [String, event]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_unsubscribe
+  parameters:
+  - [String, event]
+  return_type: void
+  since: 1
+- method: false
+  name: nvim_get_color_by_name
+  parameters:
+  - [String, name]
+  return_type: Integer
+  since: 1
+- method: false
+  name: nvim_get_color_map
+  parameters: []
+  return_type: Dictionary
+  since: 1
+- method: false
+  name: nvim_get_mode
+  parameters: []
+  return_type: Dictionary
+  since: 2
+- method: false
+  name: nvim_get_keymap
+  parameters:
+  - [String, mode]
+  return_type: ArrayOf(Dictionary)
+  since: 3
+- method: false
+  name: nvim_get_api_info
+  parameters: []
+  return_type: Array
+  since: 1
+- method: false
+  name: nvim_call_atomic
+  parameters:
+  - [Array, calls]
+  return_type: Array
+  since: 1
+- method: true
+  name: nvim_win_get_buf
+  parameters:
+  - [Window, window]
+  return_type: Buffer
+  since: 1
+- method: true
+  name: nvim_win_get_cursor
+  parameters:
+  - [Window, window]
+  return_type: ArrayOf(Integer, 2)
+  since: 1
+- method: true
+  name: nvim_win_set_cursor
+  parameters:
+  - [Window, window]
+  - ['ArrayOf(Integer, 2)', pos]
+  return_type: void
+  since: 1
+- method: true
+  name: nvim_win_get_height
+  parameters:
+  - [Window, window]
+  return_type: Integer
+  since: 1
+- method: true
+  name: nvim_win_set_height
+  parameters:
+  - [Window, window]
+  - [Integer, height]
+  return_type: void
+  since: 1
+- method: true
+  name: nvim_win_get_width
+  parameters:
+  - [Window, window]
+  return_type: Integer
+  since: 1
+- method: true
+  name: nvim_win_set_width
+  parameters:
+  - [Window, window]
+  - [Integer, width]
+  return_type: void
+  since: 1
+- method: true
+  name: nvim_win_get_var
+  parameters:
+  - [Window, window]
+  - [String, name]
+  return_type: Object
+  since: 1
+- method: true
+  name: nvim_win_set_var
+  parameters:
+  - [Window, window]
+  - [String, name]
+  - [Object, value]
+  return_type: void
+  since: 1
+- method: true
+  name: nvim_win_del_var
+  parameters:
+  - [Window, window]
+  - [String, name]
+  return_type: void
+  since: 1
+- deprecated_since: 1
+  method: false
+  name: window_set_var
+  parameters:
+  - [Window, window]
+  - [String, name]
+  - [Object, value]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: window_del_var
+  parameters:
+  - [Window, window]
+  - [String, name]
+  return_type: Object
+  since: 0
+- method: true
+  name: nvim_win_get_option
+  parameters:
+  - [Window, window]
+  - [String, name]
+  return_type: Object
+  since: 1
+- method: true
+  name: nvim_win_set_option
+  parameters:
+  - [Window, window]
+  - [String, name]
+  - [Object, value]
+  return_type: void
+  since: 1
+- method: true
+  name: nvim_win_get_position
+  parameters:
+  - [Window, window]
+  return_type: ArrayOf(Integer, 2)
+  since: 1
+- method: true
+  name: nvim_win_get_tabpage
+  parameters:
+  - [Window, window]
+  return_type: Tabpage
+  since: 1
+- method: true
+  name: nvim_win_get_number
+  parameters:
+  - [Window, window]
+  return_type: Integer
+  since: 1
+- method: true
+  name: nvim_win_is_valid
+  parameters:
+  - [Window, window]
+  return_type: Boolean
+  since: 1
+- deprecated_since: 1
+  method: true
+  name: buffer_line_count
+  parameters:
+  - [Buffer, buffer]
+  return_type: Integer
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: buffer_get_lines
+  parameters:
+  - [Buffer, buffer]
+  - [Integer, start]
+  - [Integer, end]
+  - [Boolean, strict_indexing]
+  return_type: ArrayOf(String)
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: buffer_set_lines
+  parameters:
+  - [Buffer, buffer]
+  - [Integer, start]
+  - [Integer, end]
+  - [Boolean, strict_indexing]
+  - [ArrayOf(String), replacement]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: buffer_get_var
+  parameters:
+  - [Buffer, buffer]
+  - [String, name]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: buffer_get_option
+  parameters:
+  - [Buffer, buffer]
+  - [String, name]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: buffer_set_option
+  parameters:
+  - [Buffer, buffer]
+  - [String, name]
+  - [Object, value]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: buffer_get_number
+  parameters:
+  - [Buffer, buffer]
+  return_type: Integer
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: buffer_get_name
+  parameters:
+  - [Buffer, buffer]
+  return_type: String
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: buffer_set_name
+  parameters:
+  - [Buffer, buffer]
+  - [String, name]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: buffer_is_valid
+  parameters:
+  - [Buffer, buffer]
+  return_type: Boolean
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: buffer_get_mark
+  parameters:
+  - [Buffer, buffer]
+  - [String, name]
+  return_type: ArrayOf(Integer, 2)
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: buffer_add_highlight
+  parameters:
+  - [Buffer, buffer]
+  - [Integer, src_id]
+  - [String, hl_group]
+  - [Integer, line]
+  - [Integer, col_start]
+  - [Integer, col_end]
+  return_type: Integer
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: buffer_clear_highlight
+  parameters:
+  - [Buffer, buffer]
+  - [Integer, src_id]
+  - [Integer, line_start]
+  - [Integer, line_end]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: tabpage_get_windows
+  parameters:
+  - [Tabpage, tabpage]
+  return_type: ArrayOf(Window)
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: tabpage_get_var
+  parameters:
+  - [Tabpage, tabpage]
+  - [String, name]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: tabpage_get_window
+  parameters:
+  - [Tabpage, tabpage]
+  return_type: Window
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: tabpage_is_valid
+  parameters:
+  - [Tabpage, tabpage]
+  return_type: Boolean
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: ui_detach
+  parameters: []
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: ui_try_resize
+  parameters:
+  - [Integer, width]
+  - [Integer, height]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_command
+  parameters:
+  - [String, command]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_feedkeys
+  parameters:
+  - [String, keys]
+  - [String, mode]
+  - [Boolean, escape_csi]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_input
+  parameters:
+  - [String, keys]
+  return_type: Integer
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_replace_termcodes
+  parameters:
+  - [String, str]
+  - [Boolean, from_part]
+  - [Boolean, do_lt]
+  - [Boolean, special]
+  return_type: String
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_command_output
+  parameters:
+  - [String, str]
+  return_type: String
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_eval
+  parameters:
+  - [String, expr]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_call_function
+  parameters:
+  - [String, fname]
+  - [Array, args]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_strwidth
+  parameters:
+  - [String, str]
+  return_type: Integer
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_list_runtime_paths
+  parameters: []
+  return_type: ArrayOf(String)
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_change_directory
+  parameters:
+  - [String, dir]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_get_current_line
+  parameters: []
+  return_type: String
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_set_current_line
+  parameters:
+  - [String, line]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_del_current_line
+  parameters: []
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_get_var
+  parameters:
+  - [String, name]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_get_vvar
+  parameters:
+  - [String, name]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_get_option
+  parameters:
+  - [String, name]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_set_option
+  parameters:
+  - [String, name]
+  - [Object, value]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_out_write
+  parameters:
+  - [String, str]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_err_write
+  parameters:
+  - [String, str]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_report_error
+  parameters:
+  - [String, str]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_get_buffers
+  parameters: []
+  return_type: ArrayOf(Buffer)
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_get_current_buffer
+  parameters: []
+  return_type: Buffer
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_set_current_buffer
+  parameters:
+  - [Buffer, buffer]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_get_windows
+  parameters: []
+  return_type: ArrayOf(Window)
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_get_current_window
+  parameters: []
+  return_type: Window
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_set_current_window
+  parameters:
+  - [Window, window]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_get_tabpages
+  parameters: []
+  return_type: ArrayOf(Tabpage)
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_get_current_tabpage
+  parameters: []
+  return_type: Tabpage
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_set_current_tabpage
+  parameters:
+  - [Tabpage, tabpage]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_subscribe
+  parameters:
+  - [String, event]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_unsubscribe
+  parameters:
+  - [String, event]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_name_to_color
+  parameters:
+  - [String, name]
+  return_type: Integer
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_get_color_map
+  parameters: []
+  return_type: Dictionary
+  since: 0
+- deprecated_since: 1
+  method: false
+  name: vim_get_api_info
+  parameters: []
+  return_type: Array
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: window_get_buffer
+  parameters:
+  - [Window, window]
+  return_type: Buffer
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: window_get_cursor
+  parameters:
+  - [Window, window]
+  return_type: ArrayOf(Integer, 2)
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: window_set_cursor
+  parameters:
+  - [Window, window]
+  - ['ArrayOf(Integer, 2)', pos]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: window_get_height
+  parameters:
+  - [Window, window]
+  return_type: Integer
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: window_set_height
+  parameters:
+  - [Window, window]
+  - [Integer, height]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: window_get_width
+  parameters:
+  - [Window, window]
+  return_type: Integer
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: window_set_width
+  parameters:
+  - [Window, window]
+  - [Integer, width]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: window_get_var
+  parameters:
+  - [Window, window]
+  - [String, name]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: window_get_option
+  parameters:
+  - [Window, window]
+  - [String, name]
+  return_type: Object
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: window_set_option
+  parameters:
+  - [Window, window]
+  - [String, name]
+  - [Object, value]
+  return_type: void
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: window_get_position
+  parameters:
+  - [Window, window]
+  return_type: ArrayOf(Integer, 2)
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: window_get_tabpage
+  parameters:
+  - [Window, window]
+  return_type: Tabpage
+  since: 0
+- deprecated_since: 1
+  method: true
+  name: window_is_valid
+  parameters:
+  - [Window, window]
+  return_type: Boolean
+  since: 0
+types:
+  Buffer: {id: 0, prefix: nvim_buf_}
+  Tabpage: {id: 2, prefix: nvim_tabpage_}
+  Window: {id: 1, prefix: nvim_win_}
+ui_events:
+- name: resize
+  parameters:
+  - [Integer, rows]
+  - [Integer, columns]
+  since: 3
+- name: clear
+  parameters: []
+  since: 3
+- name: eol_clear
+  parameters: []
+  since: 3
+- name: cursor_goto
+  parameters:
+  - [Integer, row]
+  - [Integer, col]
+  since: 3
+- name: mode_info_set
+  parameters:
+  - [Boolean, enabled]
+  - [Array, cursor_styles]
+  since: 3
+- name: update_menu
+  parameters: []
+  since: 3
+- name: busy_start
+  parameters: []
+  since: 3
+- name: busy_stop
+  parameters: []
+  since: 3
+- name: mouse_on
+  parameters: []
+  since: 3
+- name: mouse_off
+  parameters: []
+  since: 3
+- name: mode_change
+  parameters:
+  - [String, mode]
+  - [Integer, mode_idx]
+  since: 3
+- name: set_scroll_region
+  parameters:
+  - [Integer, top]
+  - [Integer, bot]
+  - [Integer, left]
+  - [Integer, right]
+  since: 3
+- name: scroll
+  parameters:
+  - [Integer, count]
+  since: 3
+- name: highlight_set
+  parameters:
+  - [Dictionary, attrs]
+  since: 3
+- name: put
+  parameters:
+  - [String, str]
+  since: 3
+- name: bell
+  parameters: []
+  since: 3
+- name: visual_bell
+  parameters: []
+  since: 3
+- name: flush
+  parameters: []
+  since: 3
+- name: update_fg
+  parameters:
+  - [Integer, fg]
+  since: 3
+- name: update_bg
+  parameters:
+  - [Integer, bg]
+  since: 3
+- name: update_sp
+  parameters:
+  - [Integer, sp]
+  since: 3
+- name: suspend
+  parameters: []
+  since: 3
+- name: set_title
+  parameters:
+  - [String, title]
+  since: 3
+- name: set_icon
+  parameters:
+  - [String, icon]
+  since: 3
+- name: popupmenu_show
+  parameters:
+  - [Array, items]
+  - [Integer, selected]
+  - [Integer, row]
+  - [Integer, col]
+  since: 3
+- name: popupmenu_hide
+  parameters: []
+  since: 3
+- name: popupmenu_select
+  parameters:
+  - [Integer, selected]
+  since: 3
+- name: tabline_update
+  parameters:
+  - [Tabpage, current]
+  - [Array, tabs]
+  since: 3
+version: {api_compatible: 0, api_level: 3, api_prerelease: true, major: 0, minor: 2,
+  patch: 1}

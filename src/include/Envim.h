@@ -26,22 +26,32 @@
 #include <msgpack.h>
 #include <Elementary.h>
 
-typedef struct
-{
-   unsigned int major;
-   unsigned int minor;
-   unsigned int patch;
-} s_version;
+typedef struct version s_version;
+typedef struct request s_request;
+typedef struct nvim s_nvim;
+typedef struct position s_position;
+typedef struct window s_window;
+typedef struct tabpage s_tabpage;
+typedef struct buffer s_buffer;
+typedef struct object s_object;
+typedef int64_t t_int;
 
-typedef struct
-{
-   s_version version;
-} s_api;
+#include "nvim_api.h"
 
-typedef struct
-{
-   s_api api;
 
+struct object
+{
+   int64_t id;
+};
+
+struct request
+{
+   uint64_t uid;
+   e_request type;
+};
+
+struct nvim
+{
    Ecore_Exe *exe;
    Evas_Object *win;
    Eina_List *requests;
@@ -50,64 +60,50 @@ typedef struct
    msgpack_sbuffer sbuffer;
    msgpack_packer packer;
    uint64_t request_id;
-} s_nvim;
+};
 
-typedef enum
+struct position
 {
-   REQUEST_NONE = 0,
-   REQUEST_GET_API_INFO,
+   int64_t x;
+   int64_t y;
+};
 
-   __REQUEST_LAST /* Sentinel */
-} e_request;
-
-typedef enum
+struct version
 {
-   API_KEY_INVALID = 0,
-   API_KEY_VERSION,
-   API_KEY_FUNCTIONS,
-   API_KEY_TYPES,
-   API_KEY_UI_EVENTS,
+   unsigned int major;
+   unsigned int minor;
+   unsigned int patch;
+};
 
-   __API_KEY_LAST /* Sentinel */
-} e_api_key;
-
-typedef enum
+struct window
 {
-   ARG_TYPE_INT64,
-   ARG_TYPE_STRING,
-   ARG_TYPE_BOOL,
-   ARG_TYPE_FLOAT64,
-   ARG_TYPE_ARRAY,
-   ARG_TYPE_MAP,
-} e_arg_type;
+   s_object obj;
+};
 
-typedef struct
+struct tabpage
 {
-   uint64_t uid;
-   e_request type;
-} s_request;
+   s_object obj;
+};
 
-typedef void (*f_request_handler)(s_nvim *nvim, const s_request *req, const msgpack_object_array *args);
-
-typedef struct
+struct buffer
 {
-   Eina_Stringshare *method;
-   const f_request_handler handler;
-   const unsigned int in_args_count;
-   const unsigned int out_min_args;
-   const unsigned int out_max_args;
-   const e_arg_type in_args_types[];
-} s_request_info;
+   s_object obj;
+};
 
-typedef struct
+
+static inline s_position
+position_make(int64_t x, int64_t y)
 {
-   Eina_Stringshare *call;
-   Eina_Bool is_method;
-} s_rpc;
+   const s_position pos = {
+      .x = x,
+      .y = y,
+   };
+   return pos;
+}
 
-
-
-
+/*============================================================================*
+ *                              Logging Framework                             *
+ *============================================================================*/
 
 extern int _envim_log_domain;
 
@@ -121,19 +117,38 @@ Eina_Bool nvim_init(void);
 void nvim_shutdown(void);
 s_nvim *nvim_new(void);
 void nvim_free(s_nvim *nvim);
+uint64_t nvim_get_next_uid(s_nvim *nvim);
 
-Eina_Bool request_init(void);
-void request_shutdown(void);
 s_request *request_new(uint64_t req_uid, e_request req_type);
 void request_free(s_request *req);
-const s_request_info *request_info_get(const s_request *req);
-Eina_Bool nvim_rpc(s_nvim *nvim, e_request request_type, ...);
 
-Eina_Bool api_init(void);
-void api_shutdown(void);
-e_api_key api_key_for_string_get(Eina_Stringshare *key);
-Eina_Bool api_version_set(const msgpack_object *obj, s_version *version);
+Eina_Bool nvim_api_response_dispatch(s_nvim *nvim, const s_request *req, const msgpack_object_array *args);
 
-void api_functions_set(const msgpack_object *obj);
+
+/*============================================================================*
+ *                              Packing Functions                             *
+ *============================================================================*/
+
+void pack_object(msgpack_packer *pk, const s_object *obj);
+void pack_buffer(msgpack_packer *pk, const s_buffer *buf);
+void pack_window(msgpack_packer *pk, const s_window *win);
+void pack_tabpage(msgpack_packer *pk, const s_tabpage *tab);
+void pack_non_implemented(msgpack_packer *pk, const void *obj);
+void pack_boolean(msgpack_packer *pk, Eina_Bool boolean);
+void pack_stringshare(msgpack_packer *pk, Eina_Stringshare *str);
+void pack_position(msgpack_packer *pk, s_position pos);
+void pack_list_of_windows(msgpack_packer *pk, const Eina_List *list_win);
+void pack_list_of_buffers(msgpack_packer *pk, const Eina_List *list_buf);
+void pack_list_of_tabpages(msgpack_packer *pk, const Eina_List *list_tab);
+void pack_list_of_strings(msgpack_packer *pk, const Eina_List *list_str);
+
+Eina_Bool pack_boolean_get(const msgpack_object_array *args);
+s_position pack_position_get(const msgpack_object_array *args);
+t_int pack_int_get(const msgpack_object_array *args);
+Eina_Stringshare *pack_stringshare_get(const msgpack_object_array *args);
+s_object *pack_object_get(const msgpack_object_array *args);
+s_window *pack_window_get(const msgpack_object_array *args);
+s_buffer *pack_buffer_get(const msgpack_object_array *args);
+s_tabpage *pack_tabpage_get(const msgpack_object_array *args);
 
 #endif /* ! __ENVIM_H__ */

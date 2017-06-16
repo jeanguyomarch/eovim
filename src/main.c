@@ -36,9 +36,7 @@ static const s_module _modules[] =
 #define MODULE(name_) \
    { .name = #name_, .init = name_ ## _init, .shutdown = name_ ## _shutdown }
 
-   MODULE(api),
    MODULE(nvim),
-   MODULE(request),
 
 #undef MODULE
 };
@@ -47,7 +45,6 @@ static void
 _init_func(void *data)
 {
    s_nvim *const nvim = data;
-   nvim_rpc(nvim, REQUEST_GET_API_INFO);
 }
 
 EAPI_MAIN int

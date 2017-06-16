@@ -22,6 +22,7 @@
 
 #include "Envim.h"
 
+#if 0
 #define CHECK_ARG_TYPE(ARG, TYPE, ...) \
    do { \
       if (ARG.type != TYPE) { \
@@ -76,49 +77,7 @@ _response_get_api_info(s_nvim *nvim,
           }
      }
 }
-
-
-static s_request_info _requests_api[__REQUEST_LAST] =
-{
-   [REQUEST_GET_API_INFO] = {
-      .method = "nvim_get_api_info",
-      .in_args_count = 0,
-      .out_min_args = 2,
-      .out_max_args = 2,
-      .handler = _response_get_api_info,
-   },
-};
-
-
-Eina_Bool
-request_init(void)
-{
-   /*
-    * Ahah, there is a trick here! As stringshares can only be obtained at run
-    * time, we initialize the method with a constant string, which is then fed
-    * back to the structure field after Eina has been initted.
-    *
-    * We obtain a 'method' field that self-describes its length and can be
-    * easily compared with other things.
-    */
-   for (unsigned int i = 0; i < __REQUEST_LAST; i++)
-     {
-        s_request_info *const info = &(_requests_api[i]);
-        info->method = eina_stringshare_add(info->method);
-     }
-
-   return EINA_TRUE;
-}
-
-void
-request_shutdown(void)
-{
-   for (unsigned int i = 0; i < __REQUEST_LAST; i++)
-     {
-        s_request_info *const info = &(_requests_api[i]);
-        eina_stringshare_del(info->method);
-     }
-}
+#endif
 
 s_request *
 request_new(uint64_t req_uid,
@@ -144,11 +103,4 @@ request_free(s_request *req)
      {
         free(req);
      }
-}
-
-const s_request_info *
-request_info_get(const s_request *req)
-{
-   EINA_SAFETY_ON_NULL_RETURN_VAL(req, NULL);
-   return &(_requests_api[req->type]);
 }
