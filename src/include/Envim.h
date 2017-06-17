@@ -137,6 +137,9 @@ void request_free(s_request *req);
 Eina_Bool nvim_api_response_dispatch(s_nvim *nvim, const s_request *req, const msgpack_object_array *args);
 
 
+s_tabpage *tabpage_new(t_int id);
+void tabpage_free(s_tabpage *tab);
+
 /*============================================================================*
  *                              Packing Functions                             *
  *============================================================================*/

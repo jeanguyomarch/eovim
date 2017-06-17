@@ -229,7 +229,7 @@ Eina_List *
 pack_tabpages_get(const msgpack_object_array *args)
 {
    Eina_List *list = NULL;
-   s_tabpage *tab = NULL;
+
    for (unsigned int i = 0; i < args->size; i++)
      {
         if (EINA_UNLIKELY(args->ptr[i].type != MSGPACK_OBJECT_EXT))
@@ -250,13 +250,11 @@ pack_tabpages_get(const msgpack_object_array *args)
              goto fail;
           }
 
-        const t_int id = obj->ptr[0];
-
-        list = eina_list_append(list, tab);
+        list = eina_list_append(list, (const void *)((int64_t)(obj->ptr[0])));
      }
    return list;
 
 fail:
-   EINA_LIST_FREE(list, tab);
+   eina_list_free(list);
    return NULL;
 }

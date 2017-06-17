@@ -40,6 +40,7 @@ add_executable(envim
    "${SRC_DIR}/nvim.c"
    "${SRC_DIR}/request.c"
    "${SRC_DIR}/pack.c"
+   "${SRC_DIR}/tabpage.c"
    "${BUILD_API_DIR}/nvim_api.c"
    "${BUILD_API_DIR}/nvim_api.h"
    "${SRC_DIR}/include/Envim.h"

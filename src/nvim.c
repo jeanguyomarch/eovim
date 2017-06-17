@@ -427,10 +427,23 @@ void
 nvim_list_tabpages_cb(s_nvim *nvim, Eina_List *tabpages)
 {
    Eina_List *l;
-   s_tabpage *tab;
+   const int64_t *tab_id_fake_ptr;
 
-   EINA_LIST_FOREACH(tabpages, l, tab)
+   EINA_LIST_FOREACH(tabpages, l, tab_id_fake_ptr)
      {
-        printf("%p\n", tab);
+        s_tabpage *tab;
+        const int64_t tab_id = (int64_t)tab_id_fake_ptr;
+
+        tab = eina_hash_find(nvim->tabpages, &tab_id);
+        if (! tab)
+          {
+             tab = tabpage_new(tab_id);
+             if (! tab)
+               {
+                  CRI("Failed to create tabpage");
+                  continue;
+               }
+             eina_hash_add(nvim->tabpages, &tab_id, tab);
+          }
      }
 }
