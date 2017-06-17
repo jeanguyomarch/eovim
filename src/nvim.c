@@ -325,6 +325,8 @@ nvim_new(const char *program,
    EINA_MAIN_LOOP_CHECK_RETURN_VAL(NULL);
 
    Eina_Bool ok;
+   Evas_Object *o;
+   const char group[] = "envim/main";
 
    /* Forge the command-line for the nvim program. We manually enforce
     * --embed and --headless, because we are the gui client, and forward all
@@ -392,11 +394,24 @@ nvim_new(const char *program,
         /* TODO ERROR */
      }
 
+   o = nvim->layout = elm_layout_add(nvim->win);
+   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+   ok = elm_layout_file_set(o, main_edje_file_get(), group);
+   if (EINA_UNLIKELY(! ok))
+     {
+        CRI("Failed to set layout");
+        goto del_win;
+     }
+   evas_object_show(o);
    evas_object_show(nvim->win);
 
    eina_strbuf_free(cmdline);
    return nvim;
 
+del_win:
+   evas_object_del(nvim->win);
 del_mem:
    free(nvim);
 del_strbuf:

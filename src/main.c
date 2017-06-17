@@ -25,6 +25,9 @@
 
 int _envim_log_domain = -1;
 
+static Eina_Bool _in_tree = EINA_FALSE;
+static Eina_Strbuf *_edje_file = NULL;
+
 static const Ecore_Getopt _options =
 {
    "envim",
@@ -35,6 +38,7 @@ static const Ecore_Getopt _options =
    "An EFL GUI client for NeoVim",
    EINA_FALSE, /* Not strict: allows forwarding */
    {
+      ECORE_GETOPT_STORE_STR('t', "theme", "Name of the theme to be used"),
       ECORE_GETOPT_STORE_STR('\0', "nvim", "Path to the nvim program"),
       ECORE_GETOPT_HELP('h', "help"),
       ECORE_GETOPT_VERSION('V', "version"),
@@ -70,6 +74,37 @@ _init_func(void *data)
    //nvim_get_current_tabpage(nvim);
 }
 
+static Eina_Bool
+_edje_file_init(const char *theme)
+{
+   EINA_SAFETY_ON_NULL_RETURN_VAL(theme, EINA_FALSE);
+
+   const char *const dir = main_in_tree_is()
+      ? BUILD_DATA_DIR 
+      : elm_app_data_dir_get();
+
+   _edje_file = eina_strbuf_new();
+   if (EINA_UNLIKELY(! _edje_file))
+     {
+        CRI("Failed to create Strbuf");
+        return EINA_FALSE;
+     }
+   eina_strbuf_append_printf(_edje_file, "%s/themes/%s.edj", dir, theme);
+   return EINA_TRUE;
+}
+
+Eina_Bool
+main_in_tree_is(void)
+{
+   return _in_tree;
+}
+
+const char *
+main_edje_file_get(void)
+{
+   return eina_strbuf_string_get(_edje_file);
+}
+
 EAPI_MAIN int
 elm_main(int argc,
          char **argv)
@@ -78,7 +113,9 @@ elm_main(int argc,
    int args;
    Eina_Bool quit_option = EINA_FALSE;
    char *nvim_prog = "nvim";
+   char *theme = "default";
    Ecore_Getopt_Value values[] = {
+      ECORE_GETOPT_VALUE_STR(theme),
       ECORE_GETOPT_VALUE_STR(nvim_prog),
       ECORE_GETOPT_VALUE_BOOL(quit_option),
       ECORE_GETOPT_VALUE_BOOL(quit_option),
@@ -107,6 +144,16 @@ elm_main(int argc,
         goto log_unregister;
      }
 
+
+   const char *const env = getenv("ENVIM_IN_TREE");
+   _in_tree = (env) ? !!atoi(env) : EINA_FALSE;
+
+   if (EINA_UNLIKELY(! _edje_file_init(theme)))
+     {
+        CRI("Failed to compose edje file path");
+        goto log_unregister;
+     }
+
    /*
     * Initialize all the different modules that compose Envim.
     */
@@ -125,6 +172,11 @@ elm_main(int argc,
     * App settings
     */
    elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_LAST_WINDOW_CLOSED);
+   elm_language_set("");
+   elm_app_compile_bin_dir_set(PACKAGE_BIN_DIR);
+   elm_app_compile_lib_dir_set(PACKAGE_LIB_DIR);
+   elm_app_compile_data_dir_set(PACKAGE_DATA_DIR);
+   elm_app_info_set(elm_main, "envim", "themes/default.edj");
 
    /*
     * Create the GUI client

@@ -65,6 +65,7 @@ struct nvim
    Eina_Hash *tabpages;
    Eina_Hash *windows;
    Eina_Hash *buffers;
+   Evas_Object *layout;
 
    msgpack_zone mempool;
    msgpack_sbuffer sbuffer;
@@ -122,6 +123,9 @@ extern int _envim_log_domain;
 #define WRN(...) EINA_LOG_DOM_WARN(_envim_log_domain, __VA_ARGS__)
 #define ERR(...) EINA_LOG_DOM_ERR(_envim_log_domain, __VA_ARGS__)
 #define CRI(...) EINA_LOG_DOM_CRIT(_envim_log_domain, __VA_ARGS__)
+
+Eina_Bool main_in_tree_is(void);
+const char *main_edje_file_get(void);
 
 Eina_Bool nvim_init(void);
 void nvim_shutdown(void);
