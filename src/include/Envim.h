@@ -129,6 +129,8 @@ s_nvim *nvim_new(const char *program, unsigned int argc, const char *const argv[
 void nvim_free(s_nvim *nvim);
 uint64_t nvim_get_next_uid(s_nvim *nvim);
 
+Eina_Bool request_init(void);
+void request_shutdown(void);
 s_request *request_new(uint64_t req_uid, e_request req_type, const void *then_cb);
 void request_free(s_request *req);
 

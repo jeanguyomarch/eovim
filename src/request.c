@@ -22,6 +22,28 @@
 
 #include "Envim.h"
 
+static Eina_Mempool *_mempool = NULL;
+
+Eina_Bool
+request_init(void)
+{
+   _mempool = eina_mempool_add("chained_mempool", "s_request",
+                               NULL, sizeof(s_request), 8);
+   if (EINA_UNLIKELY(! _mempool))
+     {
+        CRI("Failed to initialize mempool");
+        return EINA_FALSE;
+     }
+   return EINA_TRUE;
+}
+
+void
+request_shutdown(void)
+{
+   eina_mempool_del(_mempool);
+   _mempool = NULL;
+}
+
 s_request *
 request_new(uint64_t req_uid,
             e_request req_type,
@@ -29,7 +51,7 @@ request_new(uint64_t req_uid,
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(then_cb, NULL);
 
-   s_request *const req = calloc(1, sizeof(req));
+   s_request *const req = eina_mempool_malloc(_mempool, sizeof(s_request));
    if (EINA_UNLIKELY(! req))
      {
         CRI("Failed to allocate memory for a request object");
@@ -48,6 +70,6 @@ request_free(s_request *req)
 {
    if (req)
      {
-        free(req);
+        eina_mempool_free(_mempool, req);
      }
 }
