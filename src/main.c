@@ -21,8 +21,26 @@
  */
 
 #include "Envim.h"
+#include <Ecore_Getopt.h>
 
 int _envim_log_domain = -1;
+
+static const Ecore_Getopt _options =
+{
+   "envim",
+   "%prog [options] [files...]",
+   "0.2.1",
+   "2017 (c) Jean Guyomarc'h",
+   "MIT",
+   "An EFL GUI client for NeoVim",
+   EINA_FALSE, /* Not strict: allows forwarding */
+   {
+      ECORE_GETOPT_STORE_STR('\0', "nvim", "Path to the nvim program"),
+      ECORE_GETOPT_HELP('h', "help"),
+      ECORE_GETOPT_VERSION('V', "version"),
+      ECORE_GETOPT_SENTINEL
+   }
+};
 
 typedef struct
 {
@@ -45,13 +63,25 @@ static void
 _init_func(void *data)
 {
    s_nvim *const nvim = data;
+
+   nvim_list_tabpages(nvim, nvim_list_tabpages_cb);
+   //nvim_list_bufs(nvim);
+   //nvim_get_current_tabpage(nvim);
 }
 
 EAPI_MAIN int
-elm_main(int argc EINA_UNUSED,
-         char **argv EINA_UNUSED)
+elm_main(int argc,
+         char **argv)
 {
    int return_code = EXIT_FAILURE;
+   int args;
+   Eina_Bool quit_option = EINA_FALSE;
+   char *nvim_prog = "nvim";
+   Ecore_Getopt_Value values[] = {
+      ECORE_GETOPT_VALUE_STR(nvim_prog),
+      ECORE_GETOPT_VALUE_BOOL(quit_option),
+      ECORE_GETOPT_VALUE_BOOL(quit_option),
+   };
 
    /* First step: initialize the logging framework */
    _envim_log_domain = eina_log_domain_register("envim", EINA_COLOR_RED);
@@ -61,6 +91,21 @@ elm_main(int argc EINA_UNUSED,
         goto end;
      }
 
+   /* Do the getopts */
+   args = ecore_getopt_parse(&_options, values, argc, argv);
+   if (args < 0)
+     {
+        CRI("Failed to parse command-line arguments");
+        goto log_unregister;
+     }
+
+   /* Did we require quitting? Quit! */
+   if (quit_option)
+     {
+        return_code = EXIT_SUCCESS;
+        goto log_unregister;
+     }
+
    /*
     * Initialize all the different modules that compose Envim.
     */
@@ -68,19 +113,37 @@ elm_main(int argc EINA_UNUSED,
    const s_module *mod_it;
    for (mod_it = _modules; mod_it <= mod_last; mod_it++)
      {
-        printf("init %s\n", mod_it->name);
-       if (EINA_UNLIKELY(mod_it->init() != EINA_TRUE))
-         {
-            CRI("Failed to initialize module '%s'", mod_it->name);
-            goto modules_shutdown;
-         }
+        if (EINA_UNLIKELY(mod_it->init() != EINA_TRUE))
+          {
+             CRI("Failed to initialize module '%s'", mod_it->name);
+             goto modules_shutdown;
+          }
      }
 
-   s_nvim *const nvim = nvim_new();
+   /*
+    * App settings
+    */
+   elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_LAST_WINDOW_CLOSED);
 
+   /*
+    * Create the GUI client
+    */
+   s_nvim *const nvim = nvim_new(nvim_prog, (unsigned int)(argc -args),
+                                 (const char *const *)(&argv[args]));
+   if (EINA_UNLIKELY(! nvim))
+     {
+        CRI("Failed to create a NeoVim instance");
+        goto modules_shutdown;
+     }
+
+   /*
+    * Run an initial batch of commands
+    */
    ecore_job_add(_init_func, nvim);
 
-   /* Run the main loop */
+   /*
+    * Run the main loop
+    */
    elm_run();
 
    nvim_free(nvim);
@@ -88,10 +151,10 @@ elm_main(int argc EINA_UNUSED,
 
    /* Everything seemed to have run fine :) */
    return_code = EXIT_SUCCESS;
-
 modules_shutdown:
    for (--mod_it; mod_it >= _modules; mod_it--)
      mod_it->shutdown();
+log_unregister:
    eina_log_domain_unregister(_envim_log_domain);
 end:
    return return_code;

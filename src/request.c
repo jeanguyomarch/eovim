@@ -24,8 +24,11 @@
 
 s_request *
 request_new(uint64_t req_uid,
-            e_request req_type)
+            e_request req_type,
+            const void *then_cb)
 {
+   EINA_SAFETY_ON_NULL_RETURN_VAL(then_cb, NULL);
+
    s_request *const req = calloc(1, sizeof(req));
    if (EINA_UNLIKELY(! req))
      {
@@ -35,6 +38,7 @@ request_new(uint64_t req_uid,
 
    req->uid = req_uid;
    req->type = req_type;
+   req->then_callback = then_cb;
 
    return req;
 }

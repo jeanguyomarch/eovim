@@ -29,30 +29,43 @@ typedef Eina_Bool(*f_decode)(s_nvim *nvim, const s_request *req, const msgpack_o
 static Eina_Bool
 _decode_{{ function.name }}(s_nvim *nvim, const s_request *req, const msgpack_object_array *args)
 {
+   const f_{{ function.name }} then = (const f_{{ function.name }})(req->then_callback);
 {%- if function.return_type == "void" %}
+   then(nvim);
+   return EINA_TRUE;
    (void) args; /* Unused, no arguments are supposed to be passed */
-   return {{ function.name }}_handler(nvim, req);
-{% elif function.return_type == "Eina_Bool" %}
-   return {{ function.name }}_handler(nvim, req, pack_boolean_get(args));
-{% elif function.return_type == "t_int" %}
-   return {{ function.name }}_handler(nvim, req, pack_int_get(args));
-{% elif function.return_type == "s_position" %}
-   return {{ function.name }}_handler(nvim, req, pack_position_get(args));
-{% elif function.return_type == "s_object*" %}
-   return {{ function.name }}_handler(nvim, req, pack_object_get(args));
-{% elif function.return_type == "s_tabpage*" %}
-   return {{ function.name }}_handler(nvim, req, pack_tabpage_get(args));
-{% elif function.return_type == "s_buffer*" %}
-   return {{ function.name }}_handler(nvim, req, pack_buffer_get(args));
-{% elif function.return_type == "s_window*" %}
-   return {{ function.name }}_handler(nvim, req, pack_window_get(args));
-{% elif function.return_type == "Eina_Stringshare*" %}
-   return {{ function.name }}_handler(nvim, req, pack_stringshare_get(args));
+{% elif function.return_type == "Boolean" %}
+   then(nvim, pack_boolean_get(args));
+   return EINA_TRUE;
+{% elif function.return_type == "Integer" %}
+   then(nvim, pack_int_get(args));
+   return EINA_TRUE;
+{% elif function.return_type == "ArrayOf(Integer, 2)" %}
+   then(nvim, pack_position_get(args));
+   return EINA_TRUE;
+{% elif function.return_type == "Object" %}
+   then(nvim, pack_object_get(args));
+   return EINA_TRUE;
+{% elif function.return_type == "Tabpage" %}
+   then(nvim, pack_tabpage_get(args));
+   return EINA_TRUE;
+{% elif function.return_type == "Buffer" %}
+   then(nvim, pack_buffer_get(args));
+   return EINA_TRUE;
+{% elif function.return_type == "Window" %}
+   then(nvim, pack_window_get(args));
+   return EINA_TRUE;
+{% elif function.return_type == "String" %}
+   then(nvim, pack_stringshare_get(args));
+   return EINA_TRUE;
+{% elif function.return_type == "ArrayOf(Tabpage)" %}
+   then(nvim, pack_tabpages_get(args));
+   return EINA_TRUE;
 {% else %}
-   CRI("Unimplemented");
+   CRI("Return type '{{ function.return_type }}' is unimplemented");
    return EINA_FALSE;
+   (void) then;
    (void) nvim;
-   (void) req;
    (void) args;
 {% endif -%}
 }
@@ -130,11 +143,14 @@ Eina_Bool
 {{ function.name }}(s_nvim *nvim 
 {%- for type, name in function.c_parameters -%}
    , {{ type }} {{ name }}
-{%- endfor -%})
+{%- endfor -%}
+   , f_{{ function.name }} then_cb)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(nvim, EINA_FALSE);
 
-   s_request *const req = request_new(nvim_get_next_uid(nvim), {{ function.request }});
+   s_request *const req = request_new(nvim_get_next_uid(nvim),
+                                      {{ function.request }},
+                                      (const void *)then_cb);
    _prepare_request(nvim, req, "{{ function.name }}", sizeof("{{ function.name }}") - 1);
 
    msgpack_packer *const pk = &nvim->packer;

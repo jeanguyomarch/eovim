@@ -42,9 +42,9 @@ typedef enum
  *============================================================================*/
 
 {% for function in functions -%}
-   Eina_Bool {{ function.name }}_handler(s_nvim *nvim, const s_request *req
-   {%- if function.return_type != "void" -%}
-      , {{ function.return_type }} data
+   typedef void (*f_{{ function.name }})(s_nvim *nvim
+   {%- if function.c_return_type != "void" -%}
+      , {{ function.c_return_type }} data
    {%- endif -%});
 {% endfor %}
 
@@ -52,10 +52,11 @@ typedef enum
  *                                RPC Requests                                *
  *============================================================================*/
 {% for function in functions %}
-Eina_Bool {{ function.name }}(s_nvim *nvim
-{%- for type, name in function.c_parameters -%}
-   , {{ type }} {{ name }}
-{%- endfor -%});
+   Eina_Bool {{ function.name }}(s_nvim *nvim
+   {%- for type, name in function.c_parameters -%}
+      , {{ type }} {{ name }}
+   {%- endfor -%}
+   , f_{{ function.name }} then_cb);
 {%- endfor %}
 
 #endif /* ! __ENVIM_NVIM_API_H__ */

@@ -224,3 +224,39 @@ pack_tabpage_get(const msgpack_object_array *args)
    CRI("Unimplemented"); (void) args;
    return NULL;
 }
+
+Eina_List *
+pack_tabpages_get(const msgpack_object_array *args)
+{
+   Eina_List *list = NULL;
+   s_tabpage *tab = NULL;
+   for (unsigned int i = 0; i < args->size; i++)
+     {
+        if (EINA_UNLIKELY(args->ptr[i].type != MSGPACK_OBJECT_EXT))
+          {
+             ERR("Expected MSGPACK_OBJECT_EXT type");
+             goto fail;
+          }
+
+        const msgpack_object_ext *const obj = &(args->ptr[i].via.ext);
+        if (EINA_UNLIKELY(obj->type != PACK_EXT_TABPAGE))
+          {
+             ERR("Subtype is not PACK_EXT_TABPAGE");
+             goto fail;
+          }
+        if (EINA_UNLIKELY(obj->size != 1))
+          {
+             ERR("One element is expected but %"PRIu32" were provided", obj->size);
+             goto fail;
+          }
+
+        const t_int id = obj->ptr[0];
+
+        list = eina_list_append(list, tab);
+     }
+   return list;
+
+fail:
+   EINA_LIST_FREE(list, tab);
+   return NULL;
+}

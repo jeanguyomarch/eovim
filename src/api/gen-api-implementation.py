@@ -68,7 +68,7 @@ def fixup_db(db):
 
         ret_type = convert_param(func["return_type"])
         func["request"] = "REQUEST_{}".format(func["name"].upper())
-        func["return_type"] = ret_type
+        func["c_return_type"] = ret_type
         #func["name"] = normalize_function(func["name"])
         c_parameters = []
         for param in func["parameters"]:
