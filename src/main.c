@@ -59,20 +59,12 @@ static const s_module _modules[] =
    { .name = #name_, .init = name_ ## _init, .shutdown = name_ ## _shutdown }
 
    MODULE(request),
+   MODULE(tabpage),
+   MODULE(window),
    MODULE(nvim),
 
 #undef MODULE
 };
-
-static void
-_init_func(void *data)
-{
-   s_nvim *const nvim = data;
-
-   nvim_list_tabpages(nvim, nvim_list_tabpages_cb);
-   //nvim_list_bufs(nvim);
-   //nvim_get_current_tabpage(nvim);
-}
 
 static Eina_Bool
 _edje_file_init(const char *theme)
@@ -188,11 +180,6 @@ elm_main(int argc,
         CRI("Failed to create a NeoVim instance");
         goto modules_shutdown;
      }
-
-   /*
-    * Run an initial batch of commands
-    */
-   ecore_job_add(_init_func, nvim);
 
    /*
     * Run the main loop

@@ -27,34 +27,6 @@
  *============================================================================*/
 
 void
-pack_object(msgpack_packer *pk,
-            const s_object *obj)
-{
-   msgpack_pack_int64(pk, obj->id);
-}
-
-void
-pack_buffer(msgpack_packer *pk,
-            const s_buffer *buf)
-{
-   pack_object(pk, &buf->obj);
-}
-
-void
-pack_window(msgpack_packer *pk,
-            const s_window *win)
-{
-   pack_object(pk, &win->obj);
-}
-
-void
-pack_tabpage(msgpack_packer *pk,
-             const s_tabpage *tab)
-{
-   pack_object(pk, &tab->obj);
-}
-
-void
 pack_non_implemented(msgpack_packer *pk EINA_UNUSED,
                      const void *obj EINA_UNUSED)
 {
@@ -87,37 +59,36 @@ pack_position(msgpack_packer *pk,
    msgpack_pack_int64(pk, pos.y);
 }
 
+static void
+_pack_list_of_objects(msgpack_packer *pk,
+                      const Eina_List *list)
+{
+   Eina_List *l;
+   const t_int *id;
+
+   EINA_LIST_FOREACH(list, l, id)
+      msgpack_pack_int64(pk, *id);
+}
+
 void
 pack_list_of_windows(msgpack_packer *pk,
                      const Eina_List *list_win)
 {
-   Eina_List *l;
-   const s_window *win;
-
-   EINA_LIST_FOREACH(list_win, l, win)
-      pack_window(pk, win);
+   _pack_list_of_objects(pk, list_win);
 }
 
 void
 pack_list_of_buffers(msgpack_packer *pk,
                      const Eina_List *list_buf)
 {
-   Eina_List *l;
-   const s_buffer *buf;
-
-   EINA_LIST_FOREACH(list_buf, l, buf)
-      pack_buffer(pk, buf);
+   _pack_list_of_objects(pk, list_buf);
 }
 
 void
 pack_list_of_tabpages(msgpack_packer *pk,
                       const Eina_List *list_tab)
 {
-   Eina_List *l;
-   const s_tabpage *tab;
-
-   EINA_LIST_FOREACH(list_tab, l, tab)
-      pack_tabpage(pk, tab);
+   _pack_list_of_objects(pk, list_tab);
 }
 
 void
@@ -197,36 +168,55 @@ pack_stringshare_get(const msgpack_object_array *args)
    return eina_stringshare_add_length(str->ptr, str->size);
 }
 
-s_object *
+t_int
 pack_object_get(const msgpack_object_array *args)
 {
    CRI("Unimplemented"); (void) args;
-   return NULL;
+   return T_INT_INVALID;
 }
 
-s_window *
+t_int
 pack_window_get(const msgpack_object_array *args)
 {
    CRI("Unimplemented"); (void) args;
-   return NULL;
+   return T_INT_INVALID;
 }
 
-s_buffer *
+t_int
 pack_buffer_get(const msgpack_object_array *args)
 {
-   CRI("Unimplemented"); (void) args;
-   return NULL;
+   ARGS_CHECK_SIZE(args, 1, T_INT_INVALID);
+
+   if (EINA_UNLIKELY(! args->ptr[0].type != MSGPACK_OBJECT_EXT))
+     {
+        ERR("Response type 0x%x is not an EXT type", args->ptr[0].type);
+        return T_INT_INVALID;
+     }
+
+   const msgpack_object_ext *const obj = &(args->ptr[0].via.ext);
+   if (EINA_UNLIKELY(obj->type != MSGPACK_OBJECT_POSITIVE_INTEGER))
+     {
+        ERR("Subtype 0x%x is not a positive integer", obj->type);
+        return T_INT_INVALID;
+     }
+   if (EINA_UNLIKELY(obj->size != 1))
+     {
+        ERR("One element is expected but %"PRIu32" were provided", obj->size);
+        return T_INT_INVALID;
+     }
+
+   return (t_int)(obj->ptr[0]);
 }
 
-s_tabpage *
+t_int
 pack_tabpage_get(const msgpack_object_array *args)
 {
    CRI("Unimplemented"); (void) args;
-   return NULL;
+   return T_INT_INVALID;
 }
 
-Eina_List *
-pack_tabpages_get(const msgpack_object_array *args)
+static Eina_List *
+_pack_list_of_objects_get(const msgpack_object_array *args)
 {
    Eina_List *list = NULL;
 
@@ -239,9 +229,9 @@ pack_tabpages_get(const msgpack_object_array *args)
           }
 
         const msgpack_object_ext *const obj = &(args->ptr[i].via.ext);
-        if (EINA_UNLIKELY(obj->type != PACK_EXT_TABPAGE))
+        if (EINA_UNLIKELY(obj->type != MSGPACK_OBJECT_POSITIVE_INTEGER))
           {
-             ERR("Subtype is not PACK_EXT_TABPAGE");
+             ERR("Subtype 0x%x is not a positive integer", obj->type);
              goto fail;
           }
         if (EINA_UNLIKELY(obj->size != 1))
@@ -250,11 +240,43 @@ pack_tabpages_get(const msgpack_object_array *args)
              goto fail;
           }
 
-        list = eina_list_append(list, (const void *)((int64_t)(obj->ptr[0])));
+        list = eina_list_append(list, (const void *)((t_int)(obj->ptr[0])));
      }
    return list;
 
 fail:
    eina_list_free(list);
+   return NULL;
+}
+
+Eina_List *
+pack_tabpages_get(const msgpack_object_array *args)
+{
+   return _pack_list_of_objects_get(args);
+}
+
+Eina_List *
+pack_windows_get(const msgpack_object_array *args)
+{
+   return _pack_list_of_objects_get(args);
+}
+
+Eina_List *
+pack_buffers_get(const msgpack_object_array *args)
+{
+   return _pack_list_of_objects_get(args);
+}
+
+Eina_List *
+pack_strings_get(const msgpack_object_array *args)
+{
+   /* TODO */
+   return pack_non_implemented_get(args);
+}
+
+void *
+pack_non_implemented_get(const msgpack_object_array *args EINA_UNUSED)
+{
+   CRI("Non implemented");
    return NULL;
 }

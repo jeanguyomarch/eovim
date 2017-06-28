@@ -45,9 +45,10 @@ request_shutdown(void)
 }
 
 s_request *
-request_new(uint64_t req_uid,
+request_new(uint32_t req_uid,
             e_request req_type,
-            const void *then_cb)
+            const void *then_cb,
+            void *then_cb_data)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(then_cb, NULL);
 
@@ -61,6 +62,9 @@ request_new(uint64_t req_uid,
    req->uid = req_uid;
    req->type = req_type;
    req->then_callback = then_cb;
+   req->then_callback_data = then_cb_data;
+
+   DBG("New request 0x%x with id %"PRIu32, req->type, req->uid);
 
    return req;
 }

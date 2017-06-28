@@ -31,43 +31,12 @@ _decode_{{ function.name }}(s_nvim *nvim, const s_request *req, const msgpack_ob
 {
    const f_{{ function.name }} then = (const f_{{ function.name }})(req->then_callback);
 {%- if function.return_type == "void" %}
-   then(nvim);
-   return EINA_TRUE;
+   then(nvim, req->then_callback_data);
    (void) args; /* Unused, no arguments are supposed to be passed */
-{% elif function.return_type == "Boolean" %}
-   then(nvim, pack_boolean_get(args));
-   return EINA_TRUE;
-{% elif function.return_type == "Integer" %}
-   then(nvim, pack_int_get(args));
-   return EINA_TRUE;
-{% elif function.return_type == "ArrayOf(Integer, 2)" %}
-   then(nvim, pack_position_get(args));
-   return EINA_TRUE;
-{% elif function.return_type == "Object" %}
-   then(nvim, pack_object_get(args));
-   return EINA_TRUE;
-{% elif function.return_type == "Tabpage" %}
-   then(nvim, pack_tabpage_get(args));
-   return EINA_TRUE;
-{% elif function.return_type == "Buffer" %}
-   then(nvim, pack_buffer_get(args));
-   return EINA_TRUE;
-{% elif function.return_type == "Window" %}
-   then(nvim, pack_window_get(args));
-   return EINA_TRUE;
-{% elif function.return_type == "String" %}
-   then(nvim, pack_stringshare_get(args));
-   return EINA_TRUE;
-{% elif function.return_type == "ArrayOf(Tabpage)" %}
-   then(nvim, pack_tabpages_get(args));
-   return EINA_TRUE;
 {% else %}
-   CRI("Return type '{{ function.return_type }}' is unimplemented");
-   return EINA_FALSE;
-   (void) then;
-   (void) nvim;
-   (void) args;
-{% endif -%}
+   then(nvim, {{ unpackers[function.return_type] }}(args), req->then_callback_data);
+{% endif %}
+   return EINA_TRUE;
 }
 {% endfor %}
 
@@ -113,7 +82,7 @@ _prepare_request(s_nvim *nvim,
     */
    msgpack_pack_array(pk, 4);
    msgpack_pack_int(pk, 0);
-   msgpack_pack_uint64(pk, req->uid);
+   msgpack_pack_uint32(pk, req->uid);
    msgpack_pack_bin(pk, rpc_name_len);
    msgpack_pack_bin_body(pk, rpc_name, rpc_name_len);
 }
@@ -144,13 +113,14 @@ Eina_Bool
 {%- for type, name in function.c_parameters -%}
    , {{ type }} {{ name }}
 {%- endfor -%}
-   , f_{{ function.name }} then_cb)
+   , f_{{ function.name }} then_cb, void *then_cb_data)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(nvim, EINA_FALSE);
 
    s_request *const req = request_new(nvim_get_next_uid(nvim),
                                       {{ function.request }},
-                                      (const void *)then_cb);
+                                      (const void *)then_cb,
+                                      then_cb_data);
    _prepare_request(nvim, req, "{{ function.name }}", sizeof("{{ function.name }}") - 1);
 
    msgpack_packer *const pk = &nvim->packer;

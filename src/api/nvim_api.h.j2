@@ -45,18 +45,18 @@ typedef enum
    typedef void (*f_{{ function.name }})(s_nvim *nvim
    {%- if function.c_return_type != "void" -%}
       , {{ function.c_return_type }} data
-   {%- endif -%});
+   {%- endif -%}, void *user_data);
 {% endfor %}
 
 /*============================================================================*
  *                                RPC Requests                                *
  *============================================================================*/
-{% for function in functions %}
+{% for function in functions -%}
    Eina_Bool {{ function.name }}(s_nvim *nvim
    {%- for type, name in function.c_parameters -%}
       , {{ type }} {{ name }}
    {%- endfor -%}
-   , f_{{ function.name }} then_cb);
-{%- endfor %}
+   , f_{{ function.name }} then_cb, void *then_cb_data);
+{% endfor %}
 
 #endif /* ! __ENVIM_NVIM_API_H__ */

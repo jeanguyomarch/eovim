@@ -26,6 +26,32 @@
 #include <msgpack.h>
 #include <Elementary.h>
 
+#define lambda(RET_TYPE_, BODY_) ({ RET_TYPE_ __fn__ BODY_ __fn__;})
+
+#define TABPAGE_MAGIC 0x3210edff
+#define WINDOW_MAGIC  0x83291fea
+#define BUFFER_MAGIC  0xeab732d0
+#define NVIM_MAGIC    0xffe32412
+
+#define MAGIC_CHECK(X, MAGIC, ...)                                             \
+   do {                                                                        \
+      if (! EINA_MAGIC_CHECK(X, MAGIC)) {                                      \
+         EINA_MAGIC_FAIL(X, MAGIC);                                            \
+         return __VA_ARGS__;                                                   \
+      }                                                                        \
+   } while (0)
+
+#define MAGIC_FREE(X)                                                          \
+   do {                                                                        \
+      EINA_MAGIC_SET(X, EINA_MAGIC_NONE);                                      \
+      free(X);                                                                 \
+   } while (0)
+
+
+#define TABPAGE_MAGIC_CHECK(X, ...) MAGIC_CHECK(X, TABPAGE_MAGIC, __VA_ARGS__)
+#define WINDOW_MAGIC_CHECK(X, ...) MAGIC_CHECK(X, WINDOW_MAGIC, __VA_ARGS__)
+#define BUFFER_MAGIC_CHECK(X, ...) MAGIC_CHECK(X, BUFFER_MAGIC, __VA_ARGS__)
+
 typedef struct version s_version;
 typedef struct request s_request;
 typedef struct nvim s_nvim;
@@ -36,14 +62,9 @@ typedef struct buffer s_buffer;
 typedef struct object s_object;
 typedef int64_t t_int;
 
-#include "nvim_api.h"
+#define T_INT_INVALID ((t_int)-1)
 
-typedef enum
-{
-   PACK_EXT_BUFFER      = 0,
-   PACK_EXT_WINDOW      = 1,
-   PACK_EXT_TABPAGE     = 2,
-} e_pack_ext;
+#include "nvim_api.h"
 
 struct object
 {
@@ -52,9 +73,10 @@ struct object
 
 struct request
 {
-   uint64_t uid;
-   e_request type;
+   uint32_t uid;
    const void *then_callback;
+   void *then_callback_data;
+   e_request type;
 };
 
 struct nvim
@@ -70,7 +92,9 @@ struct nvim
    msgpack_zone mempool;
    msgpack_sbuffer sbuffer;
    msgpack_packer packer;
-   uint64_t request_id;
+   uint32_t request_id;
+
+   EINA_MAGIC;
 };
 
 struct position
@@ -88,17 +112,26 @@ struct version
 
 struct window
 {
-   s_object obj;
+   EINA_INLIST;
+
+   t_int id;
+   s_tabpage *parent;
+   EINA_MAGIC;
 };
 
 struct tabpage
 {
-   s_object obj;
+   t_int id;
+   Eina_Inlist *windows;
+   EINA_MAGIC;
 };
 
 struct buffer
 {
-   s_object obj;
+   EINA_INLIST;
+
+   t_int id;
+   EINA_MAGIC;
 };
 
 
@@ -124,25 +157,60 @@ extern int _envim_log_domain;
 #define ERR(...) EINA_LOG_DOM_ERR(_envim_log_domain, __VA_ARGS__)
 #define CRI(...) EINA_LOG_DOM_CRIT(_envim_log_domain, __VA_ARGS__)
 
+
+/*============================================================================*
+ *                                  Main API                                  *
+ *============================================================================*/
+
 Eina_Bool main_in_tree_is(void);
 const char *main_edje_file_get(void);
+
+
+/*============================================================================*
+ *                                  Nvim API                                  *
+ *============================================================================*/
+
 
 Eina_Bool nvim_init(void);
 void nvim_shutdown(void);
 s_nvim *nvim_new(const char *program, unsigned int argc, const char *const argv[]);
 void nvim_free(s_nvim *nvim);
-uint64_t nvim_get_next_uid(s_nvim *nvim);
+uint32_t nvim_get_next_uid(s_nvim *nvim);
+Eina_Bool nvim_api_response_dispatch(s_nvim *nvim, const s_request *req, const msgpack_object_array *args);
+void nvim_reload_tabpages(s_nvim *nvim, Eina_List *tabpages);
+
+
+/*============================================================================*
+ *                                 Request API                                *
+ *============================================================================*/
 
 Eina_Bool request_init(void);
 void request_shutdown(void);
-s_request *request_new(uint64_t req_uid, e_request req_type, const void *then_cb);
+s_request *request_new(uint32_t req_uid, e_request req_type, const void *then_cb, void *then_cb_data);
 void request_free(s_request *req);
 
-Eina_Bool nvim_api_response_dispatch(s_nvim *nvim, const s_request *req, const msgpack_object_array *args);
 
+/*============================================================================*
+ *                                 Tabpage API                                *
+ *============================================================================*/
 
+Eina_Bool tabpage_init(void);
+void tabpage_shutdown(void);
 s_tabpage *tabpage_new(t_int id);
 void tabpage_free(s_tabpage *tab);
+void tabpage_window_add(s_tabpage *tab, s_window *win);
+void tabpage_window_del(s_tabpage *tab, s_window *win);
+
+
+/*============================================================================*
+ *                                 Window API                                 *
+ *============================================================================*/
+
+Eina_Bool window_init(void);
+void window_shutdown(void);
+s_window *window_new(t_int id, s_tabpage *parent);
+void window_free(s_window *win);
+
 
 /*============================================================================*
  *                              Packing Functions                             *
@@ -165,13 +233,15 @@ Eina_Bool pack_boolean_get(const msgpack_object_array *args);
 s_position pack_position_get(const msgpack_object_array *args);
 t_int pack_int_get(const msgpack_object_array *args);
 Eina_Stringshare *pack_stringshare_get(const msgpack_object_array *args);
-s_object *pack_object_get(const msgpack_object_array *args);
-s_window *pack_window_get(const msgpack_object_array *args);
-s_buffer *pack_buffer_get(const msgpack_object_array *args);
-s_tabpage *pack_tabpage_get(const msgpack_object_array *args);
+t_int pack_object_get(const msgpack_object_array *args);
+t_int pack_window_get(const msgpack_object_array *args);
+t_int pack_buffer_get(const msgpack_object_array *args);
+t_int pack_tabpage_get(const msgpack_object_array *args);
 Eina_List *pack_tabpages_get(const msgpack_object_array *args);
+Eina_List *pack_windows_get(const msgpack_object_array *args);
+Eina_List *pack_buffers_get(const msgpack_object_array *args);
+Eina_List *pack_strings_get(const msgpack_object_array *args);
+void *pack_non_implemented_get(const msgpack_object_array *args);
 
-
-void nvim_list_tabpages_cb(s_nvim *nvim, Eina_List *tabpages);
 
 #endif /* ! __ENVIM_H__ */

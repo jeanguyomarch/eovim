@@ -31,12 +31,6 @@ enum
    __HANDLERS_LAST /* Sentinel, don't use */
 };
 
-typedef struct
-{
-   int type;
-   uint64_t id;
-} s_response;
-
 static Ecore_Event_Handler *_event_handlers[__HANDLERS_LAST];
 static Eina_Hash *_nvim_instances = NULL;
 
@@ -83,7 +77,7 @@ _free_buffer_cb(void *data)
 
 static Eina_List *
 _nvim_request_find(const s_nvim *nvim,
-                   uint64_t req_id)
+                   uint32_t req_id)
 {
    const s_request *req;
    Eina_List *it = NULL;
@@ -113,15 +107,15 @@ _handle_request_response(s_nvim *nvim,
      }
 
    /* Get the request from the pending requests list. */
-   const uint64_t req_id = args->ptr[1].via.u64;
+   const uint32_t req_id = (uint32_t)args->ptr[1].via.u64;
    Eina_List *const req_item = _nvim_request_find(nvim, req_id);
    if (EINA_UNLIKELY(! req_item))
      {
-        CRI("Uh... received a response to request %"PRIu64", but is was not "
+        CRI("Uh... received a response to request %"PRIu32", but is was not "
             "registered. Something wrong happend somewhere!", req_id);
         goto fail;
      }
-   DBG("Received response to request %"PRIu64, req_id);
+   DBG("Received response to request %"PRIu32, req_id);
 
    /* Found the request, we can now get the data contained within the list */
    const s_request *const req = eina_list_data_get(req_item);
@@ -142,6 +136,87 @@ _handle_request_response(s_nvim *nvim,
    return nvim_api_response_dispatch(nvim, req, out_args);
 fail:
    return EINA_FALSE;
+}
+
+static void
+_load_lines(s_nvim *nvim, Eina_List *lines, void *udata)
+{
+   Eina_List *l;
+   Eina_Stringshare *line;
+
+   WRN("Loading lines");
+   EINA_LIST_FOREACH(lines, l, line)
+     {
+        INF("=> %s", line);
+     }
+}
+
+static void
+_reload_buf(s_nvim *nvim, t_int buf, void *data)
+{
+   INF("And now I have buffer");
+   nvim_buf_get_lines(nvim, buf, 0, 5, EINA_FALSE, _load_lines, NULL);
+}
+
+static void
+_reload_wins(s_nvim *nvim, Eina_List *windows, void *data)
+{
+   s_tabpage *const parent_tab = data;
+   Eina_List *l;
+   const t_int *win_id_fake_ptr;
+
+   EINA_LIST_FOREACH(windows, l, win_id_fake_ptr)
+     {
+        const t_int win_id = (t_int)win_id_fake_ptr;
+        s_window *win = eina_hash_find(nvim->windows, &win_id);
+        if (! win)
+          {
+             win = window_new(win_id, parent_tab);
+             if (EINA_UNLIKELY(! win))
+               {
+                  CRI("Failed to create new window");
+                  continue;
+               }
+             eina_hash_add(nvim->windows, &win_id, win);
+          }
+        INF("Got window %"PRIu64, win_id);
+        nvim_win_get_buf(nvim, win_id, _reload_buf, win);
+     }
+}
+
+static void
+_reload(s_nvim *nvim, Eina_List *tabpages,
+        void *data EINA_UNUSED)
+{
+   Eina_List *l;
+   const t_int *tab_id_fake_ptr;
+
+   EINA_LIST_FOREACH(tabpages, l, tab_id_fake_ptr)
+     {
+        const t_int tab_id = (t_int)tab_id_fake_ptr;
+        s_tabpage *tab = eina_hash_find(nvim->tabpages, &tab_id);
+        if (! tab)
+          {
+             tab = tabpage_new(tab_id);
+             if (! tab)
+               {
+                  CRI("Failed to create tabpage");
+                  continue;
+               }
+             eina_hash_add(nvim->tabpages, &tab_id, tab);
+          }
+        INF("Got tabpage %"PRIu64, tab_id);
+
+        nvim_tabpage_list_wins(nvim, tab_id, _reload_wins, tab);
+     }
+}
+
+static void
+_init(void *data)
+{
+   s_nvim *const nvim = data;
+
+   nvim_list_tabpages(nvim, _reload, NULL);
 }
 
 
@@ -177,6 +252,7 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
    const Ecore_Exe_Event_Data *const info = event;
    s_nvim *const nvim = _nvim_get(info->exe);
 
+   DBG("Incoming data from PID %u (size %i)", ecore_exe_pid_get(info->exe), info->size);
    /* Deserialize the received message */
    msgpack_object deserialized;
    msgpack_unpack(info->data, (size_t)info->size, NULL,
@@ -308,9 +384,10 @@ nvim_shutdown(void)
    _nvim_instances = NULL;
 }
 
-uint64_t
+uint32_t
 nvim_get_next_uid(s_nvim *nvim)
 {
+   return 999; // FIXME
    return nvim->request_id++;
 }
 
@@ -408,6 +485,8 @@ nvim_new(const char *program,
    evas_object_show(nvim->win);
 
    eina_strbuf_free(cmdline);
+
+   ecore_job_add(_init, nvim);
    return nvim;
 
 del_win:
@@ -436,29 +515,23 @@ nvim_free(s_nvim *nvim)
      }
 }
 
-
-
-void
-nvim_list_tabpages_cb(s_nvim *nvim, Eina_List *tabpages)
+s_tabpage *
+nvim_tabpage_add(s_nvim *nvim, t_int id)
 {
-   Eina_List *l;
-   const int64_t *tab_id_fake_ptr;
-
-   EINA_LIST_FOREACH(tabpages, l, tab_id_fake_ptr)
+   s_tabpage *const tab = tabpage_new(id);
+   if (EINA_UNLIKELY(! tab))
      {
-        s_tabpage *tab;
-        const int64_t tab_id = (int64_t)tab_id_fake_ptr;
-
-        tab = eina_hash_find(nvim->tabpages, &tab_id);
-        if (! tab)
-          {
-             tab = tabpage_new(tab_id);
-             if (! tab)
-               {
-                  CRI("Failed to create tabpage");
-                  continue;
-               }
-             eina_hash_add(nvim->tabpages, &tab_id, tab);
-          }
+        CRI("Failed to create tabpage");
+        goto fail;
      }
+   if (EINA_UNLIKELY(! eina_hash_add(nvim->tabpages, &id, tab)))
+     {
+        CRI("Failed to add tab into hash table");
+        goto fail;
+     }
+   return tab;
+
+fail:
+   if (tab) tabpage_free(tab);
+   return NULL;
 }

@@ -23,22 +23,86 @@ def getopts(argv):
     return parser.parse_args(argv[1:])
 
 TYPE_TABLE = {
-    'ArrayOf(Window)':      ('Eina_List*', 'pack_list_of_windows'),
-    'ArrayOf(Buffer)':      ('Eina_List*', 'pack_list_of_buffers'),
-    'ArrayOf(Tabpage)':     ('Eina_List*', 'pack_list_of_tabpages'),
-    'ArrayOf(String)':      ('Eina_List*', 'pack_list_of_strings'),
-    'ArrayOf(Dictionary)':  ('Eina_List*', 'pack_non_implemented'),
-    'ArrayOf(Integer, 2)':  ('s_position', 'pack_position'),
-    'Integer':              ('t_int',      'msgpack_pack_int64'),
-    'void':                 ('void',       None),
-    'String':               ('Eina_Stringshare*', 'pack_stringshare'),
-    'Buffer':               ('s_buffer*',  'pack_buffer'),
-    'Window':               ('s_window*',  'pack_window'),
-    'Tabpage':              ('s_tabpage*', 'pack_tabpage'),
-    'Dictionary':           ('Eina_Hash*', 'pack_non_implemented'),
-    'Array':                ('Eina_List*', 'pack_non_implemented'),
-    'Object':               ('s_object*',  'pack_object'),
-    'Boolean':              ('Eina_Bool',  'pack_boolean'),
+    'ArrayOf(Window)': (
+        'Eina_List*',
+        'pack_list_of_windows',
+        'pack_windows_get'
+    ),
+    'ArrayOf(Buffer)': (
+        'Eina_List*',
+        'pack_list_of_buffers',
+        'pack_buffers_get'
+    ),
+    'ArrayOf(Tabpage)': (
+        'Eina_List*',
+        'pack_list_of_tabpages',
+        'pack_tabpages_get'
+    ),
+    'ArrayOf(String)': (
+        'Eina_List*',
+        'pack_list_of_strings',
+        'pack_strings_get'
+    ),
+    'ArrayOf(Dictionary)': (
+        'Eina_List*',
+        'pack_non_implemented',
+        'pack_non_implemented_get'
+    ),
+    'ArrayOf(Integer, 2)': (
+        's_position',
+        'pack_position',
+        'pack_position_get'
+    ),
+    'Integer': (
+        't_int',
+        'msgpack_pack_int64',
+        'pack_int_get'
+    ),
+    'void': (
+        'void',
+        None,
+        None
+    ),
+    'String': (
+        'Eina_Stringshare*',
+        'pack_stringshare',
+        'pack_stringshare_get'
+    ),
+    'Buffer': (
+        't_int',
+        'msgpack_pack_int64',
+        'pack_buffer_get'
+    ),
+    'Window': (
+        't_int',
+        'msgpack_pack_int64',
+        'pack_window_get'
+    ),
+    'Tabpage': (
+        't_int',
+        'msgpack_pack_int64',
+        'pack_tabpage_get'
+    ),
+    'Dictionary': (
+        'Eina_Hash*',
+        'pack_non_implemented',
+        'pack_non_implemented_get'
+    ),
+    'Array': (
+        'Eina_List*',
+        'pack_non_implemented',
+        'pack_non_implemented_get'
+    ),
+    'Object': (
+        't_int',
+        'msgpack_pack_int64',
+        'pack_object_get'
+    ),
+    'Boolean': (
+        'Eina_Bool',
+        'pack_boolean',
+        'pack_boolean_get'
+    ),
 }
 
 def convert_param(param_type):
@@ -84,9 +148,12 @@ def fixup_db(db):
     db["functions"] = [x for x in db["functions"] if x not in to_be_removed]
 
     packers = {}
+    unpackers = {}
     for key, val in TYPE_TABLE.items():
         packers[key] = val[1]
+        unpackers[key] = val[2]
     db["packers"] = packers
+    db["unpackers"] = unpackers
 
 def main(argv):
     args = getopts(argv)

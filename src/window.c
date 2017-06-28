@@ -12,7 +12,7 @@
  * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANwinILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
@@ -22,62 +22,45 @@
 
 #include "Envim.h"
 
-static const char TABPAGE_MAGIC_STR[] = "Tabpage";
+static const char WINDOW_MAGIC_STR[] = "Window";
 
 Eina_Bool
-tabpage_init(void)
+window_init(void)
 {
-   eina_magic_string_static_set(TABPAGE_MAGIC, TABPAGE_MAGIC_STR);
+   eina_magic_string_static_set(WINDOW_MAGIC, WINDOW_MAGIC_STR);
    return EINA_TRUE;
 }
 
 void
-tabpage_shutdown(void)
+window_shutdown(void)
 {
    /* Nothing to do */
 }
 
-s_tabpage *
-tabpage_new(t_int id)
+s_window *
+window_new(t_int id, s_tabpage *parent)
 {
-   s_tabpage *const tab = calloc(1, sizeof(s_tabpage));
-   if (EINA_UNLIKELY(! tab))
+   s_window *const win = calloc(1, sizeof(s_window));
+   if (EINA_UNLIKELY(! win))
      {
         CRI("Failed to allocate memory");
         return NULL;
      }
 
-   tab->id = id;
+   win->id = id;
+   win->parent = parent;
+   EINA_MAGIC_SET(win, WINDOW_MAGIC);
 
-   EINA_MAGIC_SET(tab, TABPAGE_MAGIC);
-   return tab;
+   tabpage_window_add(parent, win);
+   return win;
 }
 
 void
-tabpage_free(s_tabpage *tab)
+window_free(s_window *win)
 {
-   if (tab)
+   if (win)
      {
-        TABPAGE_MAGIC_CHECK(tab);
-        MAGIC_FREE(tab);
+        WINDOW_MAGIC_CHECK(win);
+        MAGIC_FREE(win);
      }
-}
-
-void
-tabpage_window_add(s_tabpage *tab,
-                   s_window *win)
-{
-   TABPAGE_MAGIC_CHECK(tab);
-   WINDOW_MAGIC_CHECK(win);
-
-   tab->windows = eina_inlist_append(tab->windows, EINA_INLIST_GET(win));
-}
-
-void
-tabpage_window_del(s_tabpage *tab,
-                   s_window *win)
-{
-   TABPAGE_MAGIC_CHECK(tab);
-   WINDOW_MAGIC_CHECK(win);
-
 }
