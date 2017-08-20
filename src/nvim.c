@@ -125,10 +125,9 @@ _handle_request_response(s_nvim *nvim,
     * list */
    nvim->requests = eina_list_remove_list(nvim->requests, req_item);
 
-   /* If 3rd arg is an array, this is an error message.
-    * Otherwise, 4th argument should be an array with the returned parameters
-    * to the request*/
-   if (args->ptr[2].type == MSGPACK_OBJECT_ARRAY)
+   /* If 3rd arg is an array, this is an error message. */
+   const msgpack_object_type err_type = args->ptr[2].type;
+   if (err_type == MSGPACK_OBJECT_ARRAY)
      {
         const msgpack_object_array *const err_args = &(args->ptr[2].via.array);
         if (EINA_UNLIKELY(err_args->size != 2))
@@ -156,14 +155,30 @@ _handle_request_response(s_nvim *nvim,
         if (req->error_callback)
           req->error_callback(nvim, req, req->callback_data);
      }
-   else if (args->ptr[3].type != MSGPACK_OBJECT_ARRAY)
+   else if (err_type != MSGPACK_OBJECT_NIL)
      {
-        ERR("Fourth argument in response is expected to be an array");
+        ERR("Error argument is of handled type 0x%x", err_type);
         goto fail;
      }
 
+   /*
+    * 4th argument contains the returned parameters It may be an ARRAY, if
+    * there are several parameters, or just a signle object if there is only
+    * ONE returned parameter.
+    * In the latter case, we encapsulate it within an array to have a unified
+    * interface.
+    */
+   const msgpack_object_array *out_args = &(args->ptr[3].via.array);
+   msgpack_object_array formatted_arg;
+   const msgpack_object_type answer_type = args->ptr[3].type;
+   if (answer_type != MSGPACK_OBJECT_ARRAY)
+     {
+        formatted_arg.size = 1;
+        formatted_arg.ptr = &(args->ptr[3]);
+        out_args = &formatted_arg;
+     }
+
    /* And finally call the handler associated to the request type */
-   const msgpack_object_array *const out_args = &(args->ptr[3].via.array);
    return nvim_api_response_dispatch(nvim, req, out_args);
 fail:
    return EINA_FALSE;
@@ -186,7 +201,7 @@ static void
 _reload_buf(s_nvim *nvim, t_int buf, void *data)
 {
    INF("And now I have buffer");
- //  nvim_buf_get_lines(nvim, buf, 0, 5, EINA_FALSE, _load_lines, NULL, NULL);
+   nvim_buf_get_lines(nvim, buf, 0, 5, EINA_FALSE, _load_lines, NULL, NULL);
 }
 
 static void
@@ -222,7 +237,6 @@ _reload(s_nvim *nvim, Eina_List *tabpages,
    Eina_List *l;
    const t_int *tab_id_fake_ptr;
 
-   WRN("Calling reload");
    EINA_LIST_FOREACH(tabpages, l, tab_id_fake_ptr)
      {
         const t_int tab_id = (t_int)tab_id_fake_ptr;
@@ -237,8 +251,6 @@ _reload(s_nvim *nvim, Eina_List *tabpages,
                }
              eina_hash_add(nvim->tabpages, &tab_id, tab);
           }
-        INF("=============== Got tabpage %"PRIu64, tab_id);
-
         nvim_tabpage_list_wins(nvim, tab_id, _reload_wins, NULL, tab);
      }
 }

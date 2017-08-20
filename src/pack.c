@@ -30,11 +30,38 @@ typedef enum
   E_NVIM_OBJECT_TAB = 3,
 } e_nvim_object;
 
-static inline t_int
+static t_int
 _read_object_id(const msgpack_object_ext *obj)
 {
    t_int id = 0;
-   memcpy(&id, obj->ptr, obj->size);
+   /*
+    * This is written by using:
+    *   https://github.com/msgpack/msgpack/blob/master/spec.md
+    *
+    * The sole difference is the size 1. It SEEMS that when the size is
+    * one, the object is an integer on one byte. There is no type information
+    * associated.
+    */
+   if (obj->size == 1)
+     {
+         id = (t_int)(obj->ptr[0]);
+     }
+   else
+     {
+        const uint8_t type = (uint8_t)obj->ptr[0];
+        uint8_t *const bytes = (uint8_t *)(&id);
+        switch (type)
+          {
+           case 0xCD: /* uint16_t */
+              bytes[0] = (uint8_t)obj->ptr[2];
+              bytes[1] = (uint8_t)obj->ptr[1];
+              break;
+
+           default:
+              CRI("Unhandled type information 0x%02x", type);
+              id = T_INT_INVALID; break;
+          }
+     }
    return id;
 }
 
@@ -212,7 +239,11 @@ pack_buffer_get(const msgpack_object_array *args)
    const msgpack_object_ext *const obj = &(args->ptr[0].via.ext);
    if (EINA_UNLIKELY(obj->type != E_NVIM_OBJECT_BUFFER))
      {
-        ERR("Subtype 0x%x is not a NeoVim Buffer", obj->type);
+        /* We may have a NULL buffer */
+        if (obj->type == MSGPACK_OBJECT_NIL)
+          WRN("We received a NIL buffer");
+        else
+          ERR("Subtype 0x%x is not a NeoVim Buffer", obj->type);
         return T_INT_INVALID;
      }
 
@@ -241,8 +272,7 @@ _pack_list_of_objects_get(const msgpack_object_array *args)
 
         const msgpack_object_ext *const obj = &(args->ptr[i].via.ext);
         const t_int id = _read_object_id(obj);
-        INF("size: %"PRIu32", %02x %02x %02x => %"PRIx64, obj->size,
-            (unsigned char)obj->ptr[0], (unsigned char)obj->ptr[1], (unsigned char)obj->ptr[2], id);
+        DBG("size: %"PRIu32", id is => %"PRIx64, obj->size, id);
 
         list = eina_list_append(list, (const void *)id);
      }
