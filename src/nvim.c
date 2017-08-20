@@ -62,18 +62,21 @@ static void
 _free_tabpage_cb(void *data)
 {
    s_tabpage *const tab = data;
+   (void) tab;
 }
 
 static void
 _free_window_cb(void *data)
 {
    s_window *const win = data;
+   (void) win;
 }
 
 static void
 _free_buffer_cb(void *data)
 {
    s_buffer *const buf = data;
+   (void) buf;
 }
 
 static Eina_List *
@@ -190,7 +193,6 @@ _load_lines(s_nvim *nvim, Eina_List *lines, void *udata)
    Eina_List *l;
    Eina_Stringshare *line;
 
-   WRN("Loading lines");
    EINA_LIST_FOREACH(lines, l, line)
      {
         INF("=> %s", line);
@@ -200,8 +202,7 @@ _load_lines(s_nvim *nvim, Eina_List *lines, void *udata)
 static void
 _reload_buf(s_nvim *nvim, t_int buf, void *data)
 {
-   INF("And now I have buffer");
-   nvim_buf_get_lines(nvim, buf, 0, 5, EINA_FALSE, _load_lines, NULL, NULL);
+   nvim_buf_get_lines(nvim, buf, 0, 15, EINA_FALSE, _load_lines, NULL, NULL);
 }
 
 static void
@@ -225,7 +226,6 @@ _reload_wins(s_nvim *nvim, Eina_List *windows, void *data)
                }
              eina_hash_add(nvim->windows, &win_id, win);
           }
-        INF("Got window %"PRIu64, win_id);
         nvim_win_get_buf(nvim, win_id, _reload_buf, NULL, win);
      }
 }
@@ -340,8 +340,11 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
 
    msgpack_object obj = result.data;
 
+   /* Uncomment to roughly dump the received messages */
+#if 0
    msgpack_object_print(stderr, obj);
    fprintf(stderr, "\n");
+#endif
 
    if (obj.type != MSGPACK_OBJECT_ARRAY)
      {
