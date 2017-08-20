@@ -314,7 +314,8 @@ pack_strings_get(const msgpack_object_array *args)
 
         /* Create a stringshare from the msgpack string */
         const msgpack_object_str *const s = &(args->ptr[i].via.str);
-        if (s->size == 0) { continue; } /* Skip empty lines */
+        /* We may receive NIL lines for empty buffers. Skip them. */
+        if (! s->ptr) { continue; }
         Eina_Stringshare *const str = eina_stringshare_add_length(s->ptr, s->size);
         if (EINA_UNLIKELY(! str))
           {
