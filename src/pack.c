@@ -311,16 +311,14 @@ pack_strings_get(const msgpack_object_array *args)
              ERR("Expected EXT type but got 0x%x", args->ptr[i].type);
              continue;
           }
-     //   const msgpack_object_ext *const ext = &(args->ptr[i].via.ext);
-     //   CRI("Subtype: 0x%x\n", ext->type);
-     //   continue;
 
         /* Create a stringshare from the msgpack string */
         const msgpack_object_str *const s = &(args->ptr[i].via.str);
+        if (s->size == 0) { continue; } /* Skip empty lines */
         Eina_Stringshare *const str = eina_stringshare_add_length(s->ptr, s->size);
         if (EINA_UNLIKELY(! str))
           {
-             CRI("Failed to create stringshare");
+             CRI("Failed to create stringshare of size %"PRIu32, s->size);
              continue;
           }
 
