@@ -25,9 +25,9 @@
 /* FIXME. Ideally, these values should be dynamic (reading the API contract) */
 typedef enum
 {
-  E_NVIM_OBJECT_BUFFER = 1,
-  E_NVIM_OBJECT_WINDOW = 2,
-  E_NVIM_OBJECT_TAB = 3,
+  E_NVIM_OBJECT_BUFFER = 0,
+  E_NVIM_OBJECT_WINDOW = 1,
+  E_NVIM_OBJECT_TAB = 2,
 } e_nvim_object;
 
 static t_int
@@ -239,11 +239,7 @@ pack_buffer_get(const msgpack_object_array *args)
    const msgpack_object_ext *const obj = &(args->ptr[0].via.ext);
    if (EINA_UNLIKELY(obj->type != E_NVIM_OBJECT_BUFFER))
      {
-        /* We may have a NULL buffer */
-        if (obj->type == MSGPACK_OBJECT_NIL)
-          WRN("We received a NIL buffer");
-        else
-          ERR("Subtype 0x%x is not a NeoVim Buffer", obj->type);
+        ERR("Subtype 0x%x is not a NeoVim Buffer", obj->type);
         return T_INT_INVALID;
      }
 
