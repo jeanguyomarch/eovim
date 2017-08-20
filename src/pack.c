@@ -22,6 +22,22 @@
 
 #include "Envim.h"
 
+/* FIXME. Ideally, these values should be dynamic (reading the API contract) */
+typedef enum
+{
+  E_NVIM_OBJECT_BUFFER = 1,
+  E_NVIM_OBJECT_WINDOW = 2,
+  E_NVIM_OBJECT_TAB = 3,
+} e_nvim_object;
+
+static inline t_int
+_read_object_id(const msgpack_object_ext *obj)
+{
+   t_int id = 0;
+   memcpy(&id, obj->ptr, obj->size);
+   return id;
+}
+
 /*============================================================================*
  *                                 Packing API                                *
  *============================================================================*/
@@ -187,25 +203,20 @@ pack_buffer_get(const msgpack_object_array *args)
 {
    ARGS_CHECK_SIZE(args, 1, T_INT_INVALID);
 
-   if (EINA_UNLIKELY(! args->ptr[0].type != MSGPACK_OBJECT_EXT))
+   if (EINA_UNLIKELY(args->ptr[0].type != MSGPACK_OBJECT_EXT))
      {
         ERR("Response type 0x%x is not an EXT type", args->ptr[0].type);
         return T_INT_INVALID;
      }
 
    const msgpack_object_ext *const obj = &(args->ptr[0].via.ext);
-   if (EINA_UNLIKELY(obj->type != MSGPACK_OBJECT_POSITIVE_INTEGER))
+   if (EINA_UNLIKELY(obj->type != E_NVIM_OBJECT_BUFFER))
      {
-        ERR("Subtype 0x%x is not a positive integer", obj->type);
-        return T_INT_INVALID;
-     }
-   if (EINA_UNLIKELY(obj->size != 1))
-     {
-        ERR("One element is expected but %"PRIu32" were provided", obj->size);
+        ERR("Subtype 0x%x is not a NeoVim Buffer", obj->type);
         return T_INT_INVALID;
      }
 
-   return (t_int)(obj->ptr[0]);
+   return _read_object_id(obj);
 }
 
 t_int
@@ -229,18 +240,11 @@ _pack_list_of_objects_get(const msgpack_object_array *args)
           }
 
         const msgpack_object_ext *const obj = &(args->ptr[i].via.ext);
-        if (EINA_UNLIKELY(obj->type != MSGPACK_OBJECT_POSITIVE_INTEGER))
-          {
-             ERR("Subtype 0x%x is not a positive integer", obj->type);
-             goto fail;
-          }
-        if (EINA_UNLIKELY(obj->size != 1))
-          {
-             ERR("One element is expected but %"PRIu32" were provided", obj->size);
-             goto fail;
-          }
+        const t_int id = _read_object_id(obj);
+        INF("size: %"PRIu32", %02x %02x %02x => %"PRIx64, obj->size,
+            (unsigned char)obj->ptr[0], (unsigned char)obj->ptr[1], (unsigned char)obj->ptr[2], id);
 
-        list = eina_list_append(list, (const void *)((t_int)(obj->ptr[0])));
+        list = eina_list_append(list, (const void *)id);
      }
    return list;
 
@@ -270,8 +274,35 @@ pack_buffers_get(const msgpack_object_array *args)
 Eina_List *
 pack_strings_get(const msgpack_object_array *args)
 {
-   /* TODO */
-   return pack_non_implemented_get(args);
+   Eina_List *list = NULL;
+
+   for (unsigned int i = 0; i < args->size; i++)
+     {
+        /* We expect to receive strigns only. Skip non-strings with an error
+         * message, but keep going */
+        if (args->ptr[i].type != MSGPACK_OBJECT_STR)
+          {
+             ERR("Expected EXT type but got 0x%x", args->ptr[i].type);
+             continue;
+          }
+     //   const msgpack_object_ext *const ext = &(args->ptr[i].via.ext);
+     //   CRI("Subtype: 0x%x\n", ext->type);
+     //   continue;
+
+        /* Create a stringshare from the msgpack string */
+        const msgpack_object_str *const s = &(args->ptr[i].via.str);
+        Eina_Stringshare *const str = eina_stringshare_add_length(s->ptr, s->size);
+        if (EINA_UNLIKELY(! str))
+          {
+             CRI("Failed to create stringshare");
+             continue;
+          }
+
+        /* And finally store it in the list */
+        list = eina_list_append(list, str);
+     }
+
+   return list;
 }
 
 void *

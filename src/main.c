@@ -58,6 +58,7 @@ static const s_module _modules[] =
 #define MODULE(name_) \
    { .name = #name_, .init = name_ ## _init, .shutdown = name_ ## _shutdown }
 
+   MODULE(nvim_api),
    MODULE(request),
    MODULE(tabpage),
    MODULE(window),

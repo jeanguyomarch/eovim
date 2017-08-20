@@ -51,6 +51,7 @@ _nvim_free_cb(void *data)
    s_nvim *const nvim = data;
 
    msgpack_sbuffer_destroy(&nvim->sbuffer);
+   msgpack_unpacker_destroy(&nvim->unpacker);
    eina_hash_free(nvim->buffers);
    eina_hash_free(nvim->windows);
    eina_hash_free(nvim->tabpages);
@@ -124,8 +125,38 @@ _handle_request_response(s_nvim *nvim,
     * list */
    nvim->requests = eina_list_remove_list(nvim->requests, req_item);
 
-   /* 4th arg should be an array */
-   if (args->ptr[3].type != MSGPACK_OBJECT_ARRAY)
+   /* If 3rd arg is an array, this is an error message.
+    * Otherwise, 4th argument should be an array with the returned parameters
+    * to the request*/
+   if (args->ptr[2].type == MSGPACK_OBJECT_ARRAY)
+     {
+        const msgpack_object_array *const err_args = &(args->ptr[2].via.array);
+        if (EINA_UNLIKELY(err_args->size != 2))
+          {
+             ERR("Error response is supposed to have two arguments");
+             goto fail;
+          }
+        if (EINA_UNLIKELY(err_args->ptr[1].type != MSGPACK_OBJECT_STR))
+          {
+             ERR("Error response is supposed to contain a string");
+             goto fail;
+          }
+        const msgpack_object_str *const e = &(err_args->ptr[1].via.str);
+        Eina_Stringshare *const err = eina_stringshare_add_length(e->ptr,
+                                                                  e->size);
+        if (EINA_UNLIKELY(! err))
+          {
+             CRI("Failed to create stringshare");
+             goto fail;
+          }
+
+        CRI("Neovim reported an error: %s", err);
+        eina_stringshare_del(err);
+
+        if (req->error_callback)
+          req->error_callback(nvim, req, req->callback_data);
+     }
+   else if (args->ptr[3].type != MSGPACK_OBJECT_ARRAY)
      {
         ERR("Fourth argument in response is expected to be an array");
         goto fail;
@@ -155,7 +186,7 @@ static void
 _reload_buf(s_nvim *nvim, t_int buf, void *data)
 {
    INF("And now I have buffer");
-   nvim_buf_get_lines(nvim, buf, 0, 5, EINA_FALSE, _load_lines, NULL);
+ //  nvim_buf_get_lines(nvim, buf, 0, 5, EINA_FALSE, _load_lines, NULL, NULL);
 }
 
 static void
@@ -180,7 +211,7 @@ _reload_wins(s_nvim *nvim, Eina_List *windows, void *data)
              eina_hash_add(nvim->windows, &win_id, win);
           }
         INF("Got window %"PRIu64, win_id);
-        nvim_win_get_buf(nvim, win_id, _reload_buf, win);
+        nvim_win_get_buf(nvim, win_id, _reload_buf, NULL, win);
      }
 }
 
@@ -191,6 +222,7 @@ _reload(s_nvim *nvim, Eina_List *tabpages,
    Eina_List *l;
    const t_int *tab_id_fake_ptr;
 
+   WRN("Calling reload");
    EINA_LIST_FOREACH(tabpages, l, tab_id_fake_ptr)
      {
         const t_int tab_id = (t_int)tab_id_fake_ptr;
@@ -205,9 +237,9 @@ _reload(s_nvim *nvim, Eina_List *tabpages,
                }
              eina_hash_add(nvim->tabpages, &tab_id, tab);
           }
-        INF("Got tabpage %"PRIu64, tab_id);
+        INF("=============== Got tabpage %"PRIu64, tab_id);
 
-        nvim_tabpage_list_wins(nvim, tab_id, _reload_wins, tab);
+        nvim_tabpage_list_wins(nvim, tab_id, _reload_wins, NULL, tab);
      }
 }
 
@@ -216,7 +248,7 @@ _init(void *data)
 {
    s_nvim *const nvim = data;
 
-   nvim_list_tabpages(nvim, _reload, NULL);
+   nvim_list_tabpages(nvim, _reload, NULL, NULL);
 }
 
 
@@ -251,34 +283,73 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
 {
    const Ecore_Exe_Event_Data *const info = event;
    s_nvim *const nvim = _nvim_get(info->exe);
+   msgpack_unpacker *const unpacker = &nvim->unpacker;
+   const size_t recv_size = (size_t)info->size;
 
-   DBG("Incoming data from PID %u (size %i)", ecore_exe_pid_get(info->exe), info->size);
-   /* Deserialize the received message */
-   msgpack_object deserialized;
-   msgpack_unpack(info->data, (size_t)info->size, NULL,
-                  &nvim->mempool, &deserialized);
-   msgpack_object_print(stderr, deserialized);
-   fprintf(stderr, "\n");
+   DBG("Incoming data from PID %u (size %zu)", ecore_exe_pid_get(info->exe), recv_size);
 
-   if (deserialized.type != MSGPACK_OBJECT_ARRAY)
+
+   /*
+    * We have received something from NeoVim. We now must deserialize this.
+    */
+   msgpack_unpacked result;
+
+   /* Resize the unpacking buffer if need be */
+   if (msgpack_unpacker_buffer_capacity(unpacker) < recv_size)
      {
-        ERR("Unexpected msgpack type 0x%x", deserialized.type);
-        goto end;
+        const bool ret = msgpack_unpacker_reserve_buffer(unpacker, recv_size);
+        if (! ret)
+          {
+             ERR("Memory reallocation of %zu bytes failed", recv_size);
+             goto end;
+          }
+     }
+   /* This seems to be required, but that's plain inefficiency */
+   memcpy(msgpack_unpacker_buffer(unpacker), info->data, recv_size);
+   msgpack_unpacker_buffer_consumed(unpacker, recv_size);
+
+   msgpack_unpacked_init(&result);
+   const msgpack_unpack_return ret = msgpack_unpacker_next(unpacker, &result);
+   switch (ret)
+     {
+      case MSGPACK_UNPACK_PARSE_ERROR:
+         ERR("Received msgpack format data is invalid");
+         goto end_unpack;
+
+      case MSGPACK_UNPACK_CONTINUE:
+         ERR("Received data is incomplete");
+         goto end_unpack;
+
+      case MSGPACK_UNPACK_SUCCESS:
+      default:
+         /* Keep going */
+         break;
      }
 
-   const msgpack_object_array *const args = &deserialized.via.array;
+   msgpack_object obj = result.data;
+
+   msgpack_object_print(stderr, obj);
+   fprintf(stderr, "\n");
+
+   if (obj.type != MSGPACK_OBJECT_ARRAY)
+     {
+        ERR("Unexpected msgpack type 0x%x", obj.type);
+        goto end_unpack;
+     }
+
+   const msgpack_object_array *const args = &obj.via.array;
    const unsigned int expected_size = 4;
    if (args->size != expected_size)
      {
         ERR("Expected response as an array of %u elements. Got %u.",
             expected_size, args->size);
-        goto end;
+        goto end_unpack;
      }
 
    if (args->ptr[0].type != MSGPACK_OBJECT_POSITIVE_INTEGER)
      {
         ERR("First argument in response is expected to be an integer");
-        goto end;
+        goto end_unpack;
      }
    switch (args->ptr[0].via.u64)
      {
@@ -288,13 +359,15 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
 
       case 2:
          ERR("Notification received. It is unimplemented :'(");
-         goto end;
+         goto end_unpack;
 
       default:
          ERR("Invalid message identifier %"PRIu64, args->ptr[0].via.u64);
-         goto end;
+         goto end_unpack;
      }
 
+end_unpack:
+   msgpack_unpacked_destroy(&result);
 end:
    return ECORE_CALLBACK_PASS_ON;
 }
@@ -387,7 +460,6 @@ nvim_shutdown(void)
 uint32_t
 nvim_get_next_uid(s_nvim *nvim)
 {
-   return 999; // FIXME
    return nvim->request_id++;
 }
 
@@ -443,7 +515,7 @@ nvim_new(const char *program,
    /* Initialze msgpack for RPC */
    msgpack_sbuffer_init(&nvim->sbuffer);
    msgpack_packer_init(&nvim->packer, &nvim->sbuffer, msgpack_sbuffer_write);
-   msgpack_zone_init(&nvim->mempool, 2048);
+   msgpack_unpacker_init(&nvim->unpacker, 2048);
 
    /* Create the GUI window */
    nvim->win = elm_win_util_standard_add("envim", "Envim");
@@ -463,14 +535,6 @@ nvim_new(const char *program,
      }
    DBG("Running %s", eina_strbuf_string_get(cmdline));
 
-   /* Before leaving, we register the process in the running instances table */
-   ok = eina_hash_direct_add(_nvim_instances, &nvim->exe, nvim);
-   if (EINA_UNLIKELY(! ok))
-     {
-        CRI("Failed to register nvim instance in the hash table");
-        /* TODO ERROR */
-     }
-
    o = nvim->layout = elm_layout_add(nvim->win);
    evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -481,11 +545,19 @@ nvim_new(const char *program,
         CRI("Failed to set layout");
         goto del_win;
      }
-   evas_object_show(o);
-   evas_object_show(nvim->win);
 
    eina_strbuf_free(cmdline);
 
+   /* Before leaving, we register the process in the running instances table */
+   ok = eina_hash_direct_add(_nvim_instances, &nvim->exe, nvim);
+   if (EINA_UNLIKELY(! ok))
+     {
+        CRI("Failed to register nvim instance in the hash table");
+        goto del_win;
+     }
+
+   evas_object_show(o);
+   evas_object_show(nvim->win);
    ecore_job_add(_init, nvim);
    return nvim;
 

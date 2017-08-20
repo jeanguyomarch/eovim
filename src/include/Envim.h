@@ -61,6 +61,7 @@ typedef struct tabpage s_tabpage;
 typedef struct buffer s_buffer;
 typedef struct object s_object;
 typedef int64_t t_int;
+typedef void (*f_request_error)(const s_nvim *nvim, const s_request *req, void *data);
 
 #define T_INT_INVALID ((t_int)-1)
 
@@ -75,7 +76,8 @@ struct request
 {
    uint32_t uid;
    const void *then_callback;
-   void *then_callback_data;
+   f_request_error error_callback;
+   void *callback_data;
    e_request type;
 };
 
@@ -89,7 +91,7 @@ struct nvim
    Eina_Hash *buffers;
    Evas_Object *layout;
 
-   msgpack_zone mempool;
+   msgpack_unpacker unpacker;
    msgpack_sbuffer sbuffer;
    msgpack_packer packer;
    uint32_t request_id;
@@ -186,7 +188,7 @@ void nvim_reload_tabpages(s_nvim *nvim, Eina_List *tabpages);
 
 Eina_Bool request_init(void);
 void request_shutdown(void);
-s_request *request_new(uint32_t req_uid, e_request req_type, const void *then_cb, void *then_cb_data);
+s_request *request_new(uint32_t req_uid, e_request req_type, const void *then_cb, f_request_error error_cb, void *cb_data);
 void request_free(s_request *req);
 
 
