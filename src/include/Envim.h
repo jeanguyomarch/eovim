@@ -60,6 +60,7 @@ typedef struct window s_window;
 typedef struct tabpage s_tabpage;
 typedef struct buffer s_buffer;
 typedef struct object s_object;
+typedef struct gui s_gui;
 typedef int64_t t_int;
 typedef void (*f_request_error)(const s_nvim *nvim, const s_request *req, void *data);
 
@@ -81,15 +82,21 @@ struct request
    e_request type;
 };
 
+struct gui
+{
+   Evas_Object *win;
+   Evas_Object *layout;
+};
+
 struct nvim
 {
+   s_gui gui;
+
    Ecore_Exe *exe;
-   Evas_Object *win;
    Eina_List *requests;
    Eina_Hash *tabpages;
    Eina_Hash *windows;
    Eina_Hash *buffers;
-   Evas_Object *layout;
 
    msgpack_unpacker unpacker;
    msgpack_sbuffer sbuffer;
@@ -166,6 +173,16 @@ extern int _envim_log_domain;
 
 Eina_Bool main_in_tree_is(void);
 const char *main_edje_file_get(void);
+
+
+/*============================================================================*
+ *                                   GUI API                                  *
+ *============================================================================*/
+
+Eina_Bool gui_init(void);
+void gui_shutdown(void);
+Eina_Bool gui_add(s_gui *gui);
+void gui_del(s_gui *gui);
 
 
 /*============================================================================*

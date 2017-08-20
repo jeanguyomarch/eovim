@@ -489,8 +489,6 @@ nvim_new(const char *program,
    EINA_MAIN_LOOP_CHECK_RETURN_VAL(NULL);
 
    Eina_Bool ok;
-   Evas_Object *o;
-   const char group[] = "envim/main";
 
    /* Forge the command-line for the nvim program. We manually enforce
     * --embed and --headless, because we are the gui client, and forward all
@@ -533,8 +531,11 @@ nvim_new(const char *program,
    msgpack_unpacker_init(&nvim->unpacker, 2048);
 
    /* Create the GUI window */
-   nvim->win = elm_win_util_standard_add("envim", "Envim");
-   elm_win_autodel_set(nvim->win, EINA_TRUE);
+   if (EINA_UNLIKELY(! gui_add(&nvim->gui)))
+     {
+        CRI("Failed to set up the graphical user interface");
+        goto del_mem;
+     }
 
    /* Last step: create the neovim process */
    nvim->exe = ecore_exe_pipe_run(
@@ -546,21 +547,9 @@ nvim_new(const char *program,
    if (! nvim->exe)
      {
         CRI("Failed to execute nvim instance");
-        goto del_mem;
-     }
-   DBG("Running %s", eina_strbuf_string_get(cmdline));
-
-   o = nvim->layout = elm_layout_add(nvim->win);
-   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
-
-   ok = elm_layout_file_set(o, main_edje_file_get(), group);
-   if (EINA_UNLIKELY(! ok))
-     {
-        CRI("Failed to set layout");
         goto del_win;
      }
-
+   DBG("Running %s", eina_strbuf_string_get(cmdline));
    eina_strbuf_free(cmdline);
 
    /* Before leaving, we register the process in the running instances table */
@@ -571,13 +560,11 @@ nvim_new(const char *program,
         goto del_win;
      }
 
-   evas_object_show(o);
-   evas_object_show(nvim->win);
    ecore_job_add(_init, nvim);
    return nvim;
 
 del_win:
-   evas_object_del(nvim->win);
+   gui_del(&nvim->gui);
 del_mem:
    free(nvim);
 del_strbuf:
