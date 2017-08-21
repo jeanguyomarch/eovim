@@ -38,7 +38,7 @@ window_shutdown(void)
 }
 
 s_window *
-window_new(t_int id, s_tabpage *parent)
+window_new(t_int id, s_tabpage *parent, s_gui *gui)
 {
    s_window *const win = calloc(1, sizeof(s_window));
    if (EINA_UNLIKELY(! win))
@@ -49,10 +49,19 @@ window_new(t_int id, s_tabpage *parent)
 
    win->id = id;
    win->parent = parent;
-   EINA_MAGIC_SET(win, WINDOW_MAGIC);
+   if (EINA_UNLIKELY(! gui_window_add(gui, win)))
+     {
+        CRI("Failed to set the graphical window");
+        goto fail;
+     }
 
+   EINA_MAGIC_SET(win, WINDOW_MAGIC);
    tabpage_window_add(parent, win);
    return win;
+
+fail:
+   free(win);
+   return NULL;
 }
 
 void

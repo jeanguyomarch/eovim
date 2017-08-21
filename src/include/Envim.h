@@ -26,8 +26,6 @@
 #include <msgpack.h>
 #include <Elementary.h>
 
-#define lambda(RET_TYPE_, BODY_) ({ RET_TYPE_ __fn__ BODY_ __fn__;})
-
 #define TABPAGE_MAGIC 0x3210edff
 #define WINDOW_MAGIC  0x83291fea
 #define BUFFER_MAGIC  0xeab732d0
@@ -88,6 +86,8 @@ struct gui
    Evas_Object *layout;
 };
 
+#define NVIM_GUI_CONTAINER_GET(Gui) (s_nvim *)((Gui) - offsetof(s_nvim, gui))
+
 struct nvim
 {
    s_gui gui;
@@ -125,12 +125,16 @@ struct window
 
    t_int id;
    s_tabpage *parent;
+   Evas_Object *layout;
+   Evas_Object *textgrid;
+
    EINA_MAGIC;
 };
 
 struct tabpage
 {
    t_int id;
+   Evas_Object *layout;
    Eina_Inlist *windows;
    EINA_MAGIC;
 };
@@ -183,6 +187,9 @@ Eina_Bool gui_init(void);
 void gui_shutdown(void);
 Eina_Bool gui_add(s_gui *gui);
 void gui_del(s_gui *gui);
+Evas_Object *gui_layout_item_add(const s_gui *gui, const char *group);
+Evas_Object *gui_tabpage_add(s_gui *gui);
+Eina_Bool gui_window_add(s_gui *gui, s_window *win);
 
 
 /*============================================================================*
@@ -197,6 +204,7 @@ void nvim_free(s_nvim *nvim);
 uint32_t nvim_get_next_uid(s_nvim *nvim);
 Eina_Bool nvim_api_response_dispatch(s_nvim *nvim, const s_request *req, const msgpack_object_array *args);
 void nvim_reload_tabpages(s_nvim *nvim, Eina_List *tabpages);
+void nvim_win_size_set(s_nvim *nvim, s_window *win, unsigned int width, unsigned int height);
 
 
 /*============================================================================*
@@ -215,7 +223,7 @@ void request_free(s_request *req);
 
 Eina_Bool tabpage_init(void);
 void tabpage_shutdown(void);
-s_tabpage *tabpage_new(t_int id);
+s_tabpage *tabpage_new(t_int id, s_gui *gui);
 void tabpage_free(s_tabpage *tab);
 void tabpage_window_add(s_tabpage *tab, s_window *win);
 void tabpage_window_del(s_tabpage *tab, s_window *win);
@@ -227,7 +235,7 @@ void tabpage_window_del(s_tabpage *tab, s_window *win);
 
 Eina_Bool window_init(void);
 void window_shutdown(void);
-s_window *window_new(t_int id, s_tabpage *parent);
+s_window *window_new(t_int id, s_tabpage *parent, s_gui *gui);
 void window_free(s_window *win);
 
 

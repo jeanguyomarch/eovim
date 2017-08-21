@@ -51,8 +51,6 @@ request_new(uint32_t req_uid,
             f_request_error error_cb,
             void *cb_data)
 {
-   EINA_SAFETY_ON_NULL_RETURN_VAL(then_cb, NULL);
-
    s_request *const req = eina_mempool_malloc(_mempool, sizeof(s_request));
    if (EINA_UNLIKELY(! req))
      {

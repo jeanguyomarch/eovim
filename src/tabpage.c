@@ -38,7 +38,8 @@ tabpage_shutdown(void)
 }
 
 s_tabpage *
-tabpage_new(t_int id)
+tabpage_new(t_int id,
+            s_gui *gui)
 {
    s_tabpage *const tab = calloc(1, sizeof(s_tabpage));
    if (EINA_UNLIKELY(! tab))
@@ -47,10 +48,15 @@ tabpage_new(t_int id)
         return NULL;
      }
 
+   tab->layout = gui_tabpage_add(gui);
+   if (EINA_UNLIKELY(! tab->layout)) goto fail;
    tab->id = id;
-
    EINA_MAGIC_SET(tab, TABPAGE_MAGIC);
    return tab;
+
+fail:
+   free(tab);
+   return NULL;
 }
 
 void

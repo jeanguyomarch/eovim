@@ -195,7 +195,7 @@ _load_lines(s_nvim *nvim, Eina_List *lines, void *udata)
 
    EINA_LIST_FOREACH(lines, l, line)
      {
-        INF("=> %s", line);
+        printf("=> %s\n", line);
      }
 }
 
@@ -218,7 +218,7 @@ _reload_wins(s_nvim *nvim, Eina_List *windows, void *data)
         s_window *win = eina_hash_find(nvim->windows, &win_id);
         if (! win)
           {
-             win = window_new(win_id, parent_tab);
+             win = window_new(win_id, parent_tab, &nvim->gui);
              if (EINA_UNLIKELY(! win))
                {
                   CRI("Failed to create new window");
@@ -243,7 +243,7 @@ _reload(s_nvim *nvim, Eina_List *tabpages,
         s_tabpage *tab = eina_hash_find(nvim->tabpages, &tab_id);
         if (! tab)
           {
-             tab = tabpage_new(tab_id);
+             tab = tabpage_new(tab_id, &nvim->gui);
              if (! tab)
                {
                   CRI("Failed to create tabpage");
@@ -592,7 +592,7 @@ nvim_free(s_nvim *nvim)
 s_tabpage *
 nvim_tabpage_add(s_nvim *nvim, t_int id)
 {
-   s_tabpage *const tab = tabpage_new(id);
+   s_tabpage *const tab = tabpage_new(id, &nvim->gui);
    if (EINA_UNLIKELY(! tab))
      {
         CRI("Failed to create tabpage");
@@ -608,4 +608,29 @@ nvim_tabpage_add(s_nvim *nvim, t_int id)
 fail:
    if (tab) tabpage_free(tab);
    return NULL;
+}
+
+
+struct params{
+   t_int win_id;
+   unsigned int height;
+};
+static void
+_width_cb(s_nvim *nvim, void *data)
+{
+   struct params *const p = data;
+   nvim_win_set_height(nvim, p->win_id, p->height, NULL, NULL, NULL);
+   free(p);
+}
+
+void
+nvim_win_size_set(s_nvim *nvim,
+                  s_window *win,
+                  unsigned int width,
+                  unsigned int height)
+{
+   struct params *const p  = malloc(sizeof(struct params));
+   p->win_id = win->id;
+   p->height = height;
+   nvim_win_set_width(nvim, win->id, width, _width_cb, NULL, p);
 }
