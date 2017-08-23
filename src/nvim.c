@@ -226,6 +226,7 @@ _reload_wins(s_nvim *nvim, Eina_List *windows, void *data)
                }
              eina_hash_add(nvim->windows, &win_id, win);
           }
+
         nvim_win_get_buf(nvim, win_id, _reload_buf, NULL, win);
      }
 }
@@ -493,7 +494,7 @@ nvim_new(const char *program,
         CRI("Failed to create strbuf");
         goto fail;
      }
-   ok = eina_strbuf_append_printf(cmdline, "\"%s\" --embed --headless", program);
+   ok = eina_strbuf_append_printf(cmdline, "\"%s\" --embed --headless --", program);
    for (unsigned int i = 0; i < args_count; i++)
      {
         ok &= eina_strbuf_append_printf(cmdline, " \"%s\"", argv[i]);
