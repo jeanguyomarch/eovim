@@ -93,7 +93,7 @@ _nvim_request_find(const s_nvim *nvim,
    return it;
 }
 
-static s_nvim *
+static inline s_nvim *
 _nvim_get(const Ecore_Exe *exe)
 {
    return eina_hash_find(_nvim_instances, &exe);
@@ -321,65 +321,58 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
    msgpack_unpacker_buffer_consumed(unpacker, recv_size);
 
    msgpack_unpacked_init(&result);
-   const msgpack_unpack_return ret = msgpack_unpacker_next(unpacker, &result);
-   switch (ret)
+   for (;;)
      {
-      case MSGPACK_UNPACK_PARSE_ERROR:
-         ERR("Received msgpack format data is invalid");
-         goto end_unpack;
+        const msgpack_unpack_return ret = msgpack_unpacker_next(unpacker, &result);
+        if (ret == MSGPACK_UNPACK_CONTINUE) { break; }
+        else if (ret != MSGPACK_UNPACK_SUCCESS)
+          {
+             ERR("Error while unpacking data from neovim (0x%x)", ret);
+             goto end_unpack;
+          }
+        msgpack_object obj = result.data;
 
-      case MSGPACK_UNPACK_CONTINUE:
-         ERR("Received data is incomplete");
-         goto end_unpack;
-
-      case MSGPACK_UNPACK_SUCCESS:
-      default:
-         /* Keep going */
-         break;
-     }
-
-   msgpack_object obj = result.data;
-
-   /* Uncomment to roughly dump the received messages */
+        /* Uncomment to roughly dump the received messages */
 #if 0
-   msgpack_object_print(stderr, obj);
-   fprintf(stderr, "\n");
+        msgpack_object_print(stderr, obj);
+        fprintf(stderr, "\n");
 #endif
 
-   if (obj.type != MSGPACK_OBJECT_ARRAY)
-     {
-        ERR("Unexpected msgpack type 0x%x", obj.type);
-        goto end_unpack;
-     }
+        if (obj.type != MSGPACK_OBJECT_ARRAY)
+          {
+             ERR("Unexpected msgpack type 0x%x", obj.type);
+             goto end_unpack;
+          }
 
-   const msgpack_object_array *const args = &obj.via.array;
-   const unsigned int expected_size = 4;
-   if (args->size != expected_size)
-     {
-        ERR("Expected response as an array of %u elements. Got %u.",
-            expected_size, args->size);
-        goto end_unpack;
-     }
+        const msgpack_object_array *const args = &obj.via.array;
+        const unsigned int expected_size = 4;
+        if (args->size != expected_size)
+          {
+             ERR("Expected response as an array of %u elements. Got %u.",
+                 expected_size, args->size);
+             goto end_unpack;
+          }
 
-   if (args->ptr[0].type != MSGPACK_OBJECT_POSITIVE_INTEGER)
-     {
-        ERR("First argument in response is expected to be an integer");
-        goto end_unpack;
-     }
-   switch (args->ptr[0].via.u64)
-     {
-      case 1:
-         _handle_request_response(nvim, args);
-         break;
+        if (args->ptr[0].type != MSGPACK_OBJECT_POSITIVE_INTEGER)
+          {
+             ERR("First argument in response is expected to be an integer");
+             goto end_unpack;
+          }
+        switch (args->ptr[0].via.u64)
+          {
+           case 1:
+              _handle_request_response(nvim, args);
+              break;
 
-      case 2:
-         ERR("Notification received. It is unimplemented :'(");
-         goto end_unpack;
+           case 2:
+              ERR("Notification received. It is unimplemented :'(");
+              goto end_unpack;
 
-      default:
-         ERR("Invalid message identifier %"PRIu64, args->ptr[0].via.u64);
-         goto end_unpack;
-     }
+           default:
+              ERR("Invalid message identifier %"PRIu64, args->ptr[0].via.u64);
+              goto end_unpack;
+          }
+     } /* End of message unpacking */
 
 end_unpack:
    msgpack_unpacked_destroy(&result);
@@ -396,7 +389,6 @@ _nvim_received_error_cb(void *data EINA_UNUSED,
    (void) info;
    return ECORE_CALLBACK_PASS_ON;
 }
-
 
 
 /*============================================================================*
@@ -610,27 +602,12 @@ fail:
    return NULL;
 }
 
-
-struct params{
-   t_int win_id;
-   unsigned int height;
-};
-static void
-_width_cb(s_nvim *nvim, void *data)
-{
-   struct params *const p = data;
-   nvim_win_set_height(nvim, p->win_id, p->height, NULL, NULL, NULL);
-   free(p);
-}
-
 void
 nvim_win_size_set(s_nvim *nvim,
                   s_window *win,
                   unsigned int width,
                   unsigned int height)
 {
-   struct params *const p  = malloc(sizeof(struct params));
-   p->win_id = win->id;
-   p->height = height;
-   nvim_win_set_width(nvim, win->id, width, _width_cb, NULL, p);
+   nvim_win_set_width(nvim, win->id, width, NULL, NULL, NULL);
+   nvim_win_set_height(nvim, win->id, height, NULL, NULL, NULL);
 }
