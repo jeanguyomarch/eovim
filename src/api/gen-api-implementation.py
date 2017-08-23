@@ -94,8 +94,8 @@ TYPE_TABLE = {
         'pack_non_implemented_get'
     ),
     'Object': (
-        't_int',
-        'msgpack_pack_int64',
+        'Eina_Value*',
+        'pack_object',
         'pack_object_get'
     ),
     'Boolean': (

@@ -145,6 +145,23 @@ pack_list_of_strings(msgpack_packer *pk,
       pack_stringshare(pk, str);
 }
 
+void
+pack_object(msgpack_packer *pk,
+            const Eina_Value *object)
+{
+   const Eina_Value_Type *const type = eina_value_type_get(object);
+   if (type == ENVIM_VALUE_TYPE_BOOL)
+     {
+        Eina_Bool value;
+        eina_value_get(object, &value);
+        value ? msgpack_pack_true(pk) : msgpack_pack_false(pk);
+     }
+   else
+     {
+        ERR("Unhandled object type '%s'", eina_value_type_name_get(type));
+     }
+}
+
 
 /*============================================================================*
  *                                Unpacking API                               *
@@ -211,11 +228,11 @@ pack_stringshare_get(const msgpack_object_array *args)
    return eina_stringshare_add_length(str->ptr, str->size);
 }
 
-t_int
+Eina_Value *
 pack_object_get(const msgpack_object_array *args)
 {
    CRI("Unimplemented"); (void) args;
-   return T_INT_INVALID;
+   return NULL;
 }
 
 t_int

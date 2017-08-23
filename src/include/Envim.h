@@ -57,7 +57,6 @@ typedef struct position s_position;
 typedef struct window s_window;
 typedef struct tabpage s_tabpage;
 typedef struct buffer s_buffer;
-typedef struct object s_object;
 typedef struct gui s_gui;
 typedef int64_t t_int;
 typedef void (*f_request_error)(const s_nvim *nvim, const s_request *req, void *data);
@@ -66,10 +65,6 @@ typedef void (*f_request_error)(const s_nvim *nvim, const s_request *req, void *
 
 #include "nvim_api.h"
 
-struct object
-{
-   int64_t id;
-};
 
 struct request
 {
@@ -238,12 +233,18 @@ void window_shutdown(void);
 s_window *window_new(t_int id, s_tabpage *parent, s_gui *gui);
 void window_free(s_window *win);
 
+/*============================================================================*
+ *                                  Types API                                 *
+ *============================================================================*/
+
+Eina_Bool types_init(void);
+void types_shutdown(void);
 
 /*============================================================================*
  *                              Packing Functions                             *
  *============================================================================*/
 
-void pack_object(msgpack_packer *pk, const s_object *obj);
+void pack_object(msgpack_packer *pk, const Eina_Value *value);
 void pack_buffer(msgpack_packer *pk, const s_buffer *buf);
 void pack_window(msgpack_packer *pk, const s_window *win);
 void pack_tabpage(msgpack_packer *pk, const s_tabpage *tab);
@@ -260,7 +261,7 @@ Eina_Bool pack_boolean_get(const msgpack_object_array *args);
 s_position pack_position_get(const msgpack_object_array *args);
 t_int pack_int_get(const msgpack_object_array *args);
 Eina_Stringshare *pack_stringshare_get(const msgpack_object_array *args);
-t_int pack_object_get(const msgpack_object_array *args);
+Eina_Value *pack_object_get(const msgpack_object_array *args);
 t_int pack_window_get(const msgpack_object_array *args);
 t_int pack_buffer_get(const msgpack_object_array *args);
 t_int pack_tabpage_get(const msgpack_object_array *args);
@@ -269,6 +270,8 @@ Eina_List *pack_windows_get(const msgpack_object_array *args);
 Eina_List *pack_buffers_get(const msgpack_object_array *args);
 Eina_List *pack_strings_get(const msgpack_object_array *args);
 void *pack_non_implemented_get(const msgpack_object_array *args);
+
+extern const Eina_Value_Type *ENVIM_VALUE_TYPE_BOOL;
 
 
 #endif /* ! __ENVIM_H__ */
