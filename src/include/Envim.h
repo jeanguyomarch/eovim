@@ -98,6 +98,12 @@ struct nvim
    msgpack_packer packer;
    uint32_t request_id;
 
+   struct {
+      s_tabpage *tab;
+      s_window *win;
+      s_buffer *buf;
+   } current;
+
    EINA_MAGIC;
 };
 
@@ -121,7 +127,7 @@ struct window
    t_int id;
    s_tabpage *parent;
    Evas_Object *layout;
-   Evas_Object *textgrid;
+   Evas_Object *contents;
 
    EINA_MAGIC;
 };
@@ -139,6 +145,7 @@ struct buffer
    EINA_INLIST;
 
    t_int id;
+   Eina_List *windows;
    EINA_MAGIC;
 };
 

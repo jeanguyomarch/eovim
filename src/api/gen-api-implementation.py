@@ -85,7 +85,7 @@ TYPE_TABLE = {
     ),
     'Dictionary': (
         'Eina_Hash*',
-        'pack_non_implemented',
+        'pack_dictionary',
         'pack_non_implemented_get'
     ),
     'Array': (

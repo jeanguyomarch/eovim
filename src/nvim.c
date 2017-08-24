@@ -187,6 +187,41 @@ fail:
    return EINA_FALSE;
 }
 
+static Eina_Bool
+_handle_notification(s_nvim *nvim,
+                     const msgpack_object_array *args)
+{
+   /*
+    * 2nd argument must be a string.
+    * It contains the METHOD to be called for the notification.
+    * We decore the string as a stringshare, to feed it to our table of
+    * methods.
+    */
+   if (args->ptr[1].type != MSGPACK_OBJECT_STR)
+     {
+        ERR("Second argument in notification is expected to be a string");
+        goto fail;
+     }
+   const msgpack_object_str *const method_obj = &(args->ptr[1].via.str);
+   Eina_Stringshare *const method = eina_stringshare_add_length(
+      method_obj->ptr, method_obj->size
+   );
+   if (EINA_UNLIKELY(! method))
+     {
+        CRI("Failed to create stringshare from Neovim method");
+        goto fail;
+     }
+   DBG("Received notification '%s'", method);
+
+   /*
+    * 3rd argument must be an array of objects
+    */
+
+   return EINA_TRUE;
+fail:
+   return EINA_FALSE;
+}
+
 static void
 _load_lines(s_nvim *nvim, Eina_List *lines, void *udata)
 {
@@ -202,7 +237,7 @@ _load_lines(s_nvim *nvim, Eina_List *lines, void *udata)
 static void
 _reload_buf(s_nvim *nvim, t_int buf, void *data)
 {
-   nvim_buf_get_lines(nvim, buf, 0, 15, EINA_FALSE, _load_lines, NULL, NULL);
+   nvim_buf_get_lines(nvim, buf, 0, 5, EINA_FALSE, _load_lines, NULL, NULL);
 }
 
 static void
@@ -226,7 +261,6 @@ _reload_wins(s_nvim *nvim, Eina_List *windows, void *data)
                }
              eina_hash_add(nvim->windows, &win_id, win);
           }
-
         nvim_win_get_buf(nvim, win_id, _reload_buf, NULL, win);
      }
 }
@@ -256,12 +290,15 @@ _reload(s_nvim *nvim, Eina_List *tabpages,
      }
 }
 
+
+
 static void
 _init(void *data)
 {
    s_nvim *const nvim = data;
 
-   nvim_list_tabpages(nvim, _reload, NULL, NULL);
+   nvim_ui_attach(nvim, 80, 24, NULL, NULL, NULL, NULL);
+ //  nvim_list_tabpages(nvim, _reload, NULL, NULL);
 }
 
 
@@ -334,7 +371,7 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
         msgpack_object obj = result.data;
 
         /* Uncomment to roughly dump the received messages */
-#if 0
+#if 1
         msgpack_object_print(stderr, obj);
         fprintf(stderr, "\n");
 #endif
@@ -346,11 +383,12 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
           }
 
         const msgpack_object_array *const args = &obj.via.array;
-        const unsigned int expected_size = 4;
-        if (args->size != expected_size)
+        const unsigned int response_args_count = 4;
+        const unsigned int notif_args_count = 3;
+        if ((args->size != response_args_count) &&
+            (args->size != notif_args_count))
           {
-             ERR("Expected response as an array of %u elements. Got %u.",
-                 expected_size, args->size);
+             ERR("Unexpected count of arguments: %u.", args->size);
              goto end_unpack;
           }
 
@@ -366,8 +404,8 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
               break;
 
            case 2:
-              ERR("Notification received. It is unimplemented :'(");
-              goto end_unpack;
+              _handle_notification(nvim, args);
+              break;
 
            default:
               ERR("Invalid message identifier %"PRIu64, args->ptr[0].via.u64);

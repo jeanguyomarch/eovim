@@ -51,6 +51,7 @@ gui_add(s_gui *gui)
 
    evas_object_show(gui->layout);
    evas_object_show(gui->win);
+   evas_object_resize(gui->win, 800, 600);
 
    return EINA_TRUE;
 fail:
@@ -117,7 +118,6 @@ gui_window_add(s_gui *gui,
    const char parent_part[] = "envim.tabpage.view";
    const char part[] = "envim.window.text";
 
-   Evas *const evas = evas_object_evas_get(gui->win);
    Evas_Object *o;
 
    /* Create the window's layout */
@@ -131,16 +131,16 @@ gui_window_add(s_gui *gui,
    evas_object_show(o);
    win->layout = o;
 
-   /* Create the textgrid for the window */
-   o = evas_object_textgrid_add(evas);
-   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_textgrid_font_set(o, "Sans", 12); // XXX
-   evas_object_textgrid_size_set(o, 80, 24); // XXX
-   //nvim_win_size_set(NVIM_GUI_CONTAINER_GET(gui), win, 80, 24);
-   elm_layout_content_set(win->layout, part, o); // XXX
+   /* Create the editor for the window */
+   Elm_Code *const code = elm_code_create();
+   Elm_Code_Widget *const widget = efl_add(
+      ELM_CODE_WIDGET_CLASS, win->layout,
+      elm_obj_code_widget_code_set(efl_added, code)
+   );
+   nvim_win_size_set(NVIM_GUI_CONTAINER_GET(gui), win, 80, 24);
+   elm_layout_content_set(win->layout, part, widget); // XXX
    evas_object_show(o);
-   win->textgrid = o;
+   win->contents = o;
 
    return EINA_TRUE;
 fail:

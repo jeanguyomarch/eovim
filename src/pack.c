@@ -76,6 +76,37 @@ pack_non_implemented(msgpack_packer *pk EINA_UNUSED,
    CRI("This is unimplemented. Type is too generic to be packed");
 }
 
+static Eina_Bool
+_pack_dict_obj(const Eina_Hash *dict EINA_UNUSED,
+               const void *key,
+               void *data,
+               void *fdata)
+{
+   msgpack_packer *const pk = fdata;
+   Eina_Stringshare *const key_str = key;
+   const Eina_Value *const value = data;
+   const size_t key_size = (size_t)eina_stringshare_strlen(key_str);
+
+   msgpack_pack_str(pk, key_size);
+   msgpack_pack_str_body(pk, key, key_size);
+   pack_object(pk, value);
+
+   return EINA_TRUE;
+}
+
+void
+pack_dictionary(msgpack_packer *pk,
+                const Eina_Hash *dict)
+{
+   if (dict)
+     {
+        msgpack_pack_map(pk, (size_t)eina_hash_population(dict));
+        eina_hash_foreach(dict, _pack_dict_obj, pk);
+     }
+   else
+     msgpack_pack_map(pk, 0);
+}
+
 void
 pack_boolean(msgpack_packer *pk,
              Eina_Bool boolean)
