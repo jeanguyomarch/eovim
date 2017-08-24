@@ -24,19 +24,19 @@ def getopts(argv):
 
 TYPE_TABLE = {
     'ArrayOf(Window)': (
-        'Eina_List*',
-        'pack_list_of_windows',
-        'pack_windows_get'
+        'void*',
+        'pack_non_implemented',
+        'pack_non_implemented_get'
     ),
     'ArrayOf(Buffer)': (
-        'Eina_List*',
-        'pack_list_of_buffers',
-        'pack_buffers_get'
+        'void*',
+        'pack_non_implemented',
+        'pack_non_implemented_get'
     ),
     'ArrayOf(Tabpage)': (
-        'Eina_List*',
-        'pack_list_of_tabpages',
-        'pack_tabpages_get'
+        'void*',
+        'pack_non_implemented',
+        'pack_non_implemented_get'
     ),
     'ArrayOf(String)': (
         'Eina_List*',
@@ -69,19 +69,19 @@ TYPE_TABLE = {
         'pack_stringshare_get'
     ),
     'Buffer': (
-        't_int',
-        'msgpack_pack_int64',
-        'pack_buffer_get'
+        'void*',
+        'pack_non_implemented',
+        'pack_non_implemented_get'
     ),
     'Window': (
-        't_int',
-        'msgpack_pack_int64',
-        'pack_window_get'
+        'void*',
+        'pack_non_implemented',
+        'pack_non_implemented_get'
     ),
     'Tabpage': (
-        't_int',
-        'msgpack_pack_int64',
-        'pack_tabpage_get'
+        'void*',
+        'pack_non_implemented',
+        'pack_non_implemented_get'
     ),
     'Dictionary': (
         'Eina_Hash*',

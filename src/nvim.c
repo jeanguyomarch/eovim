@@ -52,32 +52,9 @@ _nvim_free_cb(void *data)
 
    msgpack_sbuffer_destroy(&nvim->sbuffer);
    msgpack_unpacker_destroy(&nvim->unpacker);
-   eina_hash_free(nvim->buffers);
-   eina_hash_free(nvim->windows);
-   eina_hash_free(nvim->tabpages);
    free(nvim);
 }
 
-static void
-_free_tabpage_cb(void *data)
-{
-   s_tabpage *const tab = data;
-   (void) tab;
-}
-
-static void
-_free_window_cb(void *data)
-{
-   s_window *const win = data;
-   (void) win;
-}
-
-static void
-_free_buffer_cb(void *data)
-{
-   s_buffer *const buf = data;
-   (void) buf;
-}
 
 static Eina_List *
 _nvim_request_find(const s_nvim *nvim,
@@ -222,85 +199,6 @@ fail:
    return EINA_FALSE;
 }
 
-static void
-_load_lines(s_nvim *nvim, Eina_List *lines, void *udata)
-{
-   Eina_List *l;
-   Eina_Stringshare *line;
-
-   EINA_LIST_FOREACH(lines, l, line)
-     {
-        printf("=> %s\n", line);
-     }
-}
-
-static void
-_reload_buf(s_nvim *nvim, t_int buf, void *data)
-{
-   nvim_buf_get_lines(nvim, buf, 0, 5, EINA_FALSE, _load_lines, NULL, NULL);
-}
-
-static void
-_reload_wins(s_nvim *nvim, Eina_List *windows, void *data)
-{
-   s_tabpage *const parent_tab = data;
-   Eina_List *l;
-   const t_int *win_id_fake_ptr;
-
-   EINA_LIST_FOREACH(windows, l, win_id_fake_ptr)
-     {
-        const t_int win_id = (t_int)win_id_fake_ptr;
-        s_window *win = eina_hash_find(nvim->windows, &win_id);
-        if (! win)
-          {
-             win = window_new(win_id, parent_tab, &nvim->gui);
-             if (EINA_UNLIKELY(! win))
-               {
-                  CRI("Failed to create new window");
-                  continue;
-               }
-             eina_hash_add(nvim->windows, &win_id, win);
-          }
-        nvim_win_get_buf(nvim, win_id, _reload_buf, NULL, win);
-     }
-}
-
-static void
-_reload(s_nvim *nvim, Eina_List *tabpages,
-        void *data EINA_UNUSED)
-{
-   Eina_List *l;
-   const t_int *tab_id_fake_ptr;
-
-   EINA_LIST_FOREACH(tabpages, l, tab_id_fake_ptr)
-     {
-        const t_int tab_id = (t_int)tab_id_fake_ptr;
-        s_tabpage *tab = eina_hash_find(nvim->tabpages, &tab_id);
-        if (! tab)
-          {
-             tab = tabpage_new(tab_id, &nvim->gui);
-             if (! tab)
-               {
-                  CRI("Failed to create tabpage");
-                  continue;
-               }
-             eina_hash_add(nvim->tabpages, &tab_id, tab);
-          }
-        nvim_tabpage_list_wins(nvim, tab_id, _reload_wins, NULL, tab);
-     }
-}
-
-
-
-static void
-_init(void *data)
-{
-   s_nvim *const nvim = data;
-
-   nvim_ui_attach(nvim, 80, 24, NULL, NULL, NULL, NULL);
- //  nvim_list_tabpages(nvim, _reload, NULL, NULL);
-}
-
 
 /*============================================================================*
  *                       Nvim Processes Events Handlers                       *
@@ -425,6 +323,7 @@ _nvim_received_error_cb(void *data EINA_UNUSED,
                         void *event)
 {
    const Ecore_Exe_Event_Data *const info = event;
+   CRI("Received an error");
    (void) info;
    return ECORE_CALLBACK_PASS_ON;
 }
@@ -551,11 +450,6 @@ nvim_new(const char *program,
         goto del_strbuf;
      }
 
-   nvim->tabpages = eina_hash_int64_new(_free_tabpage_cb);
-   nvim->windows = eina_hash_int64_new(_free_window_cb);
-   nvim->buffers = eina_hash_int64_new(_free_buffer_cb);
-   /* TODO errors checking */
-
    /* Initialze msgpack for RPC */
    msgpack_sbuffer_init(&nvim->sbuffer);
    msgpack_packer_init(&nvim->packer, &nvim->sbuffer, msgpack_sbuffer_write);
@@ -591,7 +485,7 @@ nvim_new(const char *program,
         goto del_win;
      }
 
-   ecore_job_add(_init, nvim);
+   nvim_ui_attach(nvim, 80, 24, NULL, NULL, NULL, NULL);
    return nvim;
 
 del_win:
@@ -618,35 +512,4 @@ nvim_free(s_nvim *nvim)
          */
         eina_hash_del_by_key(_nvim_instances, &nvim->exe);
      }
-}
-
-s_tabpage *
-nvim_tabpage_add(s_nvim *nvim, t_int id)
-{
-   s_tabpage *const tab = tabpage_new(id, &nvim->gui);
-   if (EINA_UNLIKELY(! tab))
-     {
-        CRI("Failed to create tabpage");
-        goto fail;
-     }
-   if (EINA_UNLIKELY(! eina_hash_add(nvim->tabpages, &id, tab)))
-     {
-        CRI("Failed to add tab into hash table");
-        goto fail;
-     }
-   return tab;
-
-fail:
-   if (tab) tabpage_free(tab);
-   return NULL;
-}
-
-void
-nvim_win_size_set(s_nvim *nvim,
-                  s_window *win,
-                  unsigned int width,
-                  unsigned int height)
-{
-   nvim_win_set_width(nvim, win->id, width, NULL, NULL, NULL);
-   nvim_win_set_height(nvim, win->id, height, NULL, NULL, NULL);
 }

@@ -38,22 +38,4 @@ collections {
          }
       }
    }
-
-   group { "envim/tabpage";
-      parts {
-         swallow { "envim.tabpage.view";
-            desc { "default";
-            }
-         }
-      }
-   }
-
-   group { "envim/window";
-      parts {
-         swallow { "envim.window.text";
-            desc { "default";
-            }
-         }
-      }
-   }
 }

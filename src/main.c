@@ -62,8 +62,6 @@ static const s_module _modules[] =
    MODULE(nvim_api),
    MODULE(gui),
    MODULE(request),
-   MODULE(tabpage),
-   MODULE(window),
    MODULE(nvim),
 
 #undef MODULE
