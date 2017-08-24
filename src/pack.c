@@ -111,8 +111,11 @@ void
 pack_boolean(msgpack_packer *pk,
              Eina_Bool boolean)
 {
-   if (boolean == EINA_FALSE) msgpack_pack_false(pk);
-   else msgpack_pack_true(pk);
+   static int (*const funcs[])(msgpack_packer *) = {
+      msgpack_pack_false,
+      msgpack_pack_true,
+   };
+   funcs[!!boolean](pk);
 }
 
 void
