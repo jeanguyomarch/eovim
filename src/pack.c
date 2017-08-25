@@ -177,14 +177,22 @@ Eina_Stringshare *
 pack_stringshare_get(const msgpack_object_array *args)
 {
    ARGS_CHECK_SIZE(args, 1, NULL);
+   return pack_single_stringshare_get(&args->ptr[0]);
+}
 
-   if (EINA_UNLIKELY(args->ptr[0].type != MSGPACK_OBJECT_STR))
+Eina_Stringshare *
+pack_single_stringshare_get(const msgpack_object *obj)
+{
+   if (EINA_UNLIKELY(obj->type != MSGPACK_OBJECT_STR))
      {
         ERR("Object does not contain a string");
         return NULL;
      }
-   const msgpack_object_str *const str = &(args->ptr[0].via.str);
-   return eina_stringshare_add_length(str->ptr, str->size);
+   else
+     {
+        const msgpack_object_str *const str = &(obj->via.str);
+        return eina_stringshare_add_length(str->ptr, str->size);
+     }
 }
 
 Eina_Value *
@@ -220,11 +228,36 @@ pack_single_object_get(const msgpack_object *obj)
            }
          break;
 
-      case MSGPACK_OBJECT_POSITIVE_INTEGER:
-         value = eina_value_new(EINA_VALUE_TYPE_UINT64);
-         eina_value_set(value, obj->via.u64);
+      case MSGPACK_OBJECT_MAP:
+         /*
+          * The map is similar to the array. The sole difference being that
+          * elements are stored in an Eina_Hash instead of an Eina_List.
+          * Key elements are all of type string!
+          */
+           {
+              const msgpack_object_map *const map = &(obj->via.map);
+              value = eina_value_hash_new(ENVIM_VALUE_TYPE_NESTED, 0);
+              for (unsigned int i = 0; i < map->size; i++)
+                {
+                   const msgpack_object *const key = &(map->ptr[i].key);
+                   const msgpack_object *const val = &(map->ptr[i].val);
+
+                   Eina_Stringshare *const key_shr = pack_single_stringshare_get(key);
+                   if (EINA_UNLIKELY(! key_shr)) { continue; }
+                   Eina_Value *const sub_value = pack_single_object_get(val);
+                   if (EINA_UNLIKELY(! sub_value))
+                     {
+                        eina_stringshare_del(key_shr);
+                        continue;
+                     }
+                   eina_value_hash_set(value, key_shr, sub_value);
+                }
+           }
          break;
 
+
+         /* Positive and negative integers are both handled as 64-bits int */
+      case MSGPACK_OBJECT_POSITIVE_INTEGER: /* Fall through */
       case MSGPACK_OBJECT_NEGATIVE_INTEGER:
          value = eina_value_new(EINA_VALUE_TYPE_INT64);
          eina_value_set(value, obj->via.i64);

@@ -173,6 +173,7 @@ Eina_Value *pack_object_get(const msgpack_object_array *args);
 Eina_List *pack_strings_get(const msgpack_object_array *args);
 Eina_List *pack_array_get(const msgpack_object_array *args);
 Eina_Value *pack_single_object_get(const msgpack_object *obj);
+Eina_Stringshare *pack_single_stringshare_get(const msgpack_object *obj);
 void *pack_non_implemented_get(const msgpack_object_array *args);
 
 extern const Eina_Value_Type *ENVIM_VALUE_TYPE_BOOL;
