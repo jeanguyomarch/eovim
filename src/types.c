@@ -25,6 +25,9 @@
 static Eina_Value_Type _ENVIM_VALUE_TYPE_BOOL;
 const Eina_Value_Type *ENVIM_VALUE_TYPE_BOOL = &_ENVIM_VALUE_TYPE_BOOL;
 
+static Eina_Value_Type _ENVIM_VALUE_TYPE_NESTED;
+const Eina_Value_Type *ENVIM_VALUE_TYPE_NESTED = &_ENVIM_VALUE_TYPE_NESTED;
+
 Eina_Bool
 types_init(void)
 {
@@ -34,6 +37,13 @@ types_init(void)
     */
    memcpy(&_ENVIM_VALUE_TYPE_BOOL, EINA_VALUE_TYPE_UCHAR, sizeof(Eina_Value_Type));
    _ENVIM_VALUE_TYPE_BOOL.name = "Eina Bool";
+
+   /* ENVIM_VALUE_TYPE_NESTED is inherited from the Uint64 type.
+    * This is to store a pointer in an Eina Value
+    */
+   memcpy(&_ENVIM_VALUE_TYPE_NESTED, EINA_VALUE_TYPE_UINT64, sizeof(Eina_Value_Type));
+   _ENVIM_VALUE_TYPE_NESTED.name = "Generic Pointer";
+   _ENVIM_VALUE_TYPE_NESTED.value_size = sizeof(uintptr_t);
 
    return EINA_TRUE;
 }

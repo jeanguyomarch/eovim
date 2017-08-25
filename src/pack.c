@@ -22,49 +22,6 @@
 
 #include "Envim.h"
 
-/* FIXME. Ideally, these values should be dynamic (reading the API contract) */
-typedef enum
-{
-  E_NVIM_OBJECT_BUFFER = 0,
-  E_NVIM_OBJECT_WINDOW = 1,
-  E_NVIM_OBJECT_TAB = 2,
-} e_nvim_object;
-
-static t_int
-_read_object_id(const msgpack_object_ext *obj)
-{
-   t_int id = 0;
-   /*
-    * This is written by using:
-    *   https://github.com/msgpack/msgpack/blob/master/spec.md
-    *
-    * The sole difference is the size 1. It SEEMS that when the size is
-    * one, the object is an integer on one byte. There is no type information
-    * associated.
-    */
-   if (obj->size == 1)
-     {
-         id = (t_int)(obj->ptr[0]);
-     }
-   else
-     {
-        const uint8_t type = (uint8_t)obj->ptr[0];
-        uint8_t *const bytes = (uint8_t *)(&id);
-        switch (type)
-          {
-           case 0xCD: /* uint16_t */
-              bytes[0] = (uint8_t)obj->ptr[2];
-              bytes[1] = (uint8_t)obj->ptr[1];
-              break;
-
-           default:
-              CRI("Unhandled type information 0x%02x", type);
-              id = T_INT_INVALID; break;
-          }
-     }
-   return id;
-}
-
 /*============================================================================*
  *                                 Packing API                                *
  *============================================================================*/
@@ -134,38 +91,6 @@ pack_position(msgpack_packer *pk,
    msgpack_pack_array(pk, 2);
    msgpack_pack_int64(pk, pos.x);
    msgpack_pack_int64(pk, pos.y);
-}
-
-static void
-_pack_list_of_objects(msgpack_packer *pk,
-                      const Eina_List *list)
-{
-   Eina_List *l;
-   const t_int *id;
-
-   EINA_LIST_FOREACH(list, l, id)
-      msgpack_pack_int64(pk, *id);
-}
-
-void
-pack_list_of_windows(msgpack_packer *pk,
-                     const Eina_List *list_win)
-{
-   _pack_list_of_objects(pk, list_win);
-}
-
-void
-pack_list_of_buffers(msgpack_packer *pk,
-                     const Eina_List *list_buf)
-{
-   _pack_list_of_objects(pk, list_buf);
-}
-
-void
-pack_list_of_tabpages(msgpack_packer *pk,
-                      const Eina_List *list_tab)
-{
-   _pack_list_of_objects(pk, list_tab);
 }
 
 void
@@ -265,87 +190,90 @@ pack_stringshare_get(const msgpack_object_array *args)
 Eina_Value *
 pack_object_get(const msgpack_object_array *args)
 {
-   CRI("Unimplemented"); (void) args;
-   return NULL;
+   ARGS_CHECK_SIZE(args, 1, NULL);
+   return pack_single_object_get(&args->ptr[0]);
 }
 
-t_int
-pack_window_get(const msgpack_object_array *args)
+Eina_Value *
+pack_single_object_get(const msgpack_object *obj)
 {
-   CRI("Unimplemented"); (void) args;
-   return T_INT_INVALID;
-}
-
-t_int
-pack_buffer_get(const msgpack_object_array *args)
-{
-   ARGS_CHECK_SIZE(args, 1, T_INT_INVALID);
-
-   if (EINA_UNLIKELY(args->ptr[0].type != MSGPACK_OBJECT_EXT))
+   Eina_Value *value = NULL;
+   switch (obj->type)
      {
-        ERR("Response type 0x%x is not an EXT type", args->ptr[0].type);
-        return T_INT_INVALID;
+      case MSGPACK_OBJECT_ARRAY:
+         /*
+          * The array is a bit tricky, as the array is a set of single
+          * objects. So this function actually has to call itself.
+          * We stock a list of eina value in an eina value.
+          */
+           {
+              const msgpack_object_array *const arr = &(obj->via.array);
+              value = eina_value_list_new(ENVIM_VALUE_TYPE_NESTED);
+              for (unsigned int i = 0; i < arr->size; i++)
+                {
+                   const msgpack_object *const arr_obj = &(arr->ptr[i]);
+                   Eina_Value *const sub_value = pack_single_object_get(arr_obj);
+                   /* Ignore values that could not be unpacked */
+                   if (EINA_UNLIKELY(! sub_value)) { continue; }
+                   eina_value_list_append(value, sub_value);
+                }
+           }
+         break;
+
+      case MSGPACK_OBJECT_POSITIVE_INTEGER:
+         value = eina_value_new(EINA_VALUE_TYPE_UINT64);
+         eina_value_set(value, obj->via.u64);
+         break;
+
+      case MSGPACK_OBJECT_NEGATIVE_INTEGER:
+         value = eina_value_new(EINA_VALUE_TYPE_INT64);
+         eina_value_set(value, obj->via.i64);
+         break;
+
+      case MSGPACK_OBJECT_BOOLEAN:
+         value = eina_value_new(ENVIM_VALUE_TYPE_BOOL);
+         eina_value_set(value, obj->via.boolean);
+         break;
+
+      case MSGPACK_OBJECT_STR:
+           {
+              Eina_Stringshare *const shr = eina_stringshare_add_length(
+                 obj->via.str.ptr, obj->via.str.size
+              );
+              if (EINA_UNLIKELY(! shr))
+                {
+                   CRI("Failed to create stringshare from msgpack data");
+                   return NULL;
+                }
+              value = eina_value_new(EINA_VALUE_TYPE_STRINGSHARE);
+              eina_value_set(value, shr);
+           }
+         break;
+
+      default:
+         CRI("Unhandled object type 0x%x", obj->type); break;
      }
 
-   const msgpack_object_ext *const obj = &(args->ptr[0].via.ext);
-   if (EINA_UNLIKELY(obj->type != E_NVIM_OBJECT_BUFFER))
-     {
-        ERR("Subtype 0x%x is not a NeoVim Buffer", obj->type);
-        return T_INT_INVALID;
-     }
-
-   return _read_object_id(obj);
+   return value;
 }
 
-t_int
-pack_tabpage_get(const msgpack_object_array *args)
-{
-   CRI("Unimplemented"); (void) args;
-   return T_INT_INVALID;
-}
-
-static Eina_List *
-_pack_list_of_objects_get(const msgpack_object_array *args)
+Eina_List *
+pack_array_get(const msgpack_object_array *args)
 {
    Eina_List *list = NULL;
 
    for (unsigned int i = 0; i < args->size; i++)
      {
-        if (EINA_UNLIKELY(args->ptr[i].type != MSGPACK_OBJECT_EXT))
+        Eina_Value *const value = pack_single_object_get(&args->ptr[i]);
+        if (EINA_UNLIKELY(! value))
           {
-             ERR("Expected MSGPACK_OBJECT_EXT type");
-             goto fail;
+             ERR("Failed to decode object. Skipping.");
+             continue;
           }
-
-        const msgpack_object_ext *const obj = &(args->ptr[i].via.ext);
-        const t_int id = _read_object_id(obj);
-        DBG("size: %"PRIu32", id is => %"PRIx64, obj->size, id);
-
-        list = eina_list_append(list, (const void *)id);
+        list = eina_list_append(list, value);
      }
+
    return list;
-
-fail:
-   eina_list_free(list);
-   return NULL;
-}
-
-Eina_List *
-pack_tabpages_get(const msgpack_object_array *args)
-{
-   return _pack_list_of_objects_get(args);
-}
-
-Eina_List *
-pack_windows_get(const msgpack_object_array *args)
-{
-   return _pack_list_of_objects_get(args);
-}
-
-Eina_List *
-pack_buffers_get(const msgpack_object_array *args)
-{
-   return _pack_list_of_objects_get(args);
 }
 
 Eina_List *

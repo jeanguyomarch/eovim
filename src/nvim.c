@@ -164,6 +164,39 @@ fail:
    return EINA_FALSE;
 }
 
+static void
+_process_notif_arguments(s_nvim *nvim,
+                         const Eina_List *args)
+{
+   Eina_List *l;
+   Eina_Value *arg;
+   static unsigned int rec = 0;
+   char prefix[32] = "" ;
+   rec++;
+
+   for (unsigned int i = 0; i < rec; i++)
+     prefix[i] = '=';
+   prefix[rec] = '>';
+   EINA_LIST_FOREACH(args, l, arg)
+     {
+        const Eina_Value_Type *const type = eina_value_type_get(arg);
+        if (type == EINA_VALUE_TYPE_LIST)
+          {
+             Eina_Value_List sub_args;
+             eina_value_get(arg, &sub_args);
+             _process_notif_arguments(nvim, sub_args.list);
+          }
+        else
+          {
+             INF("%s %s: %s",
+                 prefix,
+                 eina_value_type_name_get(type),
+                 eina_value_to_string(arg));
+          }
+     }
+   rec--;
+}
+
 static Eina_Bool
 _handle_notification(s_nvim *nvim,
                      const msgpack_object_array *args)
@@ -174,7 +207,7 @@ _handle_notification(s_nvim *nvim,
     * We decore the string as a stringshare, to feed it to our table of
     * methods.
     */
-   if (args->ptr[1].type != MSGPACK_OBJECT_STR)
+   if (EINA_UNLIKELY(args->ptr[1].type != MSGPACK_OBJECT_STR))
      {
         ERR("Second argument in notification is expected to be a string");
         goto fail;
@@ -193,6 +226,13 @@ _handle_notification(s_nvim *nvim,
    /*
     * 3rd argument must be an array of objects
     */
+   if (EINA_UNLIKELY(args->ptr[2].type != MSGPACK_OBJECT_ARRAY))
+     {
+        ERR("Third argument in notification is expected to be an array");
+        goto fail;
+     }
+   Eina_List *const objs = pack_array_get(&args->ptr[2].via.array);
+   _process_notif_arguments(nvim, objs);
 
    return EINA_TRUE;
 fail:

@@ -91,7 +91,7 @@ TYPE_TABLE = {
     'Array': (
         'Eina_List*',
         'pack_non_implemented',
-        'pack_non_implemented_get'
+        'pack_array_get'
     ),
     'Object': (
         'Eina_Value*',
