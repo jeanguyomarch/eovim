@@ -12,7 +12,6 @@ file(MAKE_DIRECTORY ${BUILD_THEMES_DIR})
 
 find_package(PkgConfig REQUIRED)
 find_package(Eina REQUIRED)
-find_package(Eo REQUIRED)
 find_package(Evas REQUIRED)
 find_package(Ecore REQUIRED)
 find_package(Edje REQUIRED)
@@ -76,7 +75,6 @@ add_executable(envim
 target_include_directories(envim
    SYSTEM PRIVATE
    ${EINA_INCLUDE_DIRS}
-   ${EO_INCLUDE_DIRS}
    ${EVAS_INCLUDE_DIRS}
    ${EDJE_INCLUDE_DIRS}
    ${ECORE_INCLUDE_DIRS}
@@ -90,7 +88,6 @@ target_include_directories(envim
 )
 target_link_libraries(envim
    ${EINA_LIBRARIES}
-   ${EO_LIBRARIES}
    ${EVAS_LIBRARIES}
    ${EDJE_LIBRARIES}
    ${ECORE_LIBRARIES}
@@ -124,5 +121,4 @@ target_compile_definitions(envim
    PACKAGE_LIB_DIR=\"${CMAKE_INSTALL_PREFIX}/lib\"
    PACKAGE_DATA_DIR=\"${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}\"
    BUILD_DATA_DIR=\"${CMAKE_BINARY_DIR}\"
-   EFL_BETA_API_SUPPORT
 )
