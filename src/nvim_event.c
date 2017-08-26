@@ -54,7 +54,28 @@ void nvim_event_mouse_off(s_nvim *nvim) {}
 void nvim_event_mode_change(s_nvim *nvim, Eina_Stringshare* mode, t_int mode_idx) {}
 void nvim_event_set_scroll_region(s_nvim *nvim, t_int top, t_int bot, t_int left, t_int right) {}
 void nvim_event_scroll(s_nvim *nvim, t_int count) {}
-void nvim_event_highlight_set(s_nvim *nvim, Eina_Hash* attrs) {}
+
+void
+nvim_event_highlight_set(s_nvim *nvim,
+                         Eina_Hash *attrs)
+{
+   Eina_Value *const *const foreground = eina_hash_find(attrs, "foreground");
+   Eina_Value *const *const background = eina_hash_find(attrs, "background");
+   Eina_Value *const *const special = eina_hash_find(attrs, "special");
+   Eina_Value *const *const reverse = eina_hash_find(attrs, "reverse");
+   Eina_Value *const *const italic = eina_hash_find(attrs, "italic");
+   Eina_Value *const *const underline = eina_hash_find(attrs, "underline");
+   Eina_Value *const *const undercurl = eina_hash_find(attrs, "undercurl");
+
+   if (foreground)
+     {
+        t_int color;
+        eina_value_get(*foreground, &color);
+        eina_value_free(*foreground);
+     }
+   /* TODO */
+}
+
 void nvim_event_put(s_nvim *nvim, Eina_Stringshare* str) {}
 void nvim_event_bell(s_nvim *nvim) {}
 void nvim_event_visual_bell(s_nvim *nvim) {}

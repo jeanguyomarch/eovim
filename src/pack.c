@@ -405,8 +405,11 @@ pack_dispatch_tabpage(Eina_Value *arg EINA_UNUSED)
 }
 
 Eina_Hash *
-pack_dispatch_hash(Eina_Value *arg EINA_UNUSED)
+pack_dispatch_hash(Eina_Value *arg)
 {
-   CRI("Not implemented");
-   return NULL;
+   CHECK_ARG_TYPE(arg, EINA_VALUE_TYPE_HASH, NULL);
+
+   Eina_Value_Hash hash_val;
+   eina_value_get(arg, &hash_val);
+   return hash_val.hash;
 }
