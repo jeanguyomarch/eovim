@@ -22,7 +22,18 @@
 
 #include "Envim.h"
 
-void nvim_event_resize(s_nvim *nvim, t_int rows, t_int columns) {}
+void
+nvim_event_resize(s_nvim *nvim,
+                  t_int rows,
+                  t_int columns)
+{
+   /*
+    * Easy! We just have to resize the gui to make it fit the requested
+    * amount of rows and columns.
+    */
+   gui_resize(&nvim->gui, rows, columns);
+}
+
 void nvim_event_clear(s_nvim *nvim) {}
 void nvim_event_eol_clear(s_nvim *nvim) {}
 void nvim_event_cursor_goto(s_nvim *nvim, t_int row, t_int col) {}

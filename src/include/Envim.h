@@ -39,6 +39,7 @@ typedef void (*f_request_error)(const s_nvim *nvim, const s_request *req, void *
 
 #include "nvim_api.h"
 
+#include "envim/gui.h"
 
 struct request
 {
@@ -47,12 +48,6 @@ struct request
    f_request_error error_callback;
    void *callback_data;
    e_request type;
-};
-
-struct gui
-{
-   Evas_Object *win;
-   Evas_Object *layout;
 };
 
 
@@ -111,16 +106,6 @@ extern int _envim_log_domain;
 
 Eina_Bool main_in_tree_is(void);
 const char *main_edje_file_get(void);
-
-
-/*============================================================================*
- *                                   GUI API                                  *
- *============================================================================*/
-
-Eina_Bool gui_init(void);
-void gui_shutdown(void);
-Eina_Bool gui_add(s_gui *gui);
-void gui_del(s_gui *gui);
 
 
 /*============================================================================*
