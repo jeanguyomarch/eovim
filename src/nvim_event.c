@@ -34,7 +34,15 @@ nvim_event_resize(s_nvim *nvim,
    gui_resize(&nvim->gui, rows, columns);
 }
 
-void nvim_event_clear(s_nvim *nvim) {}
+void
+nvim_event_clear(s_nvim *nvim)
+{
+   /*
+    * Easy! Clear the whole screen.
+    */
+   gui_clear(&nvim->gui);
+}
+
 void nvim_event_eol_clear(s_nvim *nvim) {}
 void nvim_event_cursor_goto(s_nvim *nvim, t_int row, t_int col) {}
 void nvim_event_mode_info_set(s_nvim *nvim, Eina_Bool enabled, Eina_List* cursor_styles) {}

@@ -35,6 +35,8 @@ struct gui
    unsigned int font_size;
    unsigned int cell_w;
    unsigned int cell_h;
+   unsigned int rows;
+   unsigned int cols;
 };
 
 Eina_Bool gui_init(void);
@@ -42,5 +44,6 @@ void gui_shutdown(void);
 Eina_Bool gui_add(s_gui *gui);
 void gui_del(s_gui *gui);
 void gui_resize(s_gui *gui, unsigned int cols, unsigned int rows);
+void gui_clear(s_gui *gui);
 
 #endif /* ! __ENVIM_GUI_H__ */

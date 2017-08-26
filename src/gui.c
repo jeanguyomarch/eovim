@@ -127,6 +127,9 @@ gui_resize(s_gui *gui,
            unsigned int cols,
            unsigned int rows)
 {
+   /* Don't resize if not needed */
+   if ((gui->cols == cols) && (gui->rows == rows)) { return; }
+
    /*
     * To resize the gui, we first resize the textgrid with the new amount
     * of columns and rows, then we resize the window. UI widgets will
@@ -137,4 +140,24 @@ gui_resize(s_gui *gui,
    evas_object_textgrid_size_set(gui->textgrid, (int)cols, (int)rows);
    evas_object_resize(gui->win, (int)(cols * gui->cell_w),
                       (int)(rows * gui->cell_h));
+
+   gui->cols = cols;
+   gui->rows = rows;
+}
+
+void
+gui_clear(s_gui *gui)
+{
+   /*
+    * Go through each line (row) in the textgrid, and reset all the cells.
+    * Memset() is an efficient way to do that as it will reset both the
+    * codepoint and the attributes.
+    */
+   for (unsigned int y = 0; y < gui->rows; y++)
+     {
+        Evas_Textgrid_Cell *const cells = evas_object_textgrid_cellrow_get(
+           gui->textgrid, (int)y
+        );
+        memset(cells, 0, sizeof(Evas_Textgrid_Cell) * gui->cols);
+     }
 }
