@@ -147,6 +147,7 @@ nvim_api_shutdown(void)
         eina_log_domain_unregister(_api_log_dom);
         _api_log_dom = -1;
      }
+   if (_callbacks) { eina_hash_free(_callbacks); }
 }
 
 /*============================================================================*
