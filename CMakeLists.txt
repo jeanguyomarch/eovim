@@ -68,6 +68,7 @@ add_executable(envim
    "${SRC_DIR}/pack.c"
    "${SRC_DIR}/gui.c"
    "${SRC_DIR}/types.c"
+   "${SRC_DIR}/nvim_event.c"
    "${BUILD_API_DIR}/nvim_api.c"
    "${BUILD_API_DIR}/nvim_api.h"
    "${SRC_DIR}/include/Envim.h"

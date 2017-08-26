@@ -348,3 +348,65 @@ pack_non_implemented_get(const msgpack_object_array *args EINA_UNUSED)
    CRI("Non implemented");
    return NULL;
 }
+
+
+/*============================================================================*
+ *                                Dispatch API                                *
+ *============================================================================*/
+
+#define CHECK_ARG_TYPE(Arg, Type, ...) \
+   if (EINA_UNLIKELY(eina_value_type_get(Arg) != Type)) { \
+      CRI("Invalid type (expected %s, got %s)", \
+          eina_value_type_name_get(Type), \
+          eina_value_type_name_get(eina_value_type_get(Arg))); return __VA_ARGS__; }
+
+Eina_Bool
+pack_dispatch_boolean(Eina_Value *arg)
+{
+   CHECK_ARG_TYPE(arg, ENVIM_VALUE_TYPE_BOOL, EINA_FALSE);
+
+   Eina_Bool value;
+   eina_value_get(arg, &value);
+   return value;
+}
+
+t_int
+pack_dispatch_integer(Eina_Value *arg)
+{
+   CHECK_ARG_TYPE(arg, EINA_VALUE_TYPE_INT64, 0);
+
+   t_int value;
+   eina_value_get(arg, &value);
+   return value;
+}
+
+Eina_Stringshare *
+pack_dispatch_stringshare(Eina_Value *arg)
+{
+   CHECK_ARG_TYPE(arg, EINA_VALUE_TYPE_STRINGSHARE, 0);
+
+   Eina_Stringshare *value;
+   eina_value_get(arg, &value);
+   return value;
+}
+
+Eina_List *
+pack_dispatch_list(Eina_Value *arg EINA_UNUSED)
+{
+   CRI("Not implemented");
+   return NULL;
+}
+
+void *
+pack_dispatch_tabpage(Eina_Value *arg EINA_UNUSED)
+{
+   CRI("Not implemented");
+   return NULL;
+}
+
+Eina_Hash *
+pack_dispatch_hash(Eina_Value *arg EINA_UNUSED)
+{
+   CRI("Not implemented");
+   return NULL;
+}

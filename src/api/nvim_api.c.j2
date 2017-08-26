@@ -20,11 +20,17 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+/*
+ * This is a generated file.
+ */
+
 #include "Envim.h"
 
 typedef Eina_Bool(*f_decode)(s_nvim *nvim, const s_request *req, const msgpack_object_array *args);
+typedef void (*f_dispatch)(s_nvim *nvim, Eina_List *args);
 
 static int _api_log_dom = -1;
+static Eina_Hash *_callbacks = NULL;
 
 #undef DBG
 #undef INF
@@ -36,6 +42,37 @@ static int _api_log_dom = -1;
 #define WRN(...) EINA_LOG_DOM_WARN(_api_log_dom, __VA_ARGS__)
 #define ERR(...) EINA_LOG_DOM_ERR(_api_log_dom, __VA_ARGS__)
 #define CRI(...) EINA_LOG_DOM_CRIT(_api_log_dom, __VA_ARGS__)
+
+
+{% for ui_event in ui_events %}
+static void
+_dispatch_{{ ui_event.c_name }}(s_nvim *nvim, Eina_List *args)
+{
+{%- if ui_event.parameters_count == 0 %}
+   {{ ui_event.c_name }}(nvim);
+   (void) args;
+{%- else %}
+   const unsigned int args_count = eina_list_count(args);
+   const unsigned int expected_count = {{ ui_event.parameters | length }};
+   if (EINA_UNLIKELY(args_count != expected_count))
+     {
+        CRI("Received %u arguments but %u were expected", args_count, expected_count);
+        return;
+     }
+   {{ ui_event.c_name }}(nvim
+   {%- for type, name in ui_event.parameters %}
+   {%- if loop.first %} {# For the first item, we access the head list #}
+      , {{ dispatchers[type] }}(eina_list_data_get(args))
+   {%- elif loop.last %} {# Last item: access the last data directly #}
+      , {{ dispatchers[type] }}(eina_list_last_data_get(args))
+   {%- else %}
+      , {{ dispatchers[type] }}(eina_list_data_get(eina_list_nth(args, {{ loop.index0 }})))
+   {%- endif -%}
+   {%- endfor -%}
+   );
+{%- endif %}
+}
+{% endfor %}
 
 
 {% for function in functions %}
@@ -77,9 +114,29 @@ nvim_api_init(void)
    if (EINA_UNLIKELY(_api_log_dom < 0))
      {
         EINA_LOG_DOM_CRIT(_envim_log_domain, "Failed to create log domain");
-        return EINA_FALSE;
+        goto fail;
      }
+
+   /* Generate a hash table that will contain the callbacks to be called for
+    * each event sent by neovim. */
+   _callbacks = eina_hash_stringshared_new(NULL);
+   if (EINA_UNLIKELY(! _callbacks))
+     {
+        CRI("Failed to create hash table to hold callbacks");
+        goto hash_fail;
+     }
+
+{% for ui_event in ui_events %}
+   eina_hash_add(_callbacks,
+      eina_stringshare_add_length("{{ ui_event.name }}", sizeof("{{ ui_event.name }}") - 1),
+      _dispatch_{{ ui_event.c_name }});
+{%- endfor %}
+
    return EINA_TRUE;
+hash_fail:
+   eina_log_domain_unregister(_api_log_dom);
+fail:
+   return EINA_FALSE;
 }
 
 void
@@ -180,3 +237,80 @@ Eina_Bool
    return _send_request(nvim);
 }
 {% endfor %}
+
+
+/*============================================================================*
+ *                              Event Dispatching                             *
+ *============================================================================*/
+
+Eina_Bool
+nvim_api_dispatch_event(s_nvim *nvim, Eina_List *args)
+{
+   /*
+    * First step, iterate over all the commands. They are of the form
+    *           ["command": [args]]
+    * within the list. That's this latter list we are unrolling...
+    *
+    * We also CONSUME the arguments: they are deallocated as we iterate
+    * over them.
+    */
+   Eina_Value *top_arg;
+   EINA_LIST_FREE(args, top_arg)
+     {
+        /*
+         * Within the list of commands, we have a pair command, arguments,
+         * within a list. We are not supposed to have anything else than
+         * a list at tihs point of unrolling.
+         */
+        const Eina_Value_Type *const type = eina_value_type_get(top_arg);
+        if (EINA_LIKELY(type == EINA_VALUE_TYPE_LIST))
+          {
+             /* Get the list of arguments (command + its arguments) */
+             Eina_Value *cmd_val, *arg_val;
+             eina_value_list_get(top_arg, 0, &cmd_val);
+             eina_value_list_get(top_arg, 1, &arg_val);
+
+             /* The command is always the first element
+              * It is stored as a stringshare.
+              */
+             if (EINA_UNLIKELY(eina_value_type_get(cmd_val) != EINA_VALUE_TYPE_STRINGSHARE))
+               {
+                  ERR("First element is not a stringshare!? This is wrong!");
+                  continue;
+               }
+             Eina_Stringshare *cmd;
+             eina_value_get(cmd_val, &cmd);
+             DBG("Processing command: %s", cmd);
+
+             /* Now that we have a command, call the callback associated to it */
+             const f_dispatch func = eina_hash_find(_callbacks, cmd);
+             if (EINA_UNLIKELY(! func))
+               {
+                  CRI("Unregistered callback for command %s", cmd);
+                  continue;
+               }
+
+             /* The arguments are the second element (a list) */
+             if (EINA_UNLIKELY(eina_value_type_get(arg_val) != EINA_VALUE_TYPE_LIST))
+               {
+                  ERR("Second element is not a list!? This is wrong!");
+                  continue;
+               }
+             Eina_Value_List list_val;
+             eina_value_get(arg_val, &list_val);
+
+             /* Now, call the function with its arguments */
+             func(nvim, list_val.list);
+
+             /* Dealloc the values we got */
+             eina_value_free(cmd_val);
+             eina_value_free(arg_val);
+          }
+        else
+          {
+             ERR("Mh.... I'm pretty sure this should be a list");
+          }
+        eina_value_free(top_arg);
+     }
+   return EINA_TRUE;
+}

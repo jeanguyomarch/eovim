@@ -34,36 +34,6 @@ enum
 
 static Ecore_Event_Handler *_event_handlers[__HANDLERS_LAST];
 static Eina_Hash *_nvim_instances = NULL;
-static Eina_Hash *_callbacks = NULL;
-
-/*============================================================================*
- *                                Commands API                                *
- *============================================================================*/
-
-#define CHECK_ARGS_COUNT(Args, Count) \
-   if (EINA_UNLIKELY(eina_list_count(Args) != (Count))) { \
-      CRI("Invalid arguments count (%u instead of %u)", \
-          eina_list_count(Args), (Count)); return; }
-
-#define CHECK_ARG_TYPE(Arg, Type) \
-   if (EINA_UNLIKELY(eina_value_type_get(Arg) != Type)) { \
-      CRI("Invalid type (expected %s, got %s)", \
-          eina_value_type_name_get(Type), \
-          eina_value_type_name_get(eina_value_type_get(Arg))); return; }
-
-static void
-_nvim_update_fg(s_nvim *nvim, Eina_List *args)
-{
-   CHECK_ARGS_COUNT(args, 1);
-   Eina_Value *const val = eina_list_data_get(args);
-   CHECK_ARG_TYPE(val, EINA_VALUE_TYPE_INT64);
-
-   int64_t value;
-   eina_value_get(val, &value);
-   WRN("Hey, this is update_fg: %"PRIi64, value);
-
-   eina_value_free(val);
-}
 
 /*============================================================================*
  *                                 Private API                                *
@@ -195,93 +165,6 @@ fail:
 }
 
 
-static void
-_process_notif_arguments(s_nvim *nvim,
-                         Eina_List *args)
-{
-   /*
-    * First step, iterate over all the commands. They are of the form
-    *           ["command": [args]]
-    * within the list. That's this latter list we are unrolling...
-    *
-    * We also CONSUME the arguments: they are deallocated as we iterate
-    * over them.
-    */
-   Eina_Value *top_arg;
-   EINA_LIST_FREE(args, top_arg)
-     {
-        /*
-         * Within the list of commands, we have a pair command, arguments,
-         * within a list. We are not supposed to have anything else than
-         * a list at tihs point of unrolling.
-         */
-        const Eina_Value_Type *const type = eina_value_type_get(top_arg);
-        if (EINA_LIKELY(type == EINA_VALUE_TYPE_LIST))
-          {
-             /* Get the list of arguments (command + its arguments) */
-             //Eina_Value_List sub_args;
-             //eina_value_get(top_arg, &sub_args);
-             Eina_Value *cmd_val, *arg_val;
-             eina_value_list_get(top_arg, 0, &cmd_val);
-             eina_value_list_get(top_arg, 1, &arg_val);
-
-             /* The command is always the first element
-              * It is stored as a stringshare.
-              */
-             //Eina_Value *const cmd_val = eina_list_data_get(sub_args.list);
-             if (EINA_UNLIKELY(eina_value_type_get(cmd_val) != EINA_VALUE_TYPE_STRINGSHARE))
-               {
-                  ERR("First element is not a stringshare!? This is wrong!");
-                  continue;
-               }
-             Eina_Stringshare *cmd;
-             eina_value_get(cmd_val, &cmd);
-             DBG("Command: %s", cmd);
-
-                    /* Now that we have a command, call the callback associated to it */
-             const f_nvim_notif func = eina_hash_find(_callbacks, cmd);
-             if (EINA_UNLIKELY(! func))
-               {
-                  //       CRI("Unregistered callback for command %s", cmd);
-                  continue;
-               }
-
-             /* The arguments are the second element (a list) */
-             if (EINA_UNLIKELY(eina_value_type_get(arg_val) != EINA_VALUE_TYPE_LIST))
-               {
-                  ERR("Second element is not a list!? This is wrong!");
-                  continue;
-               }
-             Eina_Value_List list_val;
-             eina_value_get(arg_val, &list_val);
-
-             /* Now, call the function with its arguments */
-             func(nvim, list_val.list);
-
-             /* Dealloc the values we got */
-             eina_value_free(cmd_val);
-             eina_value_free(arg_val);
-          }
-        else
-          {
-             ERR("Mh.... I'm pretty sure this should be a list");
-          }
-        eina_value_free(top_arg);
-        //else if (type == EINA_VALUE_TYPE_HASH)
-        //  {
-        //     Eina_Value_Hash sub_args;
-        //     eina_value_get(arg, &sub_args);
-        //  }
-        //else
-        //  {
-        //     INF("%s %s: %s",
-        //         prefix,
-        //         eina_value_type_name_get(type),
-        //         eina_value_to_string(arg));
-        //  }
-     }
-}
-
 static Eina_Bool
 _handle_notification(s_nvim *nvim,
                      const msgpack_object_array *args)
@@ -314,7 +197,7 @@ _handle_notification(s_nvim *nvim,
         goto fail;
      }
    Eina_List *const objs = pack_array_get(&args->ptr[2].via.array);
-   _process_notif_arguments(nvim, objs);
+   nvim_api_dispatch_event(nvim, objs);
 
    return EINA_TRUE;
 fail:
@@ -458,15 +341,6 @@ _nvim_received_error_cb(void *data EINA_UNUSED,
 Eina_Bool
 nvim_init(void)
 {
-   struct cb {
-      const char *const name;
-      const unsigned int size;
-      const f_nvim_notif func;
-   } const callbacks[] = {
-#define CB(Name, Func) { .name = Name, .size = sizeof(Name) - 1, .func = Func }
-      CB("update_fg", _nvim_update_fg),
-#undef CB
-   };
    struct {
       const int event;
       const Ecore_Event_Handler_Cb callback;
@@ -511,27 +385,8 @@ nvim_init(void)
         goto fail;
      }
 
-   /* Create a hash table that will hold the callbacks for nvim commands */
-   _callbacks = eina_hash_stringshared_new(NULL);
-   if (EINA_UNLIKELY(! _callbacks))
-     {
-        CRI("Failed to create hash table to hold callbacks");
-        goto hash_fail;
-     }
-
-   for (unsigned int j = 0; j < EINA_C_ARRAY_LENGTH(callbacks); j++)
-     {
-        const struct cb *const cb = &(callbacks[j]);
-        Eina_Stringshare *const key = eina_stringshare_add_length(
-           cb->name, cb->size
-        );
-        eina_hash_add(_callbacks, key, cb->func);
-     }
-
    return EINA_TRUE;
 
-hash_fail:
-   eina_hash_free(_nvim_instances);
 fail:
    for (i--; (int)i >= 0; i--)
      ecore_event_handler_del(_event_handlers[i]);
@@ -544,7 +399,6 @@ nvim_shutdown(void)
    for (unsigned int i = 0; i < EINA_C_ARRAY_LENGTH(_event_handlers); i++)
      ecore_event_handler_del(_event_handlers[i]);
    eina_hash_free(_nvim_instances);
-   eina_hash_free(_callbacks);
 }
 
 uint32_t

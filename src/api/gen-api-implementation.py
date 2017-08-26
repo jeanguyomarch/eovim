@@ -26,82 +26,98 @@ TYPE_TABLE = {
     'ArrayOf(Window)': (
         'void*',
         'pack_non_implemented',
-        'pack_non_implemented_get'
+        'pack_non_implemented_get',
+        'NULL',
     ),
     'ArrayOf(Buffer)': (
         'void*',
         'pack_non_implemented',
-        'pack_non_implemented_get'
+        'pack_non_implemented_get',
+        'NULL',
     ),
     'ArrayOf(Tabpage)': (
         'void*',
         'pack_non_implemented',
-        'pack_non_implemented_get'
+        'pack_non_implemented_get',
+        'NULL',
     ),
     'ArrayOf(String)': (
         'Eina_List*',
         'pack_list_of_strings',
-        'pack_strings_get'
+        'pack_strings_get',
+        'NULL',
     ),
     'ArrayOf(Dictionary)': (
         'Eina_List*',
         'pack_non_implemented',
-        'pack_non_implemented_get'
+        'pack_non_implemented_get',
+        'NULL',
     ),
     'ArrayOf(Integer, 2)': (
         's_position',
         'pack_position',
-        'pack_position_get'
+        'pack_position_get',
+        'NULL',
     ),
     'Integer': (
         't_int',
         'msgpack_pack_int64',
-        'pack_int_get'
+        'pack_int_get',
+        'pack_dispatch_integer',
     ),
     'void': (
         'void',
         None,
-        None
+        None,
+        None,
     ),
     'String': (
         'Eina_Stringshare*',
         'pack_stringshare',
-        'pack_stringshare_get'
+        'pack_stringshare_get',
+        'pack_dispatch_stringshare',
     ),
     'Buffer': (
         'void*',
         'pack_non_implemented',
-        'pack_non_implemented_get'
+        'pack_non_implemented_get',
+        'NULL',
     ),
     'Window': (
         'void*',
         'pack_non_implemented',
-        'pack_non_implemented_get'
+        'pack_non_implemented_get',
+        'NULL',
     ),
     'Tabpage': (
         'void*',
         'pack_non_implemented',
-        'pack_non_implemented_get'
+        'pack_non_implemented_get',
+        'pack_dispatch_tabpage',
     ),
     'Dictionary': (
         'Eina_Hash*',
         'pack_dictionary',
-        'pack_non_implemented_get'
+        'pack_non_implemented_get',
+        'pack_dispatch_hash',
     ),
     'Array': (
         'Eina_List*',
         'pack_non_implemented',
-        'pack_array_get'
+        'pack_array_get',
+        'pack_dispatch_list',
     ),
     'Object': (
         'Eina_Value*',
         'pack_object',
-        'pack_object_get'
+        'pack_object_get',
+        'NULL',
     ),
     'Boolean': (
         'Eina_Bool',
         'pack_boolean',
-        'pack_boolean_get'
+        'pack_boolean_get',
+        'pack_dispatch_boolean',
     ),
 }
 
@@ -147,13 +163,33 @@ def fixup_db(db):
     # Remove functions that we don't want to generate
     db["functions"] = [x for x in db["functions"] if x not in to_be_removed]
 
+    # Process the UI Events.
+    # Ui events are posted by neovim, and do not return. They are simple
+    # procedures.
+    for event in db["ui_events"]:
+        event["event"] = "EVENT_{}".format(event["name"].upper())
+        event["c_name"] = "nvim_event_{}".format(event["name"])
+        if event["parameters"]:
+            c_parameters = []
+            for param in event["parameters"]:
+                param_type = convert_param(param[0])
+                c_parameters.append((param_type, param[1]))
+            event["c_parameters"] = c_parameters
+            event["parameters_count"] = len(event["parameters"])
+        else:
+            event["c_parameters"] = []
+            event["parameters_count"] = 0
+
     packers = {}
     unpackers = {}
+    dispatchers = {}
     for key, val in TYPE_TABLE.items():
         packers[key] = val[1]
         unpackers[key] = val[2]
+        dispatchers[key] = val[3]
     db["packers"] = packers
     db["unpackers"] = unpackers
+    db["dispatchers"] = dispatchers
 
 def main(argv):
     args = getopts(argv)

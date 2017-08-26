@@ -29,16 +29,26 @@
 
 typedef enum
 {
-{% for function in functions %}
+{%- for function in functions %}
    {{ function.request }},
 {%- endfor %}
 
    __REQUEST_LAST /* Sentinel */
 } e_request;
 
+typedef enum
+{
+{%- for ui_event in ui_events %}
+   {{ ui_event.event }},
+{%- endfor %}
+
+   __EVENT_LAST /* Sentinel */
+} e_event;
+
 
 Eina_Bool nvim_api_init(void);
 void nvim_api_shutdown(void);
+Eina_Bool nvim_api_dispatch_event(s_nvim *nvim, Eina_List *args);
 
 
 /*============================================================================*
@@ -61,6 +71,20 @@ void nvim_api_shutdown(void);
       , {{ type }} {{ name }}
    {%- endfor -%}
    , f_{{ function.name }} then_cb, f_request_error error_cb, void *cb_data);
+{% endfor %}
+
+/*============================================================================*
+ *                                RPC UI Events                               *
+ *============================================================================*/
+
+{% for ui_event in ui_events -%}
+   void {{ ui_event.c_name }}(s_nvim *nvim
+   {%- if ui_event.c_parameters -%}
+      {%- for type, name in ui_event.c_parameters -%}
+         , {{ type }} {{ name }}
+      {%- endfor -%}
+   {%- endif -%}
+   );
 {% endfor %}
 
 #endif /* ! __ENVIM_NVIM_API_H__ */
