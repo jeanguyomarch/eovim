@@ -22,6 +22,8 @@
 
 #include "Envim.h"
 
+static Eina_Stringshare *_put_command = NULL;
+
 /*============================================================================*
  *                                 Packing API                                *
  *============================================================================*/
@@ -206,6 +208,12 @@ Eina_Value *
 pack_single_object_get(const msgpack_object *obj)
 {
    Eina_Value *value = NULL;
+   static unsigned int count = 0;
+   static Eina_Bool next_is_put_data = EINA_FALSE;
+
+   count++;
+   if (! _put_command) _put_command = eina_stringshare_add("put");
+
    switch (obj->type)
      {
       case MSGPACK_OBJECT_ARRAY:
@@ -216,6 +224,12 @@ pack_single_object_get(const msgpack_object *obj)
           */
            {
               const msgpack_object_array *const arr = &(obj->via.array);
+              if (next_is_put_data)
+                {
+                   WRN("Put data size is %u (%s)", arr->size,
+                       arr->ptr[0].via.str.ptr);
+                   next_is_put_data = EINA_FALSE;
+                }
               value = eina_value_list_new(ENVIM_VALUE_TYPE_NESTED);
               for (unsigned int i = 0; i < arr->size; i++)
                 {
@@ -276,7 +290,13 @@ pack_single_object_get(const msgpack_object *obj)
               if (EINA_UNLIKELY(! shr))
                 {
                    CRI("Failed to create stringshare from msgpack data");
-                   return NULL;
+                   break;
+                }
+
+              if (shr == _put_command)
+                {
+                   WRN("count is %u, next is put data", count);
+                   next_is_put_data = EINA_TRUE;
                 }
               value = eina_value_new(EINA_VALUE_TYPE_STRINGSHARE);
               eina_value_set(value, shr);
@@ -287,6 +307,7 @@ pack_single_object_get(const msgpack_object *obj)
          CRI("Unhandled object type 0x%x", obj->type); break;
      }
 
+   count--;
    return value;
 }
 
@@ -347,69 +368,4 @@ pack_non_implemented_get(const msgpack_object_array *args EINA_UNUSED)
 {
    CRI("Non implemented");
    return NULL;
-}
-
-
-/*============================================================================*
- *                                Dispatch API                                *
- *============================================================================*/
-
-#define CHECK_ARG_TYPE(Arg, Type, ...) \
-   if (EINA_UNLIKELY(eina_value_type_get(Arg) != Type)) { \
-      CRI("Invalid type (expected %s, got %s)", \
-          eina_value_type_name_get(Type), \
-          eina_value_type_name_get(eina_value_type_get(Arg))); return __VA_ARGS__; }
-
-Eina_Bool
-pack_dispatch_boolean(Eina_Value *arg)
-{
-   CHECK_ARG_TYPE(arg, ENVIM_VALUE_TYPE_BOOL, EINA_FALSE);
-
-   Eina_Bool value;
-   eina_value_get(arg, &value);
-   return value;
-}
-
-t_int
-pack_dispatch_integer(Eina_Value *arg)
-{
-   CHECK_ARG_TYPE(arg, EINA_VALUE_TYPE_INT64, 0);
-
-   t_int value;
-   eina_value_get(arg, &value);
-   return value;
-}
-
-Eina_Stringshare *
-pack_dispatch_stringshare(Eina_Value *arg)
-{
-   CHECK_ARG_TYPE(arg, EINA_VALUE_TYPE_STRINGSHARE, 0);
-
-   Eina_Stringshare *value;
-   eina_value_get(arg, &value);
-   return value;
-}
-
-Eina_List *
-pack_dispatch_list(Eina_Value *arg EINA_UNUSED)
-{
-   CRI("Not implemented");
-   return NULL;
-}
-
-void *
-pack_dispatch_tabpage(Eina_Value *arg EINA_UNUSED)
-{
-   CRI("Not implemented");
-   return NULL;
-}
-
-Eina_Hash *
-pack_dispatch_hash(Eina_Value *arg)
-{
-   CHECK_ARG_TYPE(arg, EINA_VALUE_TYPE_HASH, NULL);
-
-   Eina_Value_Hash hash_val;
-   eina_value_get(arg, &hash_val);
-   return hash_val.hash;
 }

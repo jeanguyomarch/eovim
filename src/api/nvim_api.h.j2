@@ -48,7 +48,10 @@ typedef enum
 
 Eina_Bool nvim_api_init(void);
 void nvim_api_shutdown(void);
-Eina_Bool nvim_api_dispatch_event(s_nvim *nvim, Eina_List *args);
+Eina_Bool nvim_event_init(void);
+void nvim_event_shutdown(void);
+Eina_Bool nvim_api_event_dispatch(s_nvim *nvim, Eina_Stringshare *command,
+                                  const msgpack_object_array *args);
 
 
 /*============================================================================*
@@ -78,13 +81,7 @@ Eina_Bool nvim_api_dispatch_event(s_nvim *nvim, Eina_List *args);
  *============================================================================*/
 
 {% for ui_event in ui_events -%}
-   void {{ ui_event.c_name }}(s_nvim *nvim
-   {%- if ui_event.c_parameters -%}
-      {%- for type, name in ui_event.c_parameters -%}
-         , {{ type }} {{ name }}
-      {%- endfor -%}
-   {%- endif -%}
-   );
+   Eina_Bool {{ ui_event.c_name }}(s_nvim *nvim, const msgpack_object_array *args);
 {% endfor %}
 
 #endif /* ! __ENVIM_NVIM_API_H__ */

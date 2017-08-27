@@ -76,6 +76,8 @@ _nvim_get(const Ecore_Exe *exe)
    return eina_hash_find(_nvim_instances, &exe);
 }
 
+
+
 static Eina_Bool
 _handle_request_response(s_nvim *nvim,
                          const msgpack_object_array *args)
@@ -187,6 +189,7 @@ _handle_notification(s_nvim *nvim,
         goto fail;
      }
    DBG("Received notification '%s'", method);
+   eina_stringshare_del(method); /* No need of it anymore... */
 
    /*
     * 3rd argument must be an array of objects
@@ -196,8 +199,44 @@ _handle_notification(s_nvim *nvim,
         ERR("Third argument in notification is expected to be an array");
         goto fail;
      }
-   Eina_List *const objs = pack_array_get(&args->ptr[2].via.array);
-   nvim_api_dispatch_event(nvim, objs);
+   const msgpack_object_array *const args_arr = &(args->ptr[2].via.array);
+   /*
+    * Go through the notification's commands. There are formatted of the form
+    * [ command_name, Args... ]
+    * So we expect arguments to be arrays of at least one element.
+    * command_name must be a string!
+    */
+   for (unsigned int i = 0; i < args_arr->size; i++)
+     {
+        const msgpack_object *const arg = &(args_arr->ptr[i]);
+        if (EINA_UNLIKELY(arg->type != MSGPACK_OBJECT_ARRAY))
+          {
+             CRI("Expected argument of type array. Got 0x%x.", arg->type);
+             continue; /* Try next element */
+          }
+        const msgpack_object_array *const cmd = &(arg->via.array);
+        if (EINA_UNLIKELY(cmd->size < 1))
+          {
+             CRI("Expected at least one argument. Got %"PRIu32, cmd->size);
+             continue; /* Try next element */
+          }
+        const msgpack_object *const cmd_name_obj = &(cmd->ptr[0]);
+        if (EINA_UNLIKELY(cmd_name_obj->type != MSGPACK_OBJECT_STR))
+          {
+             CRI("Expected command to be of type string. Got 0x%x", arg->type);
+             continue; /* Try next element */
+          }
+        const msgpack_object_str *const cmd_obj = &(cmd_name_obj->via.str);
+        Eina_Stringshare *command = eina_stringshare_add_length(
+           cmd_obj->ptr, cmd_obj->size
+        );
+        if (EINA_UNLIKELY(! command))
+          {
+             CRI("Failed to create stringshare from command object");
+             continue; /* Try next element */
+          }
+        nvim_api_event_dispatch(nvim, command, cmd);
+     }
 
    return EINA_TRUE;
 fail:
@@ -276,7 +315,7 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
         /* Uncomment to roughly dump the received messages */
 #if 1
         msgpack_object_print(stderr, obj);
-        fprintf(stderr, "\n");
+        fprintf(stderr, "\n--------\n");
 #endif
 
         if (obj.type != MSGPACK_OBJECT_ARRAY)

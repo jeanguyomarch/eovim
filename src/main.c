@@ -60,6 +60,7 @@ static const s_module _modules[] =
 
    MODULE(types),
    MODULE(nvim_api),
+   MODULE(nvim_event),
    MODULE(gui),
    MODULE(request),
    MODULE(nvim),

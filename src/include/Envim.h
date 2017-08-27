@@ -161,13 +161,6 @@ Eina_Value *pack_single_object_get(const msgpack_object *obj);
 Eina_Stringshare *pack_single_stringshare_get(const msgpack_object *obj);
 void *pack_non_implemented_get(const msgpack_object_array *args);
 
-Eina_Hash *pack_dispatch_hash(Eina_Value *arg);
-void *pack_dispatch_tabpage(Eina_Value *arg);
-Eina_List *pack_dispatch_list(Eina_Value *arg);
-Eina_Stringshare *pack_dispatch_stringshare(Eina_Value *arg);
-t_int pack_dispatch_integer(Eina_Value *arg);
-Eina_Bool pack_dispatch_boolean(Eina_Value *arg);
-
 extern const Eina_Value_Type *ENVIM_VALUE_TYPE_BOOL;
 extern const Eina_Value_Type *ENVIM_VALUE_TYPE_NESTED;
 
