@@ -20,30 +20,19 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_GUI_H__
-#define __ENVIM_GUI_H__
+#ifndef __ENVIM_TYPES_H__
+#define __ENVIM_TYPES_H__
 
-#include <Elementary.h>
+#include <stdint.h>
 
-#include "envim/termview.h"
+typedef int64_t t_int;
+typedef struct version s_version;
+typedef struct request s_request;
+typedef struct nvim s_nvim;
+typedef struct position s_position;
+typedef struct gui s_gui;
+typedef void (*f_request_error)(const s_nvim *nvim, const s_request *req, void *data);
 
+#define T_INT_INVALID ((t_int)-1)
 
-struct gui
-{
-   Evas_Object *win;
-   Evas_Object *layout;
-   Evas_Object *termview;
-};
-
-Eina_Bool gui_add(s_gui *gui);
-void gui_del(s_gui *gui);
-void gui_resize(s_gui *gui, unsigned int cols, unsigned int rows);
-void gui_clear(s_gui *gui);
-void gui_put(s_gui *gui, const char *string, unsigned int size);
-void gui_cursor_goto(s_gui *gui, unsigned int to_x, unsigned int to_y);
-void gui_style_set(s_gui *gui, const s_termview_style *style);
-void gui_update_fg(s_gui *gui, t_int color);
-void gui_update_bg(s_gui *gui, t_int color);
-void gui_update_sp(s_gui *gui, t_int color);
-
-#endif /* ! __ENVIM_GUI_H__ */
+#endif /* ! __ENVIM_TYPES_H__ */

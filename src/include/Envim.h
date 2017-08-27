@@ -26,20 +26,13 @@
 #include <msgpack.h>
 #include <Elementary.h>
 
-
-typedef struct version s_version;
-typedef struct request s_request;
-typedef struct nvim s_nvim;
-typedef struct position s_position;
-typedef struct gui s_gui;
-typedef int64_t t_int;
-typedef void (*f_request_error)(const s_nvim *nvim, const s_request *req, void *data);
-
-#define T_INT_INVALID ((t_int)-1)
+#include "envim/types.h"
 
 #include "nvim_api.h"
 
 #include "envim/gui.h"
+#include "envim/termview.h"
+#include "envim/log.h"
 
 struct request
 {
@@ -90,14 +83,6 @@ position_make(int64_t x, int64_t y)
 /*============================================================================*
  *                              Logging Framework                             *
  *============================================================================*/
-
-extern int _envim_log_domain;
-
-#define DBG(...) EINA_LOG_DOM_DBG(_envim_log_domain, __VA_ARGS__)
-#define INF(...) EINA_LOG_DOM_INFO(_envim_log_domain, __VA_ARGS__)
-#define WRN(...) EINA_LOG_DOM_WARN(_envim_log_domain, __VA_ARGS__)
-#define ERR(...) EINA_LOG_DOM_ERR(_envim_log_domain, __VA_ARGS__)
-#define CRI(...) EINA_LOG_DOM_CRIT(_envim_log_domain, __VA_ARGS__)
 
 
 /*============================================================================*

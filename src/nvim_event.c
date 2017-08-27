@@ -287,7 +287,7 @@ nvim_event_highlight_set(s_nvim *nvim,
           }
      }
 
-   s_gui_style style = {
+   s_termview_style style = {
       .fg_color = -1,
       .bg_color = -1,
       .sp_color = -1,
