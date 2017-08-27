@@ -415,24 +415,42 @@ nvim_event_flush(s_nvim *nvim EINA_UNUSED,
    return EINA_TRUE;
 }
 Eina_Bool
-nvim_event_update_fg(s_nvim *nvim EINA_UNUSED,
-                     const msgpack_object_array *args EINA_UNUSED)
+nvim_event_update_fg(s_nvim *nvim,
+                     const msgpack_object_array *args)
 {
-   CRI("Unimplemented");
+   CHECK_BASE_ARGS_COUNT(args, ==, 1);
+   ARRAY_OF_ARGS_EXTRACT(args, params);
+   CHECK_ARGS_COUNT(params, ==, 1);
+
+   t_int color;
+   GET_ARG(params, 0, t_int, &color);
+   gui_update_fg(&nvim->gui, color);
    return EINA_TRUE;
 }
 Eina_Bool
-nvim_event_update_bg(s_nvim *nvim EINA_UNUSED,
-                     const msgpack_object_array *args EINA_UNUSED)
+nvim_event_update_bg(s_nvim *nvim,
+                     const msgpack_object_array *args)
 {
-   CRI("Unimplemented");
+   CHECK_BASE_ARGS_COUNT(args, ==, 1);
+   ARRAY_OF_ARGS_EXTRACT(args, params);
+   CHECK_ARGS_COUNT(params, ==, 1);
+
+   t_int color;
+   GET_ARG(params, 0, t_int, &color);
+   gui_update_bg(&nvim->gui, color);
    return EINA_TRUE;
 }
 Eina_Bool
-nvim_event_update_sp(s_nvim *nvim EINA_UNUSED,
-                     const msgpack_object_array *args EINA_UNUSED)
+nvim_event_update_sp(s_nvim *nvim,
+                     const msgpack_object_array *args)
 {
-   CRI("Unimplemented");
+   CHECK_BASE_ARGS_COUNT(args, ==, 1);
+   ARRAY_OF_ARGS_EXTRACT(args, params);
+   CHECK_ARGS_COUNT(params, ==, 1);
+
+   t_int color;
+   GET_ARG(params, 0, t_int, &color);
+   gui_update_sp(&nvim->gui, color);
    return EINA_TRUE;
 }
 Eina_Bool

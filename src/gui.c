@@ -320,3 +320,33 @@ gui_style_set(s_gui *gui,
    gui->current.underline = style->underline;
    gui->current.undercurl = style->undercurl;
 }
+
+void
+gui_update_fg(s_gui *gui EINA_UNUSED,
+              t_int color)
+{
+   if (color >= 0)
+     {
+        CRI("Unimplemented");
+     }
+}
+
+void
+gui_update_bg(s_gui *gui EINA_UNUSED,
+              t_int color)
+{
+   if (color >= 0)
+     {
+        CRI("Unimplemented");
+     }
+}
+
+void
+gui_update_sp(s_gui *gui EINA_UNUSED,
+              t_int color)
+{
+   if (color >= 0)
+     {
+        CRI("Unimplemented");
+     }
+}
