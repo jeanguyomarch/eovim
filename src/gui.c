@@ -24,8 +24,8 @@
 
 static void
 _focus_in_cb(void *data,
-                 Evas_Object *obj EINA_UNUSED,
-                 void *event EINA_UNUSED)
+             Evas_Object *obj EINA_UNUSED,
+             void *event EINA_UNUSED)
 {
    s_gui *const gui = data;
    evas_object_focus_set(gui->termview, EINA_TRUE);
@@ -76,6 +76,13 @@ gui_add(s_gui *gui,
    /* FIXME Use a config */
    termview_font_set(gui->termview, "Mono", 14);
 
+   /*
+    * We set the resieing step of the window to the size of a cell of the
+    * textgrid that is embedded within the termview.
+    */
+   unsigned int cell_w, cell_h;
+   termview_cell_size_get(gui->termview, &cell_w, &cell_h);
+   elm_win_size_step_set(gui->win, (int)cell_w, (int)cell_h);
 
    elm_layout_content_set(gui->layout, "envim.main.view", gui->termview);
 
@@ -118,7 +125,7 @@ gui_resize(s_gui *gui,
     *
     * XXX: This won't work with the tabline!
     */
-   termview_resize(gui->termview, cols, rows);
+   termview_resize(gui->termview, cols, rows, EINA_TRUE);
 
    termview_cell_size_get(gui->termview, &cell_w, &cell_h);
    evas_object_resize(gui->win, (int)(cols * cell_w),

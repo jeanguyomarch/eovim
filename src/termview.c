@@ -67,7 +67,6 @@ struct termview
    /* Writing position */
    unsigned int x;
    unsigned int y;
-
 };
 
 static void
@@ -195,9 +194,12 @@ _smart_resize(Evas_Object *obj,
               Evas_Coord h)
 {
    s_termview *const sd = evas_object_smart_data_get(obj);
-
    evas_object_resize(sd->textgrid, w, h);
    evas_object_smart_changed(obj);
+
+   termview_resize(obj,
+                  (unsigned int)w / sd->cell_w,
+                  (unsigned int)h / sd->cell_h, EINA_FALSE);
 }
 
 static void
@@ -306,13 +308,25 @@ termview_size_get(const Evas_Object *obj,
 void
 termview_resize(Evas_Object *obj,
                 unsigned int cols,
-                unsigned int rows)
+                unsigned int rows,
+                Eina_Bool request)
 {
    s_termview *const sd = evas_object_smart_data_get(obj);
 
    evas_object_textgrid_size_set(sd->textgrid, (int)cols, (int)rows);
    sd->cols = cols;
    sd->rows = rows;
+
+   /*
+    * If request is TRUE, it means that the resizing request comes from neovim
+    * itself. It would make no sense to tell back neovim we want to resize the
+    * ui to the value it gave us.
+    * When this value is FALSE, it is a request from the window manager (the
+    * user manually resized a window). In this case, we tell neovim its display
+    * space has changed
+    */
+   if (! request)
+     nvim_ui_try_resize(sd->nvim, cols, rows, NULL, NULL, NULL);
 }
 
 void
