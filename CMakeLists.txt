@@ -53,6 +53,7 @@ add_custom_command(
    "${BUILD_THEMES_DIR}/default.edj"
    -author "${CMAKE_SOURCE_DIR}/AUTHORS"
    -license "${CMAKE_SOURCE_DIR}/LICENSE"
+   -id "${THEMES_DIR}/img"
 
    COMMENT "Generating Edje Theme"
 )

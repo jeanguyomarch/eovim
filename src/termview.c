@@ -22,7 +22,10 @@
 
 #include "envim/termview.h"
 #include "envim/log.h"
+#include "envim/main.h"
 #include "nvim_api.h"
+
+#include <Edje.h>
 
 #define COL_DEFAULT_BG 0
 #define COL_DEFAULT_FG 1
@@ -37,6 +40,7 @@ struct termview
 
    s_nvim *nvim;
    Evas_Object *textgrid;
+   Evas_Object *cursor;
    Eina_Hash *palettes;
 
    Eina_Stringshare *font_name;
@@ -93,6 +97,27 @@ _termview_key_down_cb(void *data,
    ERR("Key down: %s, %s, %s", ev->string, ev->compose, ev->key);
    if (ev->string)
      nvim_input(sd->nvim, ev->string, _input_keys_cb, NULL, NULL);
+   edje_object_signal_emit(sd->cursor, "key,down", "envim");
+}
+
+static void
+_termview_focus_in_cb(void *data,
+                      Evas *e EINA_UNUSED,
+                      Evas_Object *obj EINA_UNUSED,
+                      void *event EINA_UNUSED)
+{
+   s_termview *const sd = data;
+   edje_object_signal_emit(sd->cursor, "focus,in", "envim");
+}
+
+static void
+_termview_focus_out_cb(void *data,
+                      Evas *e EINA_UNUSED,
+                      Evas_Object *obj EINA_UNUSED,
+                      void *event EINA_UNUSED)
+{
+   s_termview *const sd = data;
+   edje_object_signal_emit(sd->cursor, "focus,out", "envim");
 }
 
 
@@ -106,21 +131,34 @@ _smart_add(Evas_Object *obj)
         return;
      }
 
+   /* Create the smart object */
    evas_object_smart_data_set(obj, sd);
    _parent_sc.add(obj);
+   evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_DOWN, _termview_key_down_cb, sd);
+   evas_object_event_callback_add(obj, EVAS_CALLBACK_FOCUS_IN, _termview_focus_in_cb, sd);
+   evas_object_event_callback_add(obj, EVAS_CALLBACK_FOCUS_OUT, _termview_focus_out_cb, sd);
 
-   /* Textgrid setup */
    Evas *const evas = evas_object_evas_get(obj);
    Evas_Object *o;
+
+   /* Textgrid setup */
    sd->textgrid = o = evas_object_textgrid_add(evas);
    evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_smart_member_add(o, obj);
-
    evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_MOVE, _textgrid_mouse_move_cb, sd);
-   evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_DOWN, _termview_key_down_cb, sd);
    evas_object_textgrid_cell_size_get(o, (int*)&sd->cell_w, (int*)&sd->cell_h);
+   evas_object_show(o);
 
+   /* Cursor setup */
+   sd->cursor = o = edje_object_add(evas);
+   edje_object_file_set(o, main_edje_file_get(), "envim/cursor");
+   evas_object_pass_events_set(o, EINA_TRUE);
+   evas_object_propagate_events_set(o, EINA_FALSE);
+   evas_object_smart_member_add(o, obj);
+   evas_object_show(o);
+
+   /* Creation of the palette items cache */
    sd->palettes = eina_hash_int32_new(NULL);
    if (EINA_UNLIKELY(! sd->palettes))
      {
@@ -135,7 +173,6 @@ _smart_add(Evas_Object *obj)
    );
    sd->palette_id_generator = 2; /* BG + FG */
 
-   evas_object_show(sd->textgrid);
 }
 
 static void
@@ -143,6 +180,7 @@ _smart_del(Evas_Object *obj)
 {
    s_termview *const sd = evas_object_smart_data_get(obj);
    evas_object_del(sd->textgrid);
+   evas_object_del(sd->cursor);
    eina_hash_free(sd->palettes);
    eina_stringshare_del(sd->font_name);
    evas_object_event_callback_del(sd->textgrid, EVAS_CALLBACK_MOUSE_MOVE,
@@ -171,9 +209,25 @@ _smart_move(Evas_Object *obj,
 }
 
 static void
-_smart_calculate(Evas_Object *obj EINA_UNUSED)
+_smart_calculate(Evas_Object *obj)
 {
-   //s_termview *const sd = evas_object_smart_data_get(obj);
+   s_termview *const sd = evas_object_smart_data_get(obj);
+   Evas_Coord ox, oy, ow, oh;
+   evas_object_geometry_get(obj, &ox, &oy, &ow, &oh);
+
+   /* Place the textgrid */
+   evas_object_move(sd->textgrid, ox, oy);
+   evas_object_resize(sd->textgrid,
+                      (int)(sd->cols * sd->cell_w),
+                      (int)(sd->rows * sd->cell_h));
+
+   /* Place the cursor */
+   evas_object_move(sd->cursor,
+                    ox + (int)(sd->x * sd->cell_w),
+                    oy + (int)(sd->y * sd->cell_h));
+   evas_object_resize(sd->cursor,
+                      (int)sd->cell_w,
+                      (int)sd->cell_h);
 }
 
 Eina_Bool
@@ -364,6 +418,12 @@ termview_cursor_goto(Evas_Object *obj,
         ERR("Attempt to move cursor outside of known width.");
         to_x = sd->cols;
      }
+
+   Evas_Coord x, y;
+   evas_object_geometry_get(sd->textgrid, &x, &y, NULL, NULL);
+   evas_object_move(sd->cursor,
+                    x + (int)(to_x * sd->cell_w),
+                    y + (int)(to_y * sd->cell_h));
 
    sd->x = to_x;
    sd->y = to_y;

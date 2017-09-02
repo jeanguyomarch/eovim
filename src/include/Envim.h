@@ -33,6 +33,7 @@
 #include "envim/gui.h"
 #include "envim/termview.h"
 #include "envim/log.h"
+#include "envim/main.h"
 
 struct request
 {
@@ -84,13 +85,6 @@ position_make(int64_t x, int64_t y)
  *                              Logging Framework                             *
  *============================================================================*/
 
-
-/*============================================================================*
- *                                  Main API                                  *
- *============================================================================*/
-
-Eina_Bool main_in_tree_is(void);
-const char *main_edje_file_get(void);
 
 
 /*============================================================================*
