@@ -264,7 +264,24 @@ _nvim_deleted_cb(void *data EINA_UNUSED,
                  void *event)
 {
    const Ecore_Exe_Event_Del *const info = event;
-   INF("Process with PID %i died", ecore_exe_pid_get(info->exe));
+   s_nvim *const nvim = _nvim_get(info->exe);
+   const int pid = ecore_exe_pid_get(info->exe);
+
+   /* Determine whether nvim died or not */
+   Eina_Bool show_error = EINA_TRUE;
+   if ((info->exited) && (info->exit_code == 0))
+     show_error = EINA_FALSE;
+
+   if (show_error)
+     {
+        // TODO gui error
+        ERR("Process with PID %i died", pid);
+     }
+   else
+     {
+        INF("Process with PID %i terminated", pid);
+        gui_del(&nvim->gui);
+     }
    return ECORE_CALLBACK_PASS_ON;
 }
 
