@@ -20,13 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include <Eo.h>
-#include <Elementary.h>
-#include <efl_ui_layout.eo.h>
 #include "envim/termview.h"
 #include "envim/log.h"
-
-#define MY_CLASS ENVIM_TERMVIEW_CLASS
 
 #define COL_DEFAULT_BG 0
 #define COL_DEFAULT_FG 1
@@ -85,124 +80,52 @@ _termview_key_down_cb(void *data EINA_UNUSED,
 }
 
 
-EOLIAN static void
-_envim_termview_size_get(Eo *obj EINA_UNUSED, s_termview *sd,
-                         unsigned int *rows,
-                         unsigned int *cols)
+static void
+_smart_add(Evas_Object *obj)
 {
-   if (cols) *cols = sd->cols;
-   if (rows) *rows = sd->rows;
-}
-
-EOLIAN static void
-_envim_termview_cell_size_get(Eo *obj EINA_UNUSED, s_termview *sd,
-                              unsigned int *width,
-                              unsigned int *height)
-{
-   if (width) *width = sd->cell_w;
-   if (height) *height = sd->cell_h;
-}
-
-EOLIAN static void
-_envim_termview_resize(Eo *obj EINA_UNUSED, s_termview *sd,
-                       unsigned int cols,
-                       unsigned int rows)
-{
-   evas_object_textgrid_size_set(sd->textgrid, (int)cols, (int)rows);
-   sd->cols = cols;
-   sd->rows = rows;
-}
-
-EOLIAN static void
-_envim_termview_font_set(Eo *obj EINA_UNUSED, s_termview *sd,
-                         const char *font_name,
-                         unsigned int font_size)
-{
-   evas_object_textgrid_font_set(sd->textgrid, font_name, (int)font_size);
-   evas_object_textgrid_cell_size_get(sd->textgrid,
-                                      (int*)&sd->cell_w, (int*)&sd->cell_h);
-}
-
-EOLIAN static void
-_envim_termview_clear(Eo *obj EINA_UNUSED, s_termview *sd)
-{
-   /*
-    * Go through each line (row) in the textgrid, and reset all the cells.
-    * Memset() is an efficient way to do that as it will reset both the
-    * codepoint and the attributes.
-    */
-   for (unsigned int y = 0; y < sd->rows; y++)
+   s_termview *const sd = calloc(1, sizeof(s_termview));
+   if (EINA_UNLIKELY(! sd))
      {
-        Evas_Textgrid_Cell *const cells = evas_object_textgrid_cellrow_get(
-           sd->textgrid, (int)y
-        );
-        memset(cells, 0, sizeof(Evas_Textgrid_Cell) * sd->cols);
+        CRI("Failed to allocate termview structure");
+        return;
      }
 
-   /* Reset the writing position to (0,0) */
-   sd->x = 0;
-   sd->y = 0;
-}
+   evas_object_smart_data_set(obj, sd);
+   _parent_sc.add(obj);
 
-EOLIAN static void
-_envim_termview_cursor_goto(Eo *obj EINA_UNUSED, s_termview *sd,
-                            unsigned int to_x,
-                            unsigned int to_y)
-{
-   if (EINA_UNLIKELY(to_y > sd->rows))
+
+   /* Font setup (FIXME: use a config) */
+   sd->font_name = eina_stringshare_add("Mono");
+   sd->font_size = 14;
+
+   /* Textgrid setup */
+   Evas *const evas = evas_object_evas_get(obj);
+   Evas_Object *o;
+   sd->textgrid = o = evas_object_textgrid_add(evas);
+   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_smart_member_add(o, obj);
+
+   evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_MOVE, _textgrid_mouse_move_cb, sd);
+   evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_DOWN, _termview_key_down_cb, sd);
+   evas_object_textgrid_cell_size_get(o, (int*)&sd->cell_w, (int*)&sd->cell_h);
+
+   sd->palettes = eina_hash_int32_new(NULL);
+   if (EINA_UNLIKELY(! sd->palettes))
      {
-        ERR("Attempt to move cursor outside of known height.");
-        to_y = sd->rows;
-     }
-   if (EINA_UNLIKELY(to_x > sd->cols))
-     {
-        ERR("Attempt to move cursor outside of known width.");
-        to_x = sd->cols;
+        CRI("Failed to create hash for color palettes");
+        return;
      }
 
-   sd->x = to_x;
-   sd->y = to_y;
-}
-
-EOLIAN static void
-_envim_termview_put(Eo *obj EINA_UNUSED, s_termview *sd,
-                    const char *text,
-                    unsigned int size)
-{
-   Evas_Textgrid_Cell *const cells = evas_object_textgrid_cellrow_get(
-      sd->textgrid, (int)sd->y
+   /* Palette item #0 is the default BG */
+   evas_object_textgrid_palette_set(
+      o, EVAS_TEXTGRID_PALETTE_EXTENDED,
+      COL_DEFAULT_FG, 255, 255, 255, 255
    );
+   sd->palette_id_generator = 2; /* BG + FG */
 
-   if (EINA_UNLIKELY(sd->x + size > sd->cols))
-     {
-        ERR("String would overflow textgrid. Truncating.");
-        size = sd->cols - sd->x;
-     }
-
-   for (unsigned int x = 0; x < size; x++)
-     {
-        Evas_Textgrid_Cell *const c = &(cells[x + sd->x]);
-        c->codepoint = text[x];
-        if (sd->current.reverse)
-          {
-             c->fg = sd->current.bg;
-             c->bg = sd->current.fg;
-          }
-        else
-          {
-             c->fg = sd->current.fg;
-             c->bg = sd->current.bg;
-          }
-        c->bold = !!sd->current.bold;
-        c->italic = !!sd->current.italic;
-        c->underline = !!sd->current.underline;
-        c->bg_extended = 1;
-        c->fg_extended = 1;
-     }
-   sd->x += size;
+   evas_object_show(sd->textgrid);
 }
-
-
 
 static void
 _smart_del(Evas_Object *obj)
@@ -241,6 +164,166 @@ _smart_calculate(Evas_Object *obj EINA_UNUSED)
 {
    //s_termview *const sd = evas_object_smart_data_get(obj);
 }
+
+Eina_Bool
+termview_init(void)
+{
+   static Evas_Smart_Class sc;
+
+   evas_object_smart_clipped_smart_set(&_parent_sc);
+   sc           = _parent_sc;
+   sc.name      = "termview";
+   sc.version   = EVAS_SMART_CLASS_VERSION;
+   sc.add       = _smart_add;
+   sc.del       = _smart_del;
+   sc.resize    = _smart_resize;
+   sc.move      = _smart_move;
+   sc.calculate = _smart_calculate;
+   _smart = evas_smart_class_new(&sc);
+
+   return EINA_TRUE;
+}
+
+void
+termview_shutdown(void)
+{}
+
+Evas_Object *
+termview_add(Evas_Object *parent)
+{
+   Evas *const e  = evas_object_evas_get(parent);
+   Evas_Object *const obj = evas_object_smart_add(e, _smart);
+
+   return obj;
+}
+
+void
+termview_font_set(Evas_Object *obj,
+                  const char *font_name,
+                  unsigned int font_size)
+{
+   s_termview *const sd = evas_object_smart_data_get(obj);
+   evas_object_textgrid_font_set(sd->textgrid, font_name, (int)font_size);
+   evas_object_textgrid_cell_size_get(sd->textgrid,
+                                      (int*)&sd->cell_w, (int*)&sd->cell_h);
+}
+
+void
+termview_cell_size_get(const Evas_Object *obj,
+                       unsigned int *w,
+                       unsigned int *h)
+{
+   s_termview *const sd = evas_object_smart_data_get(obj);
+   if (w) *w = sd->cell_w;
+   if (h) *h = sd->cell_h;
+}
+
+void
+termview_size_get(const Evas_Object *obj,
+                  unsigned int *cols,
+                  unsigned int *rows)
+{
+   s_termview *const sd = evas_object_smart_data_get(obj);
+   if (cols) *cols = sd->cols;
+   if (rows) *rows = sd->rows;
+}
+
+void
+termview_resize(Evas_Object *obj,
+                unsigned int cols,
+                unsigned int rows)
+{
+   s_termview *const sd = evas_object_smart_data_get(obj);
+
+   evas_object_textgrid_size_set(sd->textgrid, (int)cols, (int)rows);
+   sd->cols = cols;
+   sd->rows = rows;
+}
+
+void
+termview_clear(Evas_Object *obj)
+{
+   s_termview *const sd = evas_object_smart_data_get(obj);
+
+   /*
+    * Go through each line (row) in the textgrid, and reset all the cells.
+    * Memset() is an efficient way to do that as it will reset both the
+    * codepoint and the attributes.
+    */
+   for (unsigned int y = 0; y < sd->rows; y++)
+     {
+        Evas_Textgrid_Cell *const cells = evas_object_textgrid_cellrow_get(
+           sd->textgrid, (int)y
+        );
+        memset(cells, 0, sizeof(Evas_Textgrid_Cell) * sd->cols);
+     }
+
+   /* Reset the writing position to (0,0) */
+   sd->x = 0;
+   sd->y = 0;
+}
+
+void
+termview_put(Evas_Object *obj,
+             const char *string,
+             unsigned int size)
+{
+   s_termview *const sd = evas_object_smart_data_get(obj);
+
+   Evas_Textgrid_Cell *const cells = evas_object_textgrid_cellrow_get(
+      sd->textgrid, (int)sd->y
+   );
+
+   if (EINA_UNLIKELY(sd->x + size > sd->cols))
+     {
+        ERR("String would overflow textgrid. Truncating.");
+        size = sd->cols - sd->x;
+     }
+
+   for (unsigned int x = 0; x < size; x++)
+     {
+        Evas_Textgrid_Cell *const c = &(cells[x + sd->x]);
+        c->codepoint = string[x];
+        if (sd->current.reverse)
+          {
+             c->fg = sd->current.bg;
+             c->bg = sd->current.fg;
+          }
+        else
+          {
+             c->fg = sd->current.fg;
+             c->bg = sd->current.bg;
+          }
+        c->bold = !!sd->current.bold;
+        c->italic = !!sd->current.italic;
+        c->underline = !!sd->current.underline;
+        c->bg_extended = 1;
+        c->fg_extended = 1;
+     }
+   sd->x += size;
+}
+
+void
+termview_cursor_goto(Evas_Object *obj,
+                     unsigned int to_x,
+                     unsigned int to_y)
+{
+   s_termview *const sd = evas_object_smart_data_get(obj);
+   if (EINA_UNLIKELY(to_y > sd->rows))
+     {
+        ERR("Attempt to move cursor outside of known height.");
+        to_y = sd->rows;
+     }
+   if (EINA_UNLIKELY(to_x > sd->cols))
+     {
+        ERR("Attempt to move cursor outside of known width.");
+        to_x = sd->cols;
+     }
+
+   sd->x = to_x;
+   sd->y = to_y;
+}
+
 
 
 static s_termview_color
@@ -303,10 +386,12 @@ _make_palette_from_color(s_termview *sd,
      }
 }
 
-EOLIAN static void
-_envim_termview_style_set(Eo *obj EINA_UNUSED, s_termview *sd,
-                          const s_termview_style *style)
+void
+termview_style_set(Evas_Object *obj,
+                   const s_termview_style *style)
 {
+   s_termview *const sd = evas_object_smart_data_get(obj);
+
    sd->current.fg = _make_palette_from_color(
       sd, style->fg_color, EINA_TRUE, style->reverse
    );
@@ -323,56 +408,3 @@ _envim_termview_style_set(Eo *obj EINA_UNUSED, s_termview *sd,
    sd->current.undercurl = style->undercurl;
 }
 
-EOLIAN static void
-_envim_termview_efl_canvas_group_group_add(Eo *obj, s_termview *sd)
-{
-   CRI("Passed there");
-   efl_canvas_group_add(efl_super(obj, MY_CLASS));
-   elm_object_focus_allow_set(obj, EINA_TRUE);
-
-   /* Font setup (FIXME: use a config) */
-   sd->font_name = eina_stringshare_add("Mono");
-   sd->font_size = 14;
-
-   /* Textgrid setup */
-   Evas *const evas = evas_object_evas_get(obj);
-   Evas_Object *o;
-   sd->textgrid = o = evas_object_textgrid_add(evas);
-   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_smart_member_add(o, obj);
-
-   evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_MOVE, _textgrid_mouse_move_cb, sd);
-   evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_DOWN, _termview_key_down_cb, sd);
-   evas_object_textgrid_cell_size_get(o, (int*)&sd->cell_w, (int*)&sd->cell_h);
-
-   sd->palettes = eina_hash_int32_new(NULL);
-   if (EINA_UNLIKELY(! sd->palettes))
-     {
-        CRI("Failed to create hash for color palettes");
-        return;
-     }
-
-   /* Palette item #0 is the default BG */
-   evas_object_textgrid_palette_set(
-      o, EVAS_TEXTGRID_PALETTE_EXTENDED,
-      COL_DEFAULT_FG, 255, 255, 255, 255
-   );
-   sd->palette_id_generator = 2; /* BG + FG */
-
-   evas_object_show(sd->textgrid);
-}
-
-Evas_Object *
-termview_add(Evas_Object *parent)
-{
-   EINA_SAFETY_ON_NULL_RETURN_VAL(parent, NULL);
-   return efl_add(MY_CLASS, parent, efl_canvas_object_legacy_ctor(efl_added));
-}
-
-/* Internal EO APIs and hidden overrides */
-
-#define ENVIM_TERMVIEW_EXTRA_OPS \
-   EFL_CANVAS_GROUP_ADD_OPS(envim_termview)
-
-#include "envim_termview.eo.c"
