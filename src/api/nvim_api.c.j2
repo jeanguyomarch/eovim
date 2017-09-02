@@ -51,10 +51,10 @@ _decode_{{ function.name }}(s_nvim *nvim, const s_request *req, const msgpack_ob
    const f_{{ function.name }} then = (const f_{{ function.name }})(req->then_callback);
    INF("Decoding response to request {{ function.request }}");
 {%- if function.return_type == "void" %}
-   if (then) { then(nvim, req->callback_data); }
    (void) args; /* Unused, no arguments are supposed to be passed */
+   if (then) { then(nvim, req->callback_data); }
 {% else %}
-   then(nvim, {{ unpackers[function.return_type] }}(args), req->callback_data);
+   if (then) { then(nvim, {{ unpackers[function.return_type] }}(args), req->callback_data); }
 {% endif %}
    return EINA_TRUE;
 }
