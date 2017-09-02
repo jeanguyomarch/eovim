@@ -266,6 +266,7 @@ void
 termview_clear(Evas_Object *obj)
 {
    s_termview *const sd = evas_object_smart_data_get(obj);
+   Evas_Object *const grid = sd->textgrid;
 
    /*
     * Go through each line (row) in the textgrid, and reset all the cells.
@@ -275,10 +276,12 @@ termview_clear(Evas_Object *obj)
    for (unsigned int y = 0; y < sd->rows; y++)
      {
         Evas_Textgrid_Cell *const cells = evas_object_textgrid_cellrow_get(
-           sd->textgrid, (int)y
+           grid, (int)y
         );
         memset(cells, 0, sizeof(Evas_Textgrid_Cell) * sd->cols);
+        evas_object_textgrid_cellrow_set(grid, (int)y, cells);
      }
+   evas_object_textgrid_update_add(grid, 0, 0, (int)sd->cols, (int)sd->rows);
 
    /* Reset the writing position to (0,0) */
    sd->x = 0;
@@ -322,6 +325,9 @@ termview_put(Evas_Object *obj,
         c->bg_extended = 1;
         c->fg_extended = 1;
      }
+   evas_object_textgrid_cellrow_set(sd->textgrid, (int)sd->y, cells);
+   evas_object_textgrid_update_add(sd->textgrid,
+                                   (int)sd->x, (int)sd->y, (int)size, 1);
    sd->x += size;
 }
 
