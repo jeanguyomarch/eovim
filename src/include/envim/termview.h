@@ -58,6 +58,7 @@ void termview_font_set(Evas_Object *obj, const char *font_name, unsigned int fon
 void termview_cell_size_get(const Evas_Object *obj, unsigned int *w, unsigned int *h);
 void termview_size_get(const Evas_Object *obj, unsigned int *cols, unsigned int *rows);
 void termview_clear(Evas_Object *obj);
+void termview_eol_clear(Evas_Object *obj);
 void termview_put(Evas_Object *obj, const char *string, unsigned int size);
 void termview_cursor_goto(Evas_Object *obj, unsigned int to_x, unsigned int to_y);
 void termview_style_set(Evas_Object *obj, const s_termview_style *style);

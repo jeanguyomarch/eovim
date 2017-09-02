@@ -132,6 +132,12 @@ gui_clear(s_gui *gui)
 }
 
 void
+gui_eol_clear(s_gui *gui)
+{
+   termview_eol_clear(gui->termview);
+}
+
+void
 gui_put(s_gui *gui,
         const char *string,
         unsigned int size)

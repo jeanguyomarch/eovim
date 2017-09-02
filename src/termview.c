@@ -72,7 +72,6 @@ _textgrid_mouse_move_cb(void *data EINA_UNUSED,
                         Evas_Object *obj EINA_UNUSED,
                         void *event EINA_UNUSED)
 {
-   WRN("Mouse move");
 }
 
 static void
@@ -286,6 +285,24 @@ termview_clear(Evas_Object *obj)
    /* Reset the writing position to (0,0) */
    sd->x = 0;
    sd->y = 0;
+}
+
+void
+termview_eol_clear(Evas_Object *obj)
+{
+   s_termview *const sd = evas_object_smart_data_get(obj);
+   Evas_Object *const grid = sd->textgrid;
+
+   /*
+    * Remove all characters from the cursor until the end of the textgrid line
+    */
+   Evas_Textgrid_Cell *const cells = evas_object_textgrid_cellrow_get(
+      grid, (int)sd->y
+   );
+   memset(&cells[sd->x], 0, sizeof(Evas_Textgrid_Cell) * (sd->cols - sd->x));
+   evas_object_textgrid_cellrow_set(grid, (int)sd->y, cells);
+   evas_object_textgrid_update_add(grid, (int)sd->x, (int)sd->y,
+                                   (int)(sd->cols - sd->x), 1);
 }
 
 void

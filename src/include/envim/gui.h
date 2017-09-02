@@ -39,6 +39,7 @@ Eina_Bool gui_add(s_gui *gui, s_nvim *nvim);
 void gui_del(s_gui *gui);
 void gui_resize(s_gui *gui, unsigned int cols, unsigned int rows);
 void gui_clear(s_gui *gui);
+void gui_eol_clear(s_gui *gui);
 void gui_put(s_gui *gui, const char *string, unsigned int size);
 void gui_cursor_goto(s_gui *gui, unsigned int to_x, unsigned int to_y);
 void gui_style_set(s_gui *gui, const s_termview_style *style);

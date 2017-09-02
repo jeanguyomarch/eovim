@@ -122,10 +122,10 @@ nvim_event_clear(s_nvim *nvim,
 }
 
 Eina_Bool
-nvim_event_eol_clear(s_nvim *nvim EINA_UNUSED,
+nvim_event_eol_clear(s_nvim *nvim,
                      const msgpack_object_array *args EINA_UNUSED)
 {
-   CRI("Unimplemented");
+   gui_eol_clear(&nvim->gui);
    return EINA_TRUE;
 }
 
