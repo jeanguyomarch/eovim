@@ -494,7 +494,7 @@ nvim_new(const char *program,
    msgpack_unpacker_init(&nvim->unpacker, 2048);
 
    /* Create the GUI window */
-   if (EINA_UNLIKELY(! gui_add(&nvim->gui)))
+   if (EINA_UNLIKELY(! gui_add(&nvim->gui, nvim)))
      {
         CRI("Failed to set up the graphical user interface");
         goto del_mem;

@@ -22,6 +22,14 @@
 
 #include "Envim.h"
 
+static void
+_focus_in_cb(void *data,
+                 Evas_Object *obj EINA_UNUSED,
+                 void *event EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   evas_object_focus_set(gui->termview, EINA_TRUE);
+}
 
 static Evas_Object *
 _layout_item_add(const s_gui *gui,
@@ -45,7 +53,8 @@ fail:
 }
 
 Eina_Bool
-gui_add(s_gui *gui)
+gui_add(s_gui *gui,
+        s_nvim *nvim)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(gui, EINA_FALSE);
 
@@ -61,8 +70,9 @@ gui_add(s_gui *gui)
         goto fail;
      }
    elm_win_resize_object_add(gui->win, gui->layout);
+   evas_object_smart_callback_add(gui->win, "focus,in", _focus_in_cb, gui);
 
-   gui->termview = termview_add(gui->layout);
+   gui->termview = termview_add(gui->layout, nvim);
    /* FIXME Use a config */
    termview_font_set(gui->termview, "Mono", 14);
 

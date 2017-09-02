@@ -52,7 +52,7 @@ struct termview_style
 
 Eina_Bool termview_init(void);
 void termview_shutdown(void);
-Evas_Object *termview_add(Evas_Object *parent);
+Evas_Object *termview_add(Evas_Object *parent, s_nvim *nvim);
 void termview_resize(Evas_Object *obj, unsigned int cols, unsigned int rows);
 void termview_font_set(Evas_Object *obj, const char *font_name, unsigned int font_size);
 void termview_cell_size_get(const Evas_Object *obj, unsigned int *w, unsigned int *h);

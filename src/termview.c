@@ -22,6 +22,7 @@
 
 #include "envim/termview.h"
 #include "envim/log.h"
+#include "nvim_api.h"
 
 #define COL_DEFAULT_BG 0
 #define COL_DEFAULT_FG 1
@@ -32,6 +33,9 @@ static Evas_Smart_Class _parent_sc = EVAS_SMART_CLASS_INIT_NULL;
 typedef struct termview s_termview;
 struct termview
 {
+   Evas_Object_Smart_Clipped_Data __clipped_data; /* Required by Evas */
+
+   s_nvim *nvim;
    Evas_Object *textgrid;
    Eina_Hash *palettes;
 
@@ -59,24 +63,37 @@ struct termview
    /* Writing position */
    unsigned int x;
    unsigned int y;
+
 };
 
 static void
 _textgrid_mouse_move_cb(void *data EINA_UNUSED,
                         Evas *e EINA_UNUSED,
                         Evas_Object *obj EINA_UNUSED,
-                        void *event_info EINA_UNUSED)
+                        void *event EINA_UNUSED)
 {
    WRN("Mouse move");
 }
 
 static void
-_termview_key_down_cb(void *data EINA_UNUSED,
+_input_keys_cb(s_nvim *nvim EINA_UNUSED,
+               t_int keys,
+               void *data EINA_UNUSED)
+{
+   INF("%"PRIu64" keys written", keys);
+}
+
+static void
+_termview_key_down_cb(void *data,
                       Evas *e EINA_UNUSED,
                       Evas_Object *obj EINA_UNUSED,
-                      void *event_info EINA_UNUSED)
+                      void *event)
 {
-   WRN("Key down");
+   s_termview *const sd = data;
+   const Evas_Event_Key_Down *const ev = event;
+   ERR("Key down: %s, %s, %s", ev->string, ev->compose, ev->key);
+   if (ev->string)
+     nvim_input(sd->nvim, ev->string, _input_keys_cb, NULL, NULL);
 }
 
 
@@ -92,11 +109,6 @@ _smart_add(Evas_Object *obj)
 
    evas_object_smart_data_set(obj, sd);
    _parent_sc.add(obj);
-
-
-   /* Font setup (FIXME: use a config) */
-   sd->font_name = eina_stringshare_add("Mono");
-   sd->font_size = 14;
 
    /* Textgrid setup */
    Evas *const evas = evas_object_evas_get(obj);
@@ -188,11 +200,21 @@ void
 termview_shutdown(void)
 {}
 
+static void
+_termview_nvim_set(Evas_Object *obj,
+                  s_nvim *nvim)
+{
+   s_termview *const sd = evas_object_smart_data_get(obj);
+   sd->nvim = nvim;
+}
+
 Evas_Object *
-termview_add(Evas_Object *parent)
+termview_add(Evas_Object *parent,
+             s_nvim *nvim)
 {
    Evas *const e  = evas_object_evas_get(parent);
    Evas_Object *const obj = evas_object_smart_add(e, _smart);
+   _termview_nvim_set(obj, nvim);
 
    return obj;
 }
@@ -407,4 +429,3 @@ termview_style_set(Evas_Object *obj,
    sd->current.underline = style->underline;
    sd->current.undercurl = style->undercurl;
 }
-

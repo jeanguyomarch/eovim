@@ -26,7 +26,7 @@
 #include <Elementary.h>
 
 #include "envim/termview.h"
-
+#include "envim/types.h"
 
 struct gui
 {
@@ -35,7 +35,7 @@ struct gui
    Evas_Object *termview;
 };
 
-Eina_Bool gui_add(s_gui *gui);
+Eina_Bool gui_add(s_gui *gui, s_nvim *nvim);
 void gui_del(s_gui *gui);
 void gui_resize(s_gui *gui, unsigned int cols, unsigned int rows);
 void gui_clear(s_gui *gui);
