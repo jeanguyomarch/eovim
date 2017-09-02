@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(envim LANGUAGES C VERSION 0.0.99)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
 set(NVIM_API "0.2.1")
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(EO_DIR "${SRC_DIR}/eo")
 set(SRC_API_DIR "${SRC_DIR}/api")
 set(THEMES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data/themes")
 set(BUILD_THEMES_DIR "${CMAKE_BINARY_DIR}/themes")
@@ -12,12 +15,15 @@ file(MAKE_DIRECTORY ${BUILD_THEMES_DIR})
 
 find_package(PkgConfig REQUIRED)
 find_package(Eina REQUIRED)
+find_package(Eo REQUIRED)
 find_package(Evas REQUIRED)
 find_package(Ecore REQUIRED)
 find_package(Edje REQUIRED)
 find_package(Elementary REQUIRED)
 find_package(PythonInterp REQUIRED)
 pkg_check_modules(MSGPACK msgpack REQUIRED)
+
+include("Eolian")
 
 add_custom_command(
    OUTPUT "${BUILD_API_DIR}/nvim_api.c"
@@ -73,9 +79,16 @@ add_executable(envim
    "${BUILD_API_DIR}/nvim_api.h"
    "${SRC_DIR}/include/Envim.h"
 )
+
+add_eolian_file("${EO_DIR}/envim_termview.eo"
+   DESTINATION "${CMAKE_BINARY_DIR}"
+   DEPENDENCIES eo efl evas ecore edje elementary
+   DEPENDS envim
+)
 target_include_directories(envim
    SYSTEM PRIVATE
    ${EINA_INCLUDE_DIRS}
+   ${EO_INCLUDE_DIRS}
    ${EVAS_INCLUDE_DIRS}
    ${EDJE_INCLUDE_DIRS}
    ${ECORE_INCLUDE_DIRS}
@@ -89,6 +102,7 @@ target_include_directories(envim
 )
 target_link_libraries(envim
    ${EINA_LIBRARIES}
+   ${EO_LIBRARIES}
    ${EVAS_LIBRARIES}
    ${EDJE_LIBRARIES}
    ${ECORE_LIBRARIES}
@@ -122,4 +136,5 @@ target_compile_definitions(envim
    PACKAGE_LIB_DIR=\"${CMAKE_INSTALL_PREFIX}/lib\"
    PACKAGE_DATA_DIR=\"${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}\"
    BUILD_DATA_DIR=\"${CMAKE_BINARY_DIR}\"
+   EFL_BETA_API_SUPPORT
 )

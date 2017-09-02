@@ -20,36 +20,65 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_TERMVIEW_H__
-#define __ENVIM_TERMVIEW_H__
+struct @extern s_termview_style;
 
-typedef struct termview_style s_termview_style;
-typedef struct termview_color s_termview_color;
-
-#include "envim/types.h"
-#include "envim_termview.eo.h"
-#include <Evas.h>
-
-struct termview_color
+class Envim.Termview (Efl.Ui.Layout)
 {
-   uint8_t r;
-   uint8_t g;
-   uint8_t b;
-   uint8_t a;
-};
+   data: s_termview;
+   eo_prefix: termview;
+   methods {
+      @property size {
+         get {}
+         values {
+            rows: uint;
+            cols: uint;
+         }
+      }
+      @property cell_size {
+         get {}
+         values {
+            width: uint;
+            height: uint;
+         }
+      }
 
-struct termview_style
-{
-   t_int fg_color;
-   t_int bg_color;
-   t_int sp_color;
-   Eina_Bool reverse;
-   Eina_Bool italic;
-   Eina_Bool bold;
-   Eina_Bool underline;
-   Eina_Bool undercurl;
-};
+      resize {
+         params {
+            cols: uint;
+            rows: uint;
+         }
+      }
 
-Evas_Object *termview_add(Evas_Object *parent);
+      font_set {
+         params {
+            font_name: string;
+            font_size: uint;
+         }
+      }
+      style_set {
+         params {
+            style: const(ptr(s_termview_style));
+         }
+      }
 
-#endif /* ! __ENVIM_TERMVIEW_H__ */
+      clear {
+      }
+
+      put {
+         params {
+            text: string;
+            size: uint;
+         }
+      }
+
+      cursor_goto {
+         params {
+            to_x: uint;
+            to_y: uint;
+         }
+      }
+
+
+   }
+}
+
