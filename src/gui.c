@@ -197,3 +197,28 @@ gui_update_sp(s_gui *gui EINA_UNUSED,
         CRI("Unimplemented");
      }
 }
+
+void
+gui_scroll_region_set(s_gui *gui,
+                      int top,
+                      int bot,
+                      int left,
+                      int right)
+{
+   const Eina_Rectangle region = {
+      .x = left,
+      .y = top,
+      .w = right - left,
+      .h = bot - top,
+   };
+   termview_scroll_region_set(gui->termview, &region);
+}
+
+void
+gui_scroll(s_gui *gui,
+           int scroll)
+{
+   if (scroll != 0)
+     termview_scroll(gui->termview, (unsigned int)(abs(scroll)),
+                     (scroll > 0) ? EINA_TRUE : EINA_FALSE);
+}

@@ -46,5 +46,7 @@ void gui_style_set(s_gui *gui, const s_termview_style *style);
 void gui_update_fg(s_gui *gui, t_int color);
 void gui_update_bg(s_gui *gui, t_int color);
 void gui_update_sp(s_gui *gui, t_int color);
+void gui_scroll_region_set(s_gui *gui, int x, int y, int w, int h);
+void gui_scroll(s_gui *gui, int scroll);
 
 #endif /* ! __ENVIM_GUI_H__ */

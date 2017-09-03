@@ -195,18 +195,38 @@ nvim_event_mode_change(s_nvim *nvim EINA_UNUSED,
    CRI("Unimplemented");
    return EINA_TRUE;
 }
+
 Eina_Bool
-nvim_event_set_scroll_region(s_nvim *nvim EINA_UNUSED,
-                             const msgpack_object_array *args EINA_UNUSED)
+nvim_event_set_scroll_region(s_nvim *nvim,
+                             const msgpack_object_array *args)
 {
-   CRI("Unimplemented");
+   CHECK_BASE_ARGS_COUNT(args, ==, 1);
+   ARRAY_OF_ARGS_EXTRACT(args, params);
+   CHECK_ARGS_COUNT(params, ==, 4);
+
+   t_int top, bot, left, right;
+   GET_ARG(params, 0, t_int, &top);
+   GET_ARG(params, 1, t_int, &bot);
+   GET_ARG(params, 2, t_int, &left);
+   GET_ARG(params, 3, t_int, &right);
+
+   gui_scroll_region_set(&nvim->gui, top, bot, left, right);
+
    return EINA_TRUE;
 }
+
 Eina_Bool
-nvim_event_scroll(s_nvim *nvim EINA_UNUSED,
-                  const msgpack_object_array *args EINA_UNUSED)
+nvim_event_scroll(s_nvim *nvim,
+                  const msgpack_object_array *args)
 {
-   CRI("Unimplemented");
+   CHECK_BASE_ARGS_COUNT(args, ==, 1);
+   ARRAY_OF_ARGS_EXTRACT(args, params);
+   CHECK_ARGS_COUNT(params, ==, 1);
+   
+   t_int scroll;
+   GET_ARG(params, 0, t_int, &scroll);
+   gui_scroll(&nvim->gui, scroll);
+
    return EINA_TRUE;
 }
 

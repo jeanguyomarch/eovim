@@ -63,6 +63,7 @@ struct termview
       Eina_Bool undercurl;
    } current;
 
+   Eina_Rectangle scroll;
 
    /* Writing position */
    unsigned int x;
@@ -525,4 +526,90 @@ termview_style_set(Evas_Object *obj,
    sd->current.bold = style->bold;
    sd->current.underline = style->underline;
    sd->current.undercurl = style->undercurl;
+}
+
+void
+termview_scroll_region_set(Evas_Object *obj,
+                           const Eina_Rectangle *region)
+{
+   s_termview *const sd = evas_object_smart_data_get(obj);
+   memcpy(&sd->scroll, region, sizeof(Eina_Rectangle));
+}
+
+void
+termview_scroll(Evas_Object *obj,
+                unsigned int count,
+                Eina_Bool up)
+{
+   s_termview *const sd = evas_object_smart_data_get(obj);
+   Evas_Object *const grid = sd->textgrid;
+
+   const int start = (up) ? sd->scroll.y - (int)count : sd->scroll.y + (int)count;
+   const int span = sd->scroll.h + (int)count;
+   const size_t width = sizeof(Evas_Textgrid_Cell) * (unsigned)sd->scroll.w;
+   Evas_Textgrid_Cell *src, *dst, *tmp;
+
+   if (up)
+     {
+        /*
+         * We are scrolling upwards. Line N will be overwriten by line N+1.
+         * We load the lines exactly once while copying.
+         */
+        int i = sd->scroll.y - (int)count; /* Destination index */
+        int j = sd->scroll.y; /* Source index */
+        const int end_of_scroll = sd->scroll.y + sd->scroll.h;
+
+        for (; j <= end_of_scroll; i++, j++)
+          {
+             if (i < 0) continue;
+
+             dst = evas_object_textgrid_cellrow_get(grid, i);
+             src = evas_object_textgrid_cellrow_get(grid, j);
+
+             memcpy(&dst[sd->scroll.x], &src[sd->scroll.x], width);
+             evas_object_textgrid_cellrow_set(grid, i, dst);
+          }
+        /* Clear the lines left after the scrolling */
+        for (j--; j < end_of_scroll + (int)count && j < (int)sd->rows; j++)
+          {
+             tmp = evas_object_textgrid_cellrow_get(grid, j);
+             memset(&tmp[sd->scroll.x], 0, width);
+             evas_object_textgrid_cellrow_set(grid, j, tmp);
+          }
+     }
+   else
+     {
+        /*
+         * We are scrolling downwards. Line N+1 will be overwriten by line N.
+         * We load the lines exactly once while copying.
+         */
+        const int end_of_scroll = sd->scroll.y + sd->scroll.h;
+        int i = end_of_scroll + (int)count;
+        int j = end_of_scroll;
+
+        for (; j >= sd->scroll.y; i--, j--)
+          {
+             if (i >= (int)sd->rows) continue;
+
+             dst = evas_object_textgrid_cellrow_get(grid, i);
+             src = evas_object_textgrid_cellrow_get(grid, j);
+
+             memcpy(&dst[sd->scroll.x], &src[sd->scroll.x], width);
+             evas_object_textgrid_cellrow_set(grid, i, dst);
+          }
+        /* Clear the lines left after the scrolling */
+        const int end = sd->scroll.y - count >= 0 ?: 0;
+        WRN("j = %i, end = %i", j, end);
+        for (; j >= end; j--)
+          {
+             WRN("Erase (%i)", j);
+             tmp = evas_object_textgrid_cellrow_get(grid, j);
+             memset(&tmp[sd->scroll.x], 0, width);
+             evas_object_textgrid_cellrow_set(grid, j, tmp);
+          }
+     }
+
+   /* Finally, mark the update */
+   evas_object_textgrid_update_add(grid, sd->scroll.x, start,
+                                   sd->scroll.w, span);
 }
