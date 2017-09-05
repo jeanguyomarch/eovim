@@ -30,6 +30,7 @@
 
 #include "nvim_api.h"
 
+#include "envim/config.h"
 #include "envim/gui.h"
 #include "envim/termview.h"
 #include "envim/log.h"
@@ -48,6 +49,7 @@ struct request
 struct nvim
 {
    s_gui gui;
+   s_config config;
 
    Ecore_Exe *exe;
    Eina_List *requests;

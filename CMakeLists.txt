@@ -12,6 +12,7 @@ file(MAKE_DIRECTORY ${BUILD_THEMES_DIR})
 
 find_package(PkgConfig REQUIRED)
 find_package(Eina REQUIRED)
+find_package(Eet REQUIRED)
 find_package(Evas REQUIRED)
 find_package(Ecore REQUIRED)
 find_package(Edje REQUIRED)
@@ -65,6 +66,7 @@ add_executable(envim
    "${SRC_DIR}/main.c"
    "${SRC_DIR}/nvim.c"
    "${SRC_DIR}/request.c"
+   "${SRC_DIR}/config.c"
    "${SRC_DIR}/pack.c"
    "${SRC_DIR}/gui.c"
    "${SRC_DIR}/termview.c"
@@ -77,6 +79,7 @@ add_executable(envim
 target_include_directories(envim
    SYSTEM PRIVATE
    ${EINA_INCLUDE_DIRS}
+   ${EET_INCLUDE_DIRS}
    ${EVAS_INCLUDE_DIRS}
    ${EDJE_INCLUDE_DIRS}
    ${ECORE_INCLUDE_DIRS}
@@ -90,6 +93,7 @@ target_include_directories(envim
 )
 target_link_libraries(envim
    ${EINA_LIBRARIES}
+   ${EET_LIBRARIES}
    ${EVAS_LIBRARIES}
    ${EDJE_LIBRARIES}
    ${ECORE_LIBRARIES}
