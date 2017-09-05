@@ -166,11 +166,9 @@ _smart_add(Evas_Object *obj)
         return;
      }
 
+   termview_fg_color_set(obj, 255, 255, 255, 255);
+
    /* Palette item #0 is the default BG */
-   evas_object_textgrid_palette_set(
-      o, EVAS_TEXTGRID_PALETTE_EXTENDED,
-      COL_DEFAULT_FG, 255, 255, 255, 255
-   );
    sd->palette_id_generator = 2; /* BG + FG */
 
 }
@@ -612,4 +610,22 @@ termview_scroll(Evas_Object *obj,
    /* Finally, mark the update */
    evas_object_textgrid_update_add(grid, sd->scroll.x, start,
                                    sd->scroll.w, span);
+}
+
+void
+termview_fg_color_set(Evas_Object *obj,
+                      int r, int g, int b, int a)
+{
+   s_termview *const sd = evas_object_smart_data_get(obj);
+
+   /* Set the new value of the default foreground text. */
+   evas_color_argb_premul(a, &r, &g, &b);
+   evas_object_textgrid_palette_set(
+      sd->textgrid, EVAS_TEXTGRID_PALETTE_EXTENDED,
+      COL_DEFAULT_FG, r, g, b, a
+   );
+
+   /* Update the whole textgrid to reflect the change */
+   evas_object_textgrid_update_add(sd->textgrid, 0, 0,
+                                   (int)sd->cols, (int)sd->rows);
 }

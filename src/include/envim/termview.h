@@ -64,5 +64,6 @@ void termview_cursor_goto(Evas_Object *obj, unsigned int to_x, unsigned int to_y
 void termview_style_set(Evas_Object *obj, const s_termview_style *style);
 void termview_scroll_region_set(Evas_Object *obj, const Eina_Rectangle *region);
 void termview_scroll(Evas_Object *obj, unsigned int count, Eina_Bool up);
+void termview_fg_color_set(Evas_Object *obj, int r, int g, int b, int a);
 
 #endif /* ! __ENVIM_TERMVIEW_H__ */
