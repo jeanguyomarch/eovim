@@ -33,6 +33,13 @@ struct gui
    Evas_Object *win;
    Evas_Object *layout;
    Evas_Object *termview;
+
+   struct {
+      Evas_Object *box;
+      Evas_Object *fg_col;
+   } config;
+
+   s_nvim *nvim;
 };
 
 Eina_Bool gui_add(s_gui *gui, s_nvim *nvim);
@@ -48,5 +55,8 @@ void gui_update_bg(s_gui *gui, t_int color);
 void gui_update_sp(s_gui *gui, t_int color);
 void gui_scroll_region_set(s_gui *gui, int x, int y, int w, int h);
 void gui_scroll(s_gui *gui, int scroll);
+
+void gui_config_show(s_gui *gui);
+void gui_config_hide(s_gui *gui);
 
 #endif /* ! __ENVIM_GUI_H__ */

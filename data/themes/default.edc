@@ -20,6 +20,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+externals {
+   external: "elm";
+}
+
 collections {
    group { "envim/main";
       parts {
@@ -34,6 +38,50 @@ collections {
             desc { "default";
                rel1.to: "tabs_headings";
                rel1.relative: 0.0 1.0;
+            }
+         }
+
+#define ENVIM_CONFIG_PARTS \
+      X("envim.config.fg_color")
+
+         external { "config"; source: "elm/bg"; nomouse;
+            desc { "default";
+               rel1.relative: 0.5 0.5;
+               rel2.relative: 0.5 0.5;
+            }
+            desc { "enabled";
+               rel1.offset: 50 50;
+               rel2.offset: -50 -50;
+            }
+
+            programs {
+#define X(Part) target: Part;
+               program { signal: "config,show"; source: "envim";
+                  action: STATE_SET "enabled";
+                  transition: ACCELERATE 0.8;
+                  target: "config";
+                  ENVIM_CONFIG_PARTS
+               }
+               program { signal: "config,hide"; source: "envim";
+                  action: STATE_SET "default";
+                  target: "config";
+                  transition: DECELERATE 0.5;
+                  ENVIM_CONFIG_PARTS
+               }
+#undef X
+            }
+         }
+         swallow { "envim.config.fg_color";
+            desc { "default";
+               rel1.to: "config";
+               rel2.to: "config";
+               rel2.relative: 1.0 0.0;
+               align: 0.5 0.0;
+               visible: 0;
+            }
+            desc { "enabled";
+               inherit: "default";
+               visible: 1;
             }
          }
       }

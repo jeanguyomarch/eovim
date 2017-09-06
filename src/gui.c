@@ -51,12 +51,119 @@ fail:
    evas_object_del(o);
    return NULL;
 }
+static Eina_Bool _cb(s_gui *gui)
+{
+ //  WRN("Config");
+   static int i = 0;
+ //  if (i % 2 == 0)
+ //    gui_config_show(gui);
+ //  else
+ //    gui_config_hide(gui);
+   i++;
+   return 1;
+}
+
+static Evas_Object *
+_frame_add(Evas_Object *parent,
+           const char *text)
+{
+   Evas_Object *f;
+
+   f = elm_frame_add(parent);
+   elm_frame_autocollapse_set(f, EINA_TRUE);
+   elm_object_text_set(f, text);
+   evas_object_size_hint_weight_set(f, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_fill_set(f, EVAS_HINT_FILL, 0.0);
+   evas_object_show(f);
+
+   return f;
+}
+
+static Evas_Object *
+_config_box_add(s_gui *gui)
+{
+   Evas_Object *o;
+
+   o = elm_box_add(gui->layout);
+   elm_box_horizontal_set(o, EINA_FALSE);
+   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, 0.0);
+   evas_object_show(o);
+
+   return o;
+}
+
+static Evas_Object *
+_colorselector_add(Evas_Object *parent)
+{
+   Evas_Object *const o = elm_colorselector_add(parent);
+   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_show(o);
+
+   return o;
+}
+
+static void
+_fg_color_changed_cb(void *data,
+                     Evas_Object *obj,
+                     void *event_info EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   int r, g, b, a;
+
+   elm_colorselector_color_get(obj, &r, &g, &b, &a);
+   config_fg_color_set(&gui->nvim->config, r, g, b, a);
+   termview_fg_color_set(gui->termview, r, g, b, a);
+}
+
+static Evas_Object *
+_config_fg_add(s_gui *gui, Evas_Object *parent)
+{
+   Evas_Object *const f = _frame_add(parent, "Default Foreground Color");
+   Evas_Object *const sel = _colorselector_add(f);
+
+   evas_object_smart_callback_add(sel, "changed", _fg_color_changed_cb, gui);
+
+   elm_object_content_set(f, sel);
+
+//   elm_box_pack_end(parent, f);
+//   elm_layout_content_set(gui->layout, "envim.config.fg_color", btn);
+
+   return f;
+}
+
+void
+gui_config_show(s_gui *gui)
+{
+   if (gui->config.box) { return; }
+
+   Evas_Object *const box = _config_box_add(gui);
+   Evas_Object *o;
+
+   o = _config_fg_add(gui, box);
+   elm_box_pack_end(box, o);
+   elm_layout_content_set(gui->layout, "envim.config.fg_color", box);
+
+   elm_layout_signal_emit(gui->layout, "config,show", "envim");
+
+   gui->config.box = box;
+}
+
+
+void
+gui_config_hide(s_gui *gui)
+{
+  // elm_layout_signal_emit(gui->layout, "config,hide", "envim");
+}
 
 Eina_Bool
 gui_add(s_gui *gui,
         s_nvim *nvim)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(gui, EINA_FALSE);
+
+   gui->nvim = nvim;
 
    /* Window setup */
    gui->win = elm_win_util_standard_add("envim", "Envim");
@@ -85,10 +192,13 @@ gui_add(s_gui *gui,
    elm_win_size_step_set(gui->win, (int)cell_w, (int)cell_h);
 
    elm_layout_content_set(gui->layout, "envim.main.view", gui->termview);
+   _config_fg_add(gui, gui->layout);
 
    evas_object_show(gui->termview);
    evas_object_show(gui->layout);
    evas_object_show(gui->win);
+
+   ecore_timer_add(2.0, _cb, gui);
 
    return EINA_TRUE;
 
