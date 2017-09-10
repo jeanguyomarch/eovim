@@ -465,6 +465,13 @@ nvim_get_next_uid(s_nvim *nvim)
    return nvim->request_id++;
 }
 
+static void
+_attach(void *data)
+{
+   s_nvim *const nvim = data;
+   nvim_ui_attach(nvim, 80, 24, NULL, NULL, NULL, NULL);
+}
+
 s_nvim *
 nvim_new(const char *program,
          unsigned int args_count,
@@ -553,7 +560,7 @@ nvim_new(const char *program,
         goto del_win;
      }
 
-   nvim_ui_attach(nvim, 80, 24, NULL, NULL, NULL, NULL);
+   ecore_job_add(_attach, nvim);
    return nvim;
 
 del_win:
