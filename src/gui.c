@@ -113,7 +113,7 @@ _fg_color_changed_cb(void *data,
    int r, g, b, a;
 
    elm_colorselector_color_get(obj, &r, &g, &b, &a);
-   config_fg_color_set(&gui->nvim->config, r, g, b, a);
+   config_fg_color_set(gui->nvim->config, r, g, b, a);
    termview_fg_color_set(gui->termview, r, g, b, a);
 }
 
