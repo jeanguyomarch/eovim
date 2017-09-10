@@ -39,6 +39,7 @@ static const s_keymap _map[] =
    KM_STD("Down"),
    KM_STD("Left"),
    KM_STD("Right"),
+   KM_STD("F1"),
    KM_STD("F2"),
    KM_STD("F3"),
    KM_STD("F4"),
