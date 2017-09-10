@@ -95,19 +95,20 @@ _termview_key_down_cb(void *data,
 {
    s_termview *const sd = data;
    const Evas_Event_Key_Down *const ev = event;
-   ERR("Key down: %s, %s, %s", ev->string, ev->compose, ev->key);
    const char *send = ev->string;
 
+   /* If ev->string is not set, we will try to load  ev->key from the keymap */
    if (! send && ev->key)
-     {
-        send = keymap_get(ev->key);
-     }
+     send = keymap_get(ev->key);
 
+   /* If a key is availab,e pass it to neovim and update the ui */
    if (send)
      {
         nvim_input(sd->nvim, send, _input_keys_cb, NULL, NULL);
         edje_object_signal_emit(sd->cursor, "key,down", "envim");
      }
+   else
+     ERR("Unhandled key '%s'", ev->key);
 }
 
 static void
