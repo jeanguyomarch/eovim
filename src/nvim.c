@@ -332,7 +332,7 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
         msgpack_object obj = result.data;
 
         /* Uncomment to roughly dump the received messages */
-#if 1
+#if 0
         msgpack_object_print(stderr, obj);
         fprintf(stderr, "\n--------\n");
 #endif
@@ -506,6 +506,9 @@ nvim_new(const char *program,
         CRI("Failed to create nvim structure");
         goto del_strbuf;
      }
+
+   /* Create the config */
+   nvim->config = config_new();
 
    /* Initialze msgpack for RPC */
    msgpack_sbuffer_init(&nvim->sbuffer);

@@ -39,11 +39,13 @@ struct config_color
 struct config
 {
    unsigned int version;
-   s_config_color fg_color;
+   s_config_color *fg_color;
 };
 
 Eina_Bool config_init(void);
 void config_shutdown(void);
 void config_fg_color_set(s_config *config, int r, int g, int b, int a);
+s_config *config_new(void);
+void config_free(s_config *config);
 
 #endif /* ! __ENVIM_CONFIG_H__ */

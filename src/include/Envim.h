@@ -50,7 +50,7 @@ struct request
 struct nvim
 {
    s_gui gui;
-   s_config config;
+   s_config *config;
 
    Ecore_Exe *exe;
    Eina_List *requests;

@@ -21,7 +21,10 @@
  */
 
 #include "envim/config.h"
+#include "envim/log.h"
 #include <Eet.h>
+
+#define CONFIG_VERSION 0
 
 static Eet_Data_Descriptor *_edd_color = NULL;
 static Eet_Data_Descriptor *_edd = NULL;
@@ -40,17 +43,13 @@ config_init(void)
 {
    Eet_Data_Descriptor_Class eddc;
 
-   eet_eina_stream_data_descriptor_class_set(
-      &eddc, sizeof(eddc), "s_config", sizeof(s_config)
-   );
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, s_config);
    _edd = eet_data_descriptor_stream_new(&eddc);
 
    /* ========================================================================
     * s_config_color serialization
     * ===================================================================== */
-   eet_eina_stream_data_descriptor_class_set(
-      &eddc, sizeof(eddc), "s_config_color", sizeof(s_config_color)
-   );
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, s_config_color);
    _edd_color = eet_data_descriptor_stream_new(&eddc);
 
    EDD_COLOR_REGISTER(r);
@@ -79,8 +78,32 @@ void
 config_fg_color_set(s_config *config,
                     int r, int g, int b, int a)
 {
-   config->fg_color.r = (uint8_t)r;
-   config->fg_color.g = (uint8_t)g;
-   config->fg_color.b = (uint8_t)b;
-   config->fg_color.a = (uint8_t)a;
+   config->fg_color->r = (uint8_t)r;
+   config->fg_color->g = (uint8_t)g;
+   config->fg_color->b = (uint8_t)b;
+   config->fg_color->a = (uint8_t)a;
+}
+
+s_config *
+config_new(void)
+{
+   s_config *const config = calloc(1, sizeof(s_config));
+   if (EINA_UNLIKELY(! config))
+     {
+        CRI("Failed to allocate memory");
+        return NULL;
+     }
+
+   config->version = CONFIG_VERSION;
+   config->fg_color = malloc(sizeof(s_config_color));
+   config_fg_color_set(config, 0xff, 0xff, 0xff, 0xff);
+
+   return config;
+}
+
+void
+config_free(s_config *config)
+{
+   free(config->fg_color);
+   free(config);
 }
