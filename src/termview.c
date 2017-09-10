@@ -456,12 +456,12 @@ termview_cursor_goto(Evas_Object *obj,
 
 
 static s_termview_color
-_make_color(uint64_t col)
+_make_color(uint32_t col)
 {
    const s_termview_color color = {
-      .r = (uint8_t)(col & 0xff),
-      .g = (uint8_t)(col & 0xff00) >> 8,
-      .b = (uint8_t)(col & 0xff0000) >> 16,
+      .r = (uint8_t)((col & 0x00ff0000) >> 16),
+      .g = (uint8_t)((col & 0x0000ff00) >> 8),
+      .b = (uint8_t)((col & 0x000000ff) >> 0),
       .a = 0xff,
    };
    return color;
@@ -510,7 +510,7 @@ _make_palette_from_color(s_termview *sd,
      }
    else
      {
-        const s_termview_color col = _make_color((uint64_t)color);
+        const s_termview_color col = _make_color((uint32_t)color);
         return _make_palette(sd, col);
      }
 }
