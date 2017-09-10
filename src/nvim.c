@@ -52,6 +52,8 @@ _nvim_free_cb(void *data)
 
    msgpack_sbuffer_destroy(&nvim->sbuffer);
    msgpack_unpacker_destroy(&nvim->unpacker);
+   eina_hash_free(nvim->modes);
+   if (nvim->mode.name) { eina_stringshare_del(nvim->mode.name); }
    free(nvim);
 }
 
@@ -510,11 +512,19 @@ nvim_new(const char *program,
    msgpack_packer_init(&nvim->packer, &nvim->sbuffer, msgpack_sbuffer_write);
    msgpack_unpacker_init(&nvim->unpacker, 2048);
 
+   /* Create the hash map that will contain the modes */
+   nvim->modes = eina_hash_stringshared_new(EINA_FREE_CB(mode_free));
+   if (EINA_UNLIKELY(! nvim->modes))
+     {
+        CRI("Failed to create Eina_Hash");
+        goto del_mem;
+     }
+
    /* Create the GUI window */
    if (EINA_UNLIKELY(! gui_add(&nvim->gui, nvim)))
      {
         CRI("Failed to set up the graphical user interface");
-        goto del_mem;
+        goto del_hash;
      }
 
    /* Last step: create the neovim process */
@@ -545,6 +555,8 @@ nvim_new(const char *program,
 
 del_win:
    gui_del(&nvim->gui);
+del_hash:
+   eina_hash_free(nvim->modes);
 del_mem:
    free(nvim);
 del_strbuf:
@@ -567,4 +579,28 @@ nvim_free(s_nvim *nvim)
          */
         eina_hash_del_by_key(_nvim_instances, &nvim->exe);
      }
+}
+
+void
+nvim_mode_set(s_nvim *nvim,
+              Eina_Stringshare *name,
+              unsigned int index)
+{
+   if (nvim->mode.name) { eina_stringshare_del(nvim->mode.name); }
+   nvim->mode.name = name;
+   nvim->mode.index = index;
+}
+
+s_mode *
+nvim_named_mode_get(s_nvim *nvim,
+                    Eina_Stringshare *name)
+{
+   return eina_hash_find(nvim->modes, name);
+}
+
+Eina_Bool
+nvim_mode_add(s_nvim *nvim,
+              s_mode *mode)
+{
+  return eina_hash_add(nvim->modes, mode->name, mode);
 }

@@ -20,27 +20,30 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_TYPES_H__
-#define __ENVIM_TYPES_H__
+#include "envim/mode.h"
 
-#include <stdint.h>
-
-typedef int64_t t_int;
-typedef struct version s_version;
-typedef struct request s_request;
-typedef struct nvim s_nvim;
-typedef struct mode s_mode;
-typedef struct position s_position;
-typedef struct gui s_gui;
-typedef void (*f_request_error)(const s_nvim *nvim, const s_request *req, void *data);
-
-typedef enum
+s_mode *
+mode_new(Eina_Stringshare *name,
+         const char *short_name,
+         unsigned int short_size)
 {
-   CURSOR_SHAPE_BLOCK,
-   CURSOR_SHAPE_HORIZONTAL,
-   CURSOR_SHAPE_VERTICAL,
-} e_cursor_shape;
+   s_mode *const mode = calloc(1, sizeof(s_mode) + short_size);
+   if (EINA_UNLIKELY(! mode))
+     {
+        CRI("Failed to allocate memory");
+        return NULL;
+     }
 
-#define T_INT_INVALID ((t_int)-1)
+   mode->name = eina_stringshare_ref(name);
+   memcpy(mode->short_name, short_name, short_size);
+   mode->short_name[short_size] = '\0';
 
-#endif /* ! __ENVIM_TYPES_H__ */
+   return mode;
+}
+
+void
+mode_free(s_mode *mode)
+{
+   eina_stringshare_del(mode->name);
+   free(mode);
+}

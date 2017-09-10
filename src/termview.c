@@ -544,7 +544,7 @@ termview_scroll(Evas_Object *obj,
 
    const int start = (up) ? sd->scroll.y - (int)count : sd->scroll.y + (int)count;
    const int span = sd->scroll.h + (int)count;
-   const size_t width = sizeof(Evas_Textgrid_Cell) * (unsigned)sd->scroll.w;
+   const size_t width = sizeof(Evas_Textgrid_Cell) * (unsigned)sd->scroll.w + 1;
    Evas_Textgrid_Cell *src, *dst, *tmp;
 
    if (up)
@@ -609,7 +609,7 @@ termview_scroll(Evas_Object *obj,
 
    /* Finally, mark the update */
    evas_object_textgrid_update_add(grid, sd->scroll.x, start,
-                                   sd->scroll.w, span);
+                                   sd->scroll.w + 1, span);
 }
 
 void

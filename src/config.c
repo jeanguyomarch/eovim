@@ -50,7 +50,7 @@ config_init(void)
     * ===================================================================== */
    eet_eina_stream_data_descriptor_class_set(
       &eddc, sizeof(eddc), "s_config_color", sizeof(s_config_color)
-      );
+   );
    _edd_color = eet_data_descriptor_stream_new(&eddc);
 
    EDD_COLOR_REGISTER(r);

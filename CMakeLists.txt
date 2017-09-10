@@ -68,6 +68,7 @@ add_executable(envim
    "${SRC_DIR}/request.c"
    "${SRC_DIR}/config.c"
    "${SRC_DIR}/pack.c"
+   "${SRC_DIR}/mode.c"
    "${SRC_DIR}/gui.c"
    "${SRC_DIR}/termview.c"
    "${SRC_DIR}/types.c"

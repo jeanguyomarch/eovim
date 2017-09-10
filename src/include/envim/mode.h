@@ -20,27 +20,27 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_TYPES_H__
-#define __ENVIM_TYPES_H__
+#ifndef __ENVIM_MODE_H__
+#define __ENVIM_MODE_H__
 
-#include <stdint.h>
+#include "envim/types.h"
+#include "envim/log.h"
+#include <Eina.h>
 
-typedef int64_t t_int;
-typedef struct version s_version;
-typedef struct request s_request;
-typedef struct nvim s_nvim;
-typedef struct mode s_mode;
-typedef struct position s_position;
-typedef struct gui s_gui;
-typedef void (*f_request_error)(const s_nvim *nvim, const s_request *req, void *data);
-
-typedef enum
+struct mode
 {
-   CURSOR_SHAPE_BLOCK,
-   CURSOR_SHAPE_HORIZONTAL,
-   CURSOR_SHAPE_VERTICAL,
-} e_cursor_shape;
+   Eina_Stringshare *name;
+   e_cursor_shape cursor_shape;
+   unsigned int cell_percentage;
+   unsigned int blinkon;
+   unsigned int blinkoff;
+   unsigned int blinkwait;
+   unsigned int hl_id;
+   unsigned int id_lm;
+   char short_name[1];
+};
 
-#define T_INT_INVALID ((t_int)-1)
+s_mode *mode_new(Eina_Stringshare *name, const char *short_name, unsigned int short_size);
+void mode_free(s_mode *mode);
 
-#endif /* ! __ENVIM_TYPES_H__ */
+#endif /* ! __ENVIM_MODE_H__ */

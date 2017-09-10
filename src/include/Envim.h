@@ -31,6 +31,7 @@
 #include "nvim_api.h"
 
 #include "envim/config.h"
+#include "envim/mode.h"
 #include "envim/gui.h"
 #include "envim/termview.h"
 #include "envim/log.h"
@@ -53,6 +54,12 @@ struct nvim
 
    Ecore_Exe *exe;
    Eina_List *requests;
+   Eina_Hash *modes;
+
+   struct {
+      Eina_Stringshare *name;
+      unsigned int index;
+   } mode;
 
    msgpack_unpacker unpacker;
    msgpack_sbuffer sbuffer;
@@ -100,6 +107,9 @@ s_nvim *nvim_new(const char *program, unsigned int argc, const char *const argv[
 void nvim_free(s_nvim *nvim);
 uint32_t nvim_get_next_uid(s_nvim *nvim);
 Eina_Bool nvim_api_response_dispatch(s_nvim *nvim, const s_request *req, const msgpack_object_array *args);
+Eina_Bool nvim_mode_add(s_nvim *nvim, s_mode *mode);
+s_mode *nvim_named_mode_get(s_nvim *nvim, Eina_Stringshare *name);
+void nvim_mode_set(s_nvim *nvim, Eina_Stringshare *name, unsigned int index);
 
 
 /*============================================================================*

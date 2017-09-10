@@ -187,7 +187,7 @@ pack_single_stringshare_get(const msgpack_object *obj)
 {
    if (EINA_UNLIKELY(obj->type != MSGPACK_OBJECT_STR))
      {
-        ERR("Object does not contain a string");
+        ERR("Object does not contain a string. Type is 0x%x", obj->type);
         return NULL;
      }
    else
