@@ -329,6 +329,5 @@ gui_scroll(s_gui *gui,
            int scroll)
 {
    if (scroll != 0)
-     termview_scroll(gui->termview, (unsigned int)(abs(scroll)),
-                     (scroll > 0) ? EINA_TRUE : EINA_FALSE);
+     termview_scroll(gui->termview, scroll);
 }
