@@ -21,6 +21,7 @@
  */
 
 #include "Envim.h"
+#include "envim/keymap.h"
 #include <Ecore_Getopt.h>
 
 int _envim_log_domain = -1;
@@ -60,6 +61,7 @@ static const s_module _modules[] =
 
    MODULE(types),
    MODULE(config),
+   MODULE(keymap),
    MODULE(nvim_api),
    MODULE(nvim_event),
    MODULE(termview),

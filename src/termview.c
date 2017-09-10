@@ -23,6 +23,7 @@
 #include "envim/termview.h"
 #include "envim/log.h"
 #include "envim/main.h"
+#include "envim/keymap.h"
 #include "nvim_api.h"
 
 #include <Edje.h>
@@ -95,9 +96,18 @@ _termview_key_down_cb(void *data,
    s_termview *const sd = data;
    const Evas_Event_Key_Down *const ev = event;
    ERR("Key down: %s, %s, %s", ev->string, ev->compose, ev->key);
-   if (ev->string)
-     nvim_input(sd->nvim, ev->string, _input_keys_cb, NULL, NULL);
-   edje_object_signal_emit(sd->cursor, "key,down", "envim");
+   const char *send = ev->string;
+
+   if (! send && ev->key)
+     {
+        send = keymap_get(ev->key);
+     }
+
+   if (send)
+     {
+        nvim_input(sd->nvim, send, _input_keys_cb, NULL, NULL);
+        edje_object_signal_emit(sd->cursor, "key,down", "envim");
+     }
 }
 
 static void
