@@ -74,6 +74,37 @@ collections {
             }
          }
 
+         external { "busy_indicator"; source: "elm/progressbar";
+            description { "default";
+               rel1.relative: 1.0 0.0;
+               rel2.relative: 1.0 0.0;
+               align: 1.0 0.0;
+               params {
+                  string: "style" "wheel";
+                  bool: "pulse" 1;
+               }
+               visible: 0;
+            }
+            description { "busy";
+               inherit: "default";
+               params {
+                  bool: "pulsing" 1;
+               }
+               visible: 1;
+            }
+
+            programs {
+               program { signal: "envim,busy,on"; source: "envim";
+                  action: STATE_SET "busy";
+                  target: "busy_indicator";
+               }
+               program { signal: "envim,busy,off"; source: "envim";
+                  action: STATE_SET "default";
+                  target: "busy_indicator";
+               }
+            }
+         }
+
 
 
 #define ENVIM_CONFIG_PARTS \

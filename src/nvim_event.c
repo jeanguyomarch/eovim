@@ -314,20 +314,23 @@ nvim_event_update_menu(s_nvim *nvim EINA_UNUSED,
    CRI("Unimplemented");
    return EINA_TRUE;
 }
+
 Eina_Bool
-nvim_event_busy_start(s_nvim *nvim EINA_UNUSED,
+nvim_event_busy_start(s_nvim *nvim,
                       const msgpack_object_array *args EINA_UNUSED)
 {
-   CRI("Unimplemented");
+   gui_busy_set(&nvim->gui, EINA_TRUE);
    return EINA_TRUE;
 }
+
 Eina_Bool
-nvim_event_busy_stop(s_nvim *nvim EINA_UNUSED,
+nvim_event_busy_stop(s_nvim *nvim,
                      const msgpack_object_array *args EINA_UNUSED)
 {
-   CRI("Unimplemented");
+   gui_busy_set(&nvim->gui, EINA_FALSE);
    return EINA_TRUE;
 }
+
 Eina_Bool
 nvim_event_mouse_on(s_nvim *nvim EINA_UNUSED,
                     const msgpack_object_array *args EINA_UNUSED)

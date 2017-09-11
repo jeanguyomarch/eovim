@@ -345,3 +345,11 @@ gui_scroll(s_gui *gui,
    if (scroll != 0)
      termview_scroll(gui->termview, scroll);
 }
+
+void
+gui_busy_set(s_gui *gui,
+             Eina_Bool busy)
+{
+   const char *const signal = (busy) ? "envim,busy,on" : "envim,busy,off";
+   elm_layout_signal_emit(gui->layout, signal, "envim");
+}
