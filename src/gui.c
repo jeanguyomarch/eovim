@@ -51,16 +51,25 @@ fail:
    evas_object_del(o);
    return NULL;
 }
-static Eina_Bool _cb(s_gui *gui)
+
+static void
+_config_show_cb(void *data,
+                Evas_Object *obj EINA_UNUSED,
+                const char *emission EINA_UNUSED,
+                const char *source EINA_UNUSED)
 {
- //  WRN("Config");
-   static int i = 0;
- //  if (i % 2 == 0)
- //    gui_config_show(gui);
- //  else
- //    gui_config_hide(gui);
-   i++;
-   return 1;
+   s_nvim *const nvim = data;
+   gui_config_show(&nvim->gui);
+}
+
+static void
+_config_hide_cb(void *data,
+                Evas_Object *obj EINA_UNUSED,
+                const char *emission EINA_UNUSED,
+                const char *source EINA_UNUSED)
+{
+   s_nvim *const nvim = data;
+   gui_config_hide(&nvim->gui);
 }
 
 static Evas_Object *
@@ -127,9 +136,6 @@ _config_fg_add(s_gui *gui, Evas_Object *parent)
 
    elm_object_content_set(f, sel);
 
-//   elm_box_pack_end(parent, f);
-//   elm_layout_content_set(gui->layout, "envim.config.fg_color", btn);
-
    return f;
 }
 
@@ -143,18 +149,24 @@ gui_config_show(s_gui *gui)
 
    o = _config_fg_add(gui, box);
    elm_box_pack_end(box, o);
-   elm_layout_content_set(gui->layout, "envim.config.fg_color", box);
+   elm_layout_content_set(gui->layout, "envim.config.box", box);
 
    elm_layout_signal_emit(gui->layout, "config,show", "envim");
+   evas_object_focus_set(o, EINA_TRUE);
+
 
    gui->config.box = box;
 }
 
-
 void
 gui_config_hide(s_gui *gui)
 {
-  // elm_layout_signal_emit(gui->layout, "config,hide", "envim");
+   elm_layout_signal_emit(gui->layout, "config,hide", "envim");
+   evas_object_focus_set(gui->termview, EINA_TRUE);
+
+   elm_layout_content_unset(gui->layout, "envim.config.box");
+   evas_object_del(gui->config.box);
+   gui->config.box = NULL;
 }
 
 Eina_Bool
@@ -176,6 +188,10 @@ gui_add(s_gui *gui,
         CRI("Failed to get layout item");
         goto fail;
      }
+   elm_layout_signal_callback_add(gui->layout, "config,open", "envim",
+                                  _config_show_cb, nvim);
+   elm_layout_signal_callback_add(gui->layout, "config,close", "envim",
+                                  _config_hide_cb, nvim);
    elm_win_resize_object_add(gui->win, gui->layout);
    evas_object_smart_callback_add(gui->win, "focus,in", _focus_in_cb, gui);
 
@@ -197,8 +213,6 @@ gui_add(s_gui *gui,
    evas_object_show(gui->termview);
    evas_object_show(gui->layout);
    evas_object_show(gui->win);
-
-   ecore_timer_add(2.0, _cb, gui);
 
    return EINA_TRUE;
 
