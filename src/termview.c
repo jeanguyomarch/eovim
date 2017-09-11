@@ -80,14 +80,6 @@ _textgrid_mouse_move_cb(void *data EINA_UNUSED,
 }
 
 static void
-_input_keys_cb(s_nvim *nvim EINA_UNUSED,
-               t_int keys,
-               void *data EINA_UNUSED)
-{
-   INF("%"PRIu64" keys written", keys);
-}
-
-static void
 _termview_key_down_cb(void *data,
                       Evas *e EINA_UNUSED,
                       Evas_Object *obj EINA_UNUSED,
@@ -104,7 +96,7 @@ _termview_key_down_cb(void *data,
    /* If a key is availab,e pass it to neovim and update the ui */
    if (send)
      {
-        nvim_input(sd->nvim, send, _input_keys_cb, NULL, NULL);
+        nvim_input(sd->nvim, send, NULL, NULL, NULL);
         edje_object_signal_emit(sd->cursor, "key,down", "envim");
      }
    else
