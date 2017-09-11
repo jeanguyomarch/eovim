@@ -353,3 +353,10 @@ gui_busy_set(s_gui *gui,
    const char *const signal = (busy) ? "envim,busy,on" : "envim,busy,off";
    elm_layout_signal_emit(gui->layout, signal, "envim");
 }
+
+void
+gui_mouse_enabled_set(s_gui *gui,
+                      Eina_Bool enable)
+{
+   gui->use_mouse = enable;
+}
