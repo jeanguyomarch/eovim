@@ -40,8 +40,6 @@ struct gui
    } config;
 
    s_nvim *nvim;
-
-   Eina_Bool use_mouse;
 };
 
 Eina_Bool gui_add(s_gui *gui, s_nvim *nvim);
@@ -59,7 +57,6 @@ void gui_scroll_region_set(s_gui *gui, int x, int y, int w, int h);
 void gui_scroll(s_gui *gui, int scroll);
 void gui_busy_set(s_gui *gui, Eina_Bool busy);
 
-void gui_mouse_enabled_set(s_gui *gui, Eina_Bool enable);
 void gui_config_show(s_gui *gui);
 void gui_config_hide(s_gui *gui);
 

@@ -335,7 +335,7 @@ Eina_Bool
 nvim_event_mouse_on(s_nvim *nvim,
                     const msgpack_object_array *args EINA_UNUSED)
 {
-   gui_mouse_enabled_set(&nvim->gui, EINA_TRUE);
+   nvim_mouse_enabled_set(nvim, EINA_TRUE);
    return EINA_TRUE;
 }
 
@@ -343,7 +343,7 @@ Eina_Bool
 nvim_event_mouse_off(s_nvim *nvim,
                      const msgpack_object_array *args EINA_UNUSED)
 {
-   gui_mouse_enabled_set(&nvim->gui, EINA_FALSE);
+   nvim_mouse_enabled_set(nvim, EINA_FALSE);
    return EINA_TRUE;
 }
 

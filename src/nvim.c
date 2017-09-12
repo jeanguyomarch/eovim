@@ -614,3 +614,16 @@ nvim_mode_add(s_nvim *nvim,
 {
   return eina_hash_add(nvim->modes, mode->name, mode);
 }
+
+void
+nvim_mouse_enabled_set(s_nvim *nvim,
+                       Eina_Bool enable)
+{
+   nvim->mouse_enabled = !!enable;
+}
+
+Eina_Bool
+nvim_mouse_enabled_get(const s_nvim *nvim)
+{
+   return nvim->mouse_enabled;
+}

@@ -65,6 +65,8 @@ struct nvim
    msgpack_sbuffer sbuffer;
    msgpack_packer packer;
    uint32_t request_id;
+
+   Eina_Bool mouse_enabled;
 };
 
 struct position
@@ -110,6 +112,8 @@ Eina_Bool nvim_api_response_dispatch(s_nvim *nvim, const s_request *req, const m
 Eina_Bool nvim_mode_add(s_nvim *nvim, s_mode *mode);
 s_mode *nvim_named_mode_get(s_nvim *nvim, Eina_Stringshare *name);
 void nvim_mode_set(s_nvim *nvim, Eina_Stringshare *name, unsigned int index);
+void nvim_mouse_enabled_set(s_nvim *nvim, Eina_Bool enable);
+Eina_Bool nvim_mouse_enabled_get(const s_nvim *nvim);
 
 
 /*============================================================================*
