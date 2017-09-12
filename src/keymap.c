@@ -51,6 +51,10 @@ static const s_keymap _map[] =
    KM_STD("F10"),
    KM_STD("F11"),
    KM_STD("F12"),
+   KM_STD("Home"),
+   KM_STD("End"),
+   KM("Prior", "<PageUp>"),
+   KM("Next", "<PageDown>"),
 };
 
 static Eina_Hash *_keymap = NULL;
