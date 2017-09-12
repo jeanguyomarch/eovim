@@ -25,6 +25,7 @@
 #include "envim/main.h"
 #include "envim/keymap.h"
 #include "nvim_api.h"
+#include "Envim.h"
 
 #include <Edje.h>
 
@@ -107,11 +108,62 @@ _mouse_button_to_string(int button)
 }
 
 static void
+_mouse_event(s_termview *sd, const char *event,
+             unsigned int cx, unsigned int cy,
+             int btn)
+{
+   char input[64];
+
+   /* If mouse is NOT enabled, we don't handle mouse events */
+   if (! nvim_mouse_enabled_get(sd->nvim)) { return; }
+
+   /* Determine which button we pressed */
+   const char *const button = _mouse_button_to_string(btn);
+
+   /* Convert the mouse input as an input format. Our API uses stringshares,
+    * so we are obliged to make a stringshare of the string, but this is pure
+    * loss. */
+   const int bytes = snprintf(input, sizeof(input),
+                              "<%s%s><%u,%u>", button, event, cx, cy);
+   Eina_Stringshare *const shr = eina_stringshare_add_length(
+      input, (unsigned int)bytes
+   );
+   if (EINA_UNLIKELY(! shr))
+     {
+        CRI("Failed to create stringshare from string '%s'", input);
+        return;
+     }
+
+   nvim_input(sd->nvim, shr, NULL, NULL, NULL);
+   eina_stringshare_del(shr);
+}
+
+static void
 _textgrid_mouse_move_cb(void *data EINA_UNUSED,
                         Evas *e EINA_UNUSED,
                         Evas_Object *obj EINA_UNUSED,
                         void *event EINA_UNUSED)
 {
+}
+
+static void
+_textgrid_mouse_up_cb(void *data,
+                      Evas *e EINA_UNUSED,
+                      Evas_Object *obj EINA_UNUSED,
+                      void *event)
+{
+   s_termview *const sd = data;
+   const Evas_Event_Mouse_Up *const ev = event;
+   unsigned int cx, cy;
+
+   /* Convert the mouse down location to a textgrid cell */
+   if (! _coords_to_cell(sd, ev->canvas.x, ev->canvas.y, &cx, &cy))
+     {
+        ERR("Wtf? Something went wrong");
+        return;
+     }
+
+   _mouse_event(sd, "Release", cx, cy, ev->button);
 }
 
 static void
@@ -123,9 +175,6 @@ _textgrid_mouse_down_cb(void *data,
    s_termview *const sd = data;
    const Evas_Event_Mouse_Down *const ev = event;
    unsigned int cx, cy;
-   char input[64];
-   int bytes;
-   Eina_Stringshare *shr;
 
    /* Convert the mouse down location to a textgrid cell */
    if (! _coords_to_cell(sd, ev->canvas.x, ev->canvas.y, &cx, &cy))
@@ -134,22 +183,7 @@ _textgrid_mouse_down_cb(void *data,
         return;
      }
 
-   /* Determine which button we pressed */
-   const char *const button = _mouse_button_to_string(ev->button);
-
-   /* Convert the mouse input as an input format. Our API uses stringshares,
-    * so we are obliged to make a stringshare of the string, but this is pure
-    * loss. */
-   bytes = snprintf(input, sizeof(input), "<%sMouse><%u,%u>", button, cx, cy);
-   shr = eina_stringshare_add_length(input, (unsigned int)bytes);
-   if (EINA_UNLIKELY(! shr))
-     {
-        CRI("Failed to create stringshare from string '%s'", input);
-        return;
-     }
-
-   nvim_input(sd->nvim, shr, NULL, NULL, NULL);
-   eina_stringshare_del(shr);
+   _mouse_event(sd, "Mouse", cx, cy, ev->button);
 }
 
 static void
@@ -224,6 +258,7 @@ _smart_add(Evas_Object *obj)
    evas_object_smart_member_add(o, obj);
    evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_MOVE, _textgrid_mouse_move_cb, sd);
    evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_DOWN, _textgrid_mouse_down_cb, sd);
+   evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_UP, _textgrid_mouse_up_cb, sd);
    evas_object_textgrid_cell_size_get(o, (int*)&sd->cell_w, (int*)&sd->cell_h);
    evas_object_show(o);
 
