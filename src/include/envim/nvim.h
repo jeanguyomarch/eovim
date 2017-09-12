@@ -20,54 +20,49 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_TYPES_H__
-#define __ENVIM_TYPES_H__
+#ifndef __ENVIM_NVIM_H__
+#define __ENVIM_NVIM_H__
+
+#include "envim/types.h"
+#include "envim/gui.h"
 
 #include <Eina.h>
-#include <stdint.h>
+#include <Ecore.h>
+#include <msgpack.h>
 
-typedef int64_t t_int;
-typedef struct version s_version;
-typedef struct request s_request;
-typedef struct nvim s_nvim;
-typedef struct mode s_mode;
-typedef struct position s_position;
-typedef struct gui s_gui;
-typedef void (*f_request_error)(const s_nvim *nvim, const s_request *req, void *data);
-
-typedef enum
+struct nvim
 {
-   CURSOR_SHAPE_BLOCK,
-   CURSOR_SHAPE_HORIZONTAL,
-   CURSOR_SHAPE_VERTICAL,
-} e_cursor_shape;
+   s_gui gui;
+   s_config *config;
 
-struct position
-{
-   int64_t x;
-   int64_t y;
+   Ecore_Exe *exe;
+   Eina_List *requests;
+   Eina_Hash *modes;
+
+   struct {
+      Eina_Stringshare *name;
+      unsigned int index;
+   } mode;
+
+   msgpack_unpacker unpacker;
+   msgpack_sbuffer sbuffer;
+   msgpack_packer packer;
+   uint32_t request_id;
+
+   Eina_Bool mouse_enabled;
 };
 
-struct version
-{
-   unsigned int major;
-   unsigned int minor;
-   unsigned int patch;
-};
 
-static inline s_position
-position_make(int64_t x, int64_t y)
-{
-   const s_position pos = {
-      .x = x,
-      .y = y,
-   };
-   return pos;
-}
+Eina_Bool nvim_init(void);
+void nvim_shutdown(void);
+s_nvim *nvim_new(const char *program, unsigned int argc, const char *const argv[]);
+void nvim_free(s_nvim *nvim);
+uint32_t nvim_get_next_uid(s_nvim *nvim);
+Eina_Bool nvim_api_response_dispatch(s_nvim *nvim, const s_request *req, const msgpack_object_array *args);
+Eina_Bool nvim_mode_add(s_nvim *nvim, s_mode *mode);
+s_mode *nvim_named_mode_get(s_nvim *nvim, Eina_Stringshare *name);
+void nvim_mode_set(s_nvim *nvim, Eina_Stringshare *name, unsigned int index);
+void nvim_mouse_enabled_set(s_nvim *nvim, Eina_Bool enable);
+Eina_Bool nvim_mouse_enabled_get(const s_nvim *nvim);
 
-#define T_INT_INVALID ((t_int)-1)
-
-Eina_Bool types_init(void);
-void types_shutdown(void);
-
-#endif /* ! __ENVIM_TYPES_H__ */
+#endif /* ! __ENVIM_NVIM_H__ */

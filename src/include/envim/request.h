@@ -20,54 +20,26 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_TYPES_H__
-#define __ENVIM_TYPES_H__
+#ifndef __ENVIM_REQUEST_H__
+#define __ENVIM_REQUEST_H__
 
-#include <Eina.h>
-#include <stdint.h>
+#include "envim/types.h"
 
-typedef int64_t t_int;
-typedef struct version s_version;
-typedef struct request s_request;
-typedef struct nvim s_nvim;
-typedef struct mode s_mode;
-typedef struct position s_position;
-typedef struct gui s_gui;
-typedef void (*f_request_error)(const s_nvim *nvim, const s_request *req, void *data);
 
-typedef enum
+struct request
 {
-   CURSOR_SHAPE_BLOCK,
-   CURSOR_SHAPE_HORIZONTAL,
-   CURSOR_SHAPE_VERTICAL,
-} e_cursor_shape;
-
-struct position
-{
-   int64_t x;
-   int64_t y;
+   uint32_t uid;
+   const void *then_callback;
+   f_request_error error_callback;
+   void *callback_data;
+   e_request type;
 };
 
-struct version
-{
-   unsigned int major;
-   unsigned int minor;
-   unsigned int patch;
-};
 
-static inline s_position
-position_make(int64_t x, int64_t y)
-{
-   const s_position pos = {
-      .x = x,
-      .y = y,
-   };
-   return pos;
-}
+Eina_Bool request_init(void);
+void request_shutdown(void);
+s_request *request_new(uint32_t req_uid, e_request req_type, const void *then_cb, f_request_error error_cb, void *cb_data);
+void request_free(s_request *req);
 
-#define T_INT_INVALID ((t_int)-1)
 
-Eina_Bool types_init(void);
-void types_shutdown(void);
-
-#endif /* ! __ENVIM_TYPES_H__ */
+#endif /* ! __ENVIM_REQUEST_H__ */
