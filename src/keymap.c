@@ -20,8 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "envim/keymap.h"
-#include "envim/log.h"
+#include "eovim/keymap.h"
+#include "eovim/log.h"
 
 typedef struct
 {

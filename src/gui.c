@@ -20,12 +20,12 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "envim/types.h"
-#include "envim/gui.h"
-#include "envim/nvim.h"
-#include "envim/main.h"
-#include "envim/log.h"
-#include "envim/config.h"
+#include "eovim/types.h"
+#include "eovim/gui.h"
+#include "eovim/nvim.h"
+#include "eovim/main.h"
+#include "eovim/log.h"
+#include "eovim/config.h"
 #include <Elementary.h>
 
 static void
@@ -155,9 +155,9 @@ gui_config_show(s_gui *gui)
 
    o = _config_fg_add(gui, box);
    elm_box_pack_end(box, o);
-   elm_layout_content_set(gui->layout, "envim.config.box", box);
+   elm_layout_content_set(gui->layout, "eovim.config.box", box);
 
-   elm_layout_signal_emit(gui->layout, "config,show", "envim");
+   elm_layout_signal_emit(gui->layout, "config,show", "eovim");
    evas_object_focus_set(o, EINA_TRUE);
 
 
@@ -167,10 +167,10 @@ gui_config_show(s_gui *gui)
 void
 gui_config_hide(s_gui *gui)
 {
-   elm_layout_signal_emit(gui->layout, "config,hide", "envim");
+   elm_layout_signal_emit(gui->layout, "config,hide", "eovim");
    evas_object_focus_set(gui->termview, EINA_TRUE);
 
-   elm_layout_content_unset(gui->layout, "envim.config.box");
+   elm_layout_content_unset(gui->layout, "eovim.config.box");
    evas_object_del(gui->config.box);
    gui->config.box = NULL;
 }
@@ -184,19 +184,19 @@ gui_add(s_gui *gui,
    gui->nvim = nvim;
 
    /* Window setup */
-   gui->win = elm_win_util_standard_add("envim", "Envim");
+   gui->win = elm_win_util_standard_add("eovim", "Eovim");
    elm_win_autodel_set(gui->win, EINA_TRUE);
 
    /* Main Layout setup */
-   gui->layout = _layout_item_add(gui, "envim/main");
+   gui->layout = _layout_item_add(gui, "eovim/main");
    if (EINA_UNLIKELY(! gui->layout))
      {
         CRI("Failed to get layout item");
         goto fail;
      }
-   elm_layout_signal_callback_add(gui->layout, "config,open", "envim",
+   elm_layout_signal_callback_add(gui->layout, "config,open", "eovim",
                                   _config_show_cb, nvim);
-   elm_layout_signal_callback_add(gui->layout, "config,close", "envim",
+   elm_layout_signal_callback_add(gui->layout, "config,close", "eovim",
                                   _config_hide_cb, nvim);
    elm_win_resize_object_add(gui->win, gui->layout);
    evas_object_smart_callback_add(gui->win, "focus,in", _focus_in_cb, gui);
@@ -213,7 +213,7 @@ gui_add(s_gui *gui,
    termview_cell_size_get(gui->termview, &cell_w, &cell_h);
    elm_win_size_step_set(gui->win, (int)cell_w, (int)cell_h);
 
-   elm_layout_content_set(gui->layout, "envim.main.view", gui->termview);
+   elm_layout_content_set(gui->layout, "eovim.main.view", gui->termview);
    _config_fg_add(gui, gui->layout);
 
    evas_object_show(gui->termview);
@@ -356,6 +356,6 @@ void
 gui_busy_set(s_gui *gui,
              Eina_Bool busy)
 {
-   const char *const signal = (busy) ? "envim,busy,on" : "envim,busy,off";
-   elm_layout_signal_emit(gui->layout, signal, "envim");
+   const char *const signal = (busy) ? "eovim,busy,on" : "eovim,busy,off";
+   elm_layout_signal_emit(gui->layout, signal, "eovim");
 }

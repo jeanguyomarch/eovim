@@ -20,10 +20,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_EVENT_H__
-#define __ENVIM_EVENT_H__
+#ifndef __EOVIM_EVENT_H__
+#define __EOVIM_EVENT_H__
 
-#include "envim/types.h"
+#include "eovim/types.h"
 #include <msgpack.h>
 
 Eina_Bool nvim_event_resize(s_nvim *nvim, const msgpack_object_array *args);
@@ -58,4 +58,4 @@ Eina_Bool nvim_event_tabline_update(s_nvim *nvim, const msgpack_object_array *ar
 Eina_Bool nvim_event_init(void);
 void nvim_event_shutdown(void);
 
-#endif /* ! __ENVIM_EVENT_H__ */
+#endif /* ! __EOVIM_EVENT_H__ */

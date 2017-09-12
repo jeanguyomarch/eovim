@@ -25,7 +25,7 @@ externals {
 }
 
 collections {
-   group { "envim/main";
+   group { "eovim/main";
       images {
          image: "preferences.png" COMP;
       }
@@ -37,7 +37,7 @@ collections {
             }
          }
 
-         swallow { "envim.main.view";
+         swallow { "eovim.main.view";
             desc { "default";
                rel1.to: "tabs_headings";
                rel1.relative: 0.0 1.0;
@@ -70,7 +70,7 @@ collections {
                target: "config_icon";
             }
             program { signal: "mouse,clicked,1"; source: "config_icon";
-               action: SIGNAL_EMIT "config,open" "envim";
+               action: SIGNAL_EMIT "config,open" "eovim";
             }
          }
 
@@ -94,11 +94,11 @@ collections {
             }
 
             programs {
-               program { signal: "envim,busy,on"; source: "envim";
+               program { signal: "eovim,busy,on"; source: "eovim";
                   action: STATE_SET "busy";
                   target: "busy_indicator";
                }
-               program { signal: "envim,busy,off"; source: "envim";
+               program { signal: "eovim,busy,off"; source: "eovim";
                   action: STATE_SET "default";
                   target: "busy_indicator";
                }
@@ -107,8 +107,8 @@ collections {
 
 
 
-#define ENVIM_CONFIG_PARTS \
-      X("envim.config.box")
+#define EOVIM_CONFIG_PARTS \
+      X("eovim.config.box")
 
          rect { "config_cache";
             desc { "default";
@@ -140,7 +140,7 @@ collections {
 
             programs {
                program { signal: "mouse,clicked,1"; source: "config_close";
-                  action: SIGNAL_EMIT "config,close" "envim";
+                  action: SIGNAL_EMIT "config,close" "eovim";
                }
             }
          }
@@ -156,26 +156,26 @@ collections {
 
             programs {
 #define X(Part) target: Part;
-               program { signal: "config,show"; source: "envim";
+               program { signal: "config,show"; source: "eovim";
                   action: STATE_SET "enabled";
                   transition: ACCELERATE 0.8;
                   target: "config";
                   target: "config_cache";
                   target: "config_close";
-                  ENVIM_CONFIG_PARTS
+                  EOVIM_CONFIG_PARTS
                }
-               program { signal: "config,hide"; source: "envim";
+               program { signal: "config,hide"; source: "eovim";
                   action: STATE_SET "default";
                   target: "config";
                   target: "config_cache";
                   target: "config_close";
                   transition: DECELERATE 0.5;
-                  ENVIM_CONFIG_PARTS
+                  EOVIM_CONFIG_PARTS
                }
 #undef X
             }
          }
-         swallow { "envim.config.box";
+         swallow { "eovim.config.box";
             desc { "default";
                rel1.to: "config";
                rel2.to: "config";
@@ -196,7 +196,7 @@ collections {
     * NOTE: This group is mostly inspired from Terminology's cursor:
     * https://www.enlightenment.org/about-terminology
     */
-   group { "envim/cursor";
+   group { "eovim/cursor";
       images {
         image: "cr_key.png" COMP;
         image: "cr_out.png" COMP;
@@ -292,13 +292,13 @@ collections {
          }
          programs {
             program {
-               signal: "focus,in,noblink"; source: "envim";
+               signal: "focus,in,noblink"; source: "eovim";
                action: STATE_SET "focused" 0.0;
                target: "glow";
                target: "outline";
             }
             program { name: "focus_in";
-               signal: "focus,in"; source: "envim";
+               signal: "focus,in"; source: "eovim";
                action: STATE_SET "focused" 0.0;
                target: "glow";
                target: "outline";
@@ -332,7 +332,7 @@ collections {
                target: "pulse";
             }
             program {
-               signal: "focus,out"; source: "envim";
+               signal: "focus,out"; source: "eovim";
                action: ACTION_STOP;
                target: "focus_in";
                target: "focus2";
@@ -347,7 +347,7 @@ collections {
                target: "outline";
             }
             program {
-               signal: "key,down"; source: "envim";
+               signal: "key,down"; source: "eovim";
                action: STATE_SET "default" 0.0;
                target: "key";
                after: "key2";

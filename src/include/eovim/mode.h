@@ -20,13 +20,27 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_KEYMAP_H__
-#define __ENVIM_KEYMAP_H__
+#ifndef __EOVIM_MODE_H__
+#define __EOVIM_MODE_H__
 
+#include "eovim/types.h"
+#include "eovim/log.h"
 #include <Eina.h>
 
-Eina_Bool keymap_init(void);
-void keymap_shutdown(void);
-Eina_Stringshare *keymap_get(const char *input);
+struct mode
+{
+   Eina_Stringshare *name;
+   e_cursor_shape cursor_shape;
+   unsigned int cell_percentage;
+   unsigned int blinkon;
+   unsigned int blinkoff;
+   unsigned int blinkwait;
+   unsigned int hl_id;
+   unsigned int id_lm;
+   char short_name[1];
+};
 
-#endif /* ! __ENVIM_KEYMAP_H__ */
+s_mode *mode_new(Eina_Stringshare *name, const char *short_name, unsigned int short_size);
+void mode_free(s_mode *mode);
+
+#endif /* ! __EOVIM_MODE_H__ */

@@ -20,11 +20,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "envim/types.h"
-#include "envim/nvim.h"
-#include "envim/nvim_event.h"
-#include "envim/gui.h"
-#include "envim/mode.h"
+#include "eovim/types.h"
+#include "eovim/nvim.h"
+#include "eovim/nvim_event.h"
+#include "eovim/gui.h"
+#include "eovim/mode.h"
 
 typedef enum
 {

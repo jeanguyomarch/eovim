@@ -20,15 +20,62 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_LOG_H__
-#define __ENVIM_LOG_H__
+#ifndef __EOVIM_TYPES_H__
+#define __EOVIM_TYPES_H__
 
-extern int _envim_log_domain;
+#include <Eina.h>
+#include <msgpack.h>
+#include <stdint.h>
 
-#define DBG(...) EINA_LOG_DOM_DBG(_envim_log_domain, __VA_ARGS__)
-#define INF(...) EINA_LOG_DOM_INFO(_envim_log_domain, __VA_ARGS__)
-#define WRN(...) EINA_LOG_DOM_WARN(_envim_log_domain, __VA_ARGS__)
-#define ERR(...) EINA_LOG_DOM_ERR(_envim_log_domain, __VA_ARGS__)
-#define CRI(...) EINA_LOG_DOM_CRIT(_envim_log_domain, __VA_ARGS__)
+typedef int64_t t_int;
+typedef struct version s_version;
+typedef struct request s_request;
+typedef struct nvim s_nvim;
+typedef struct config s_config;
+typedef struct mode s_mode;
+typedef struct position s_position;
+typedef struct gui s_gui;
+typedef Eina_Bool (*f_event_cb)(s_nvim *nvim, const msgpack_object_array *args);
 
-#endif /* ! __ENVIM_LOG_H__ */
+typedef enum
+{
+   CURSOR_SHAPE_BLOCK,
+   CURSOR_SHAPE_HORIZONTAL,
+   CURSOR_SHAPE_VERTICAL,
+} e_cursor_shape;
+
+
+struct request
+{
+   uint32_t uid;
+};
+
+struct position
+{
+   int64_t x;
+   int64_t y;
+};
+
+struct version
+{
+   unsigned int major;
+   unsigned int minor;
+   unsigned int patch;
+};
+
+static inline s_position
+position_make(int64_t x, int64_t y)
+{
+   const s_position pos = {
+      .x = x,
+      .y = y,
+   };
+   return pos;
+}
+
+#define T_INT_INVALID ((t_int)-1)
+
+Eina_Bool types_init(void);
+void types_shutdown(void);
+
+#endif /* ! __EOVIM_TYPES_H__ */

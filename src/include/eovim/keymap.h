@@ -20,32 +20,13 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_CONFIG_H__
-#define __ENVIM_CONFIG_H__
+#ifndef __EOVIM_KEYMAP_H__
+#define __EOVIM_KEYMAP_H__
 
-#include "envim/types.h"
 #include <Eina.h>
 
-typedef struct config_color s_config_color;
+Eina_Bool keymap_init(void);
+void keymap_shutdown(void);
+Eina_Stringshare *keymap_get(const char *input);
 
-struct config_color
-{
-   uint8_t r;
-   uint8_t g;
-   uint8_t b;
-   uint8_t a;
-};
-
-struct config
-{
-   unsigned int version;
-   s_config_color *fg_color;
-};
-
-Eina_Bool config_init(void);
-void config_shutdown(void);
-void config_fg_color_set(s_config *config, int r, int g, int b, int a);
-s_config *config_new(void);
-void config_free(s_config *config);
-
-#endif /* ! __ENVIM_CONFIG_H__ */
+#endif /* ! __EOVIM_KEYMAP_H__ */

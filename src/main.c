@@ -20,25 +20,25 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "envim/keymap.h"
-#include "envim/types.h"
-#include "envim/config.h"
-#include "envim/nvim.h"
-#include "envim/nvim_api.h"
-#include "envim/nvim_event.h"
-#include "envim/termview.h"
-#include "envim/main.h"
-#include "envim/log.h"
+#include "eovim/keymap.h"
+#include "eovim/types.h"
+#include "eovim/config.h"
+#include "eovim/nvim.h"
+#include "eovim/nvim_api.h"
+#include "eovim/nvim_event.h"
+#include "eovim/termview.h"
+#include "eovim/main.h"
+#include "eovim/log.h"
 #include <Ecore_Getopt.h>
 
-int _envim_log_domain = -1;
+int _eovim_log_domain = -1;
 
 static Eina_Bool _in_tree = EINA_FALSE;
 static Eina_Strbuf *_edje_file = NULL;
 
 static const Ecore_Getopt _options =
 {
-   "envim",
+   "eovim",
    "%prog [options] [files...]",
    "0.2.1",
    "2017 (c) Jean Guyomarc'h",
@@ -124,8 +124,8 @@ elm_main(int argc,
    };
 
    /* First step: initialize the logging framework */
-   _envim_log_domain = eina_log_domain_register("envim", EINA_COLOR_RED);
-   if (EINA_UNLIKELY(_envim_log_domain < 0))
+   _eovim_log_domain = eina_log_domain_register("eovim", EINA_COLOR_RED);
+   if (EINA_UNLIKELY(_eovim_log_domain < 0))
      {
         EINA_LOG_CRIT("Failed to create log domain");
         goto end;
@@ -147,7 +147,7 @@ elm_main(int argc,
      }
 
 
-   const char *const env = getenv("ENVIM_IN_TREE");
+   const char *const env = getenv("EOVIM_IN_TREE");
    _in_tree = (env) ? !!atoi(env) : EINA_FALSE;
 
    if (EINA_UNLIKELY(! _edje_file_init(theme)))
@@ -157,7 +157,7 @@ elm_main(int argc,
      }
 
    /*
-    * Initialize all the different modules that compose Envim.
+    * Initialize all the different modules that compose Eovim.
     */
    const s_module *const mod_last = &(_modules[EINA_C_ARRAY_LENGTH(_modules) - 1]);
    const s_module *mod_it;
@@ -178,7 +178,7 @@ elm_main(int argc,
    elm_app_compile_bin_dir_set(PACKAGE_BIN_DIR);
    elm_app_compile_lib_dir_set(PACKAGE_LIB_DIR);
    elm_app_compile_data_dir_set(PACKAGE_DATA_DIR);
-   elm_app_info_set(elm_main, "envim", "themes/default.edj");
+   elm_app_info_set(elm_main, "eovim", "themes/default.edj");
 
    /*
     * Create the GUI client
@@ -205,7 +205,7 @@ modules_shutdown:
    for (--mod_it; mod_it >= _modules; mod_it--)
      mod_it->shutdown();
 log_unregister:
-   eina_log_domain_unregister(_envim_log_domain);
+   eina_log_domain_unregister(_eovim_log_domain);
 end:
    return return_code;
 }

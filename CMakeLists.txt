@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(envim LANGUAGES C VERSION 0.0.99)
+project(eovim LANGUAGES C VERSION 0.0.99)
 
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(THEMES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data/themes")
@@ -37,7 +37,7 @@ add_custom_target(themes
    DEPENDS "${BUILD_THEMES_DIR}/default.edj"
 )
 
-add_executable(envim
+add_executable(eovim
    "${SRC_DIR}/main.c"
    "${SRC_DIR}/nvim.c"
    "${SRC_DIR}/config.c"
@@ -48,7 +48,7 @@ add_executable(envim
    "${SRC_DIR}/nvim_event.c"
    "${SRC_DIR}/nvim_api.c"
 )
-target_include_directories(envim
+target_include_directories(eovim
    SYSTEM PRIVATE
    ${EINA_INCLUDE_DIRS}
    ${EET_INCLUDE_DIRS}
@@ -58,11 +58,11 @@ target_include_directories(envim
    ${ELEMENTARY_INCLUDE_DIRS}
    ${MSGPACK_INCLUDE_DIRS}
 )
-target_include_directories(envim
+target_include_directories(eovim
    PRIVATE
    "${SRC_DIR}/include"
 )
-target_link_libraries(envim
+target_link_libraries(eovim
    ${EINA_LIBRARIES}
    ${EET_LIBRARIES}
    ${EVAS_LIBRARIES}
@@ -71,14 +71,14 @@ target_link_libraries(envim
    ${ELEMENTARY_LIBRARIES}
    ${MSGPACK_LIBRARIES}
 )
-add_dependencies(envim themes)
+add_dependencies(eovim themes)
 
 set_property(
-   TARGET envim
+   TARGET eovim
    PROPERTY C_STANDARD 11
 )
 if (CMAKE_COMPILER_IS_GNUCC)
-   target_compile_options(envim
+   target_compile_options(eovim
       PRIVATE
       -Wall
       -Wextra
@@ -92,7 +92,7 @@ if (CMAKE_COMPILER_IS_GNUCC)
       -Wunsafe-loop-optimizations
    )
 endif ()
-target_compile_definitions(envim
+target_compile_definitions(eovim
    PRIVATE
    PACKAGE_BIN_DIR=\"${CMAKE_INSTALL_PREFIX}/bin\"
    PACKAGE_LIB_DIR=\"${CMAKE_INSTALL_PREFIX}/lib\"

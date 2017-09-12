@@ -20,11 +20,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_NVIM_H__
-#define __ENVIM_NVIM_H__
+#ifndef __EOVIM_NVIM_H__
+#define __EOVIM_NVIM_H__
 
-#include "envim/types.h"
-#include "envim/gui.h"
+#include "eovim/types.h"
+#include "eovim/gui.h"
 
 #include <Eina.h>
 #include <Ecore.h>
@@ -65,4 +65,4 @@ void nvim_mode_set(s_nvim *nvim, Eina_Stringshare *name, unsigned int index);
 void nvim_mouse_enabled_set(s_nvim *nvim, Eina_Bool enable);
 Eina_Bool nvim_mouse_enabled_get(const s_nvim *nvim);
 
-#endif /* ! __ENVIM_NVIM_H__ */
+#endif /* ! __EOVIM_NVIM_H__ */

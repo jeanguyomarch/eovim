@@ -20,13 +20,13 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "envim/nvim_api.h"
-#include "envim/types.h"
-#include "envim/nvim.h"
-#include "envim/config.h"
-#include "envim/nvim_api.h"
-#include "envim/log.h"
-#include "envim/mode.h"
+#include "eovim/nvim_api.h"
+#include "eovim/types.h"
+#include "eovim/nvim.h"
+#include "eovim/config.h"
+#include "eovim/nvim_api.h"
+#include "eovim/log.h"
+#include "eovim/mode.h"
 
 typedef void (*f_nvim_notif)(s_nvim *nvim, Eina_List *args);
 enum

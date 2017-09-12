@@ -20,27 +20,21 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_MODE_H__
-#define __ENVIM_MODE_H__
+#ifndef __EOVIM_API_H__
+#define __EOVIM_API_H__
 
-#include "envim/types.h"
-#include "envim/log.h"
+#include "eovim/types.h"
 #include <Eina.h>
+#include <msgpack.h>
 
-struct mode
-{
-   Eina_Stringshare *name;
-   e_cursor_shape cursor_shape;
-   unsigned int cell_percentage;
-   unsigned int blinkon;
-   unsigned int blinkoff;
-   unsigned int blinkwait;
-   unsigned int hl_id;
-   unsigned int id_lm;
-   char short_name[1];
-};
+Eina_Bool nvim_api_ui_attach(s_nvim *nvim, unsigned int width, unsigned int height);
+Eina_Bool nvim_api_ui_try_resize(s_nvim *nvim, unsigned int width, unsigned height);
+Eina_Bool nvim_api_input(s_nvim *nvim, const char *input, unsigned int input_size);
 
-s_mode *mode_new(Eina_Stringshare *name, const char *short_name, unsigned int short_size);
-void mode_free(s_mode *mode);
+void nvim_api_request_free(s_nvim *nvim, Eina_List *req_item);
+Eina_Bool nvim_api_event_dispatch(s_nvim *nvim, Eina_Stringshare *command, const msgpack_object_array *args);
 
-#endif /* ! __ENVIM_MODE_H__ */
+Eina_Bool nvim_api_init(void);
+void nvim_api_shutdown(void);
+
+#endif /* ! __EOVIM_API_H__ */

@@ -20,12 +20,12 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "envim/termview.h"
-#include "envim/log.h"
-#include "envim/main.h"
-#include "envim/keymap.h"
-#include "envim/nvim_api.h"
-#include "envim/nvim.h"
+#include "eovim/termview.h"
+#include "eovim/log.h"
+#include "eovim/main.h"
+#include "eovim/keymap.h"
+#include "eovim/nvim_api.h"
+#include "eovim/nvim.h"
 
 #include <Edje.h>
 
@@ -205,7 +205,7 @@ _termview_key_down_cb(void *data,
    if (send)
      {
         nvim_api_input(sd->nvim, send, send_size);
-        edje_object_signal_emit(sd->cursor, "key,down", "envim");
+        edje_object_signal_emit(sd->cursor, "key,down", "eovim");
      }
    else
      ERR("Unhandled key '%s'", ev->key);
@@ -218,7 +218,7 @@ _termview_focus_in_cb(void *data,
                       void *event EINA_UNUSED)
 {
    s_termview *const sd = data;
-   edje_object_signal_emit(sd->cursor, "focus,in", "envim");
+   edje_object_signal_emit(sd->cursor, "focus,in", "eovim");
 }
 
 static void
@@ -228,7 +228,7 @@ _termview_focus_out_cb(void *data,
                       void *event EINA_UNUSED)
 {
    s_termview *const sd = data;
-   edje_object_signal_emit(sd->cursor, "focus,out", "envim");
+   edje_object_signal_emit(sd->cursor, "focus,out", "eovim");
 }
 
 
@@ -265,7 +265,7 @@ _smart_add(Evas_Object *obj)
 
    /* Cursor setup */
    sd->cursor = o = edje_object_add(evas);
-   edje_object_file_set(o, main_edje_file_get(), "envim/cursor");
+   edje_object_file_set(o, main_edje_file_get(), "eovim/cursor");
    evas_object_pass_events_set(o, EINA_TRUE);
    evas_object_propagate_events_set(o, EINA_FALSE);
    evas_object_smart_member_add(o, obj);

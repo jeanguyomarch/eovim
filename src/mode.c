@@ -20,7 +20,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "envim/mode.h"
+#include "eovim/mode.h"
 
 s_mode *
 mode_new(Eina_Stringshare *name,

@@ -20,10 +20,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_TERMVIEW_H__
-#define __ENVIM_TERMVIEW_H__
+#ifndef __EOVIM_TERMVIEW_H__
+#define __EOVIM_TERMVIEW_H__
 
-#include "envim/types.h"
+#include "eovim/types.h"
 #include <Evas.h>
 
 typedef struct termview_style s_termview_style;
@@ -66,4 +66,4 @@ void termview_scroll_region_set(Evas_Object *obj, const Eina_Rectangle *region);
 void termview_scroll(Evas_Object *obj, int count);
 void termview_fg_color_set(Evas_Object *obj, int r, int g, int b, int a);
 
-#endif /* ! __ENVIM_TERMVIEW_H__ */
+#endif /* ! __EOVIM_TERMVIEW_H__ */

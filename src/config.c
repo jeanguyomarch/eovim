@@ -20,8 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "envim/config.h"
-#include "envim/log.h"
+#include "eovim/config.h"
+#include "eovim/log.h"
 #include <Eet.h>
 
 #define CONFIG_VERSION 0

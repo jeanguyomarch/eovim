@@ -20,44 +20,32 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_GUI_H__
-#define __ENVIM_GUI_H__
+#ifndef __EOVIM_CONFIG_H__
+#define __EOVIM_CONFIG_H__
 
-#include <Elementary.h>
+#include "eovim/types.h"
+#include <Eina.h>
 
-#include "envim/termview.h"
-#include "envim/types.h"
+typedef struct config_color s_config_color;
 
-struct gui
+struct config_color
 {
-   Evas_Object *win;
-   Evas_Object *layout;
-   Evas_Object *termview;
-
-   struct {
-      Evas_Object *box;
-      Evas_Object *fg_col;
-   } config;
-
-   s_nvim *nvim;
+   uint8_t r;
+   uint8_t g;
+   uint8_t b;
+   uint8_t a;
 };
 
-Eina_Bool gui_add(s_gui *gui, s_nvim *nvim);
-void gui_del(s_gui *gui);
-void gui_resize(s_gui *gui, unsigned int cols, unsigned int rows);
-void gui_clear(s_gui *gui);
-void gui_eol_clear(s_gui *gui);
-void gui_put(s_gui *gui, const char *string, unsigned int size);
-void gui_cursor_goto(s_gui *gui, unsigned int to_x, unsigned int to_y);
-void gui_style_set(s_gui *gui, const s_termview_style *style);
-void gui_update_fg(s_gui *gui, t_int color);
-void gui_update_bg(s_gui *gui, t_int color);
-void gui_update_sp(s_gui *gui, t_int color);
-void gui_scroll_region_set(s_gui *gui, int x, int y, int w, int h);
-void gui_scroll(s_gui *gui, int scroll);
-void gui_busy_set(s_gui *gui, Eina_Bool busy);
+struct config
+{
+   unsigned int version;
+   s_config_color *fg_color;
+};
 
-void gui_config_show(s_gui *gui);
-void gui_config_hide(s_gui *gui);
+Eina_Bool config_init(void);
+void config_shutdown(void);
+void config_fg_color_set(s_config *config, int r, int g, int b, int a);
+s_config *config_new(void);
+void config_free(s_config *config);
 
-#endif /* ! __ENVIM_GUI_H__ */
+#endif /* ! __EOVIM_CONFIG_H__ */

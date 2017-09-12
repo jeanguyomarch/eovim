@@ -20,21 +20,12 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_API_H__
-#define __ENVIM_API_H__
+#ifndef __EOVIM_UTILS_H__
+#define __EOVIM_UTILS_H__
 
-#include "envim/types.h"
 #include <Eina.h>
-#include <msgpack.h>
 
-Eina_Bool nvim_api_ui_attach(s_nvim *nvim, unsigned int width, unsigned int height);
-Eina_Bool nvim_api_ui_try_resize(s_nvim *nvim, unsigned int width, unsigned height);
-Eina_Bool nvim_api_input(s_nvim *nvim, const char *input, unsigned int input_size);
+Eina_Bool main_in_tree_is(void);
+const char *main_edje_file_get(void);
 
-void nvim_api_request_free(s_nvim *nvim, Eina_List *req_item);
-Eina_Bool nvim_api_event_dispatch(s_nvim *nvim, Eina_Stringshare *command, const msgpack_object_array *args);
-
-Eina_Bool nvim_api_init(void);
-void nvim_api_shutdown(void);
-
-#endif /* ! __ENVIM_API_H__ */
+#endif /* ! __EOVIM_UTILS_H__ */

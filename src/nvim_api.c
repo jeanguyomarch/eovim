@@ -20,11 +20,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "envim/types.h"
-#include "envim/log.h"
-#include "envim/nvim_api.h"
-#include "envim/nvim_event.h"
-#include "envim/nvim.h"
+#include "eovim/types.h"
+#include "eovim/log.h"
+#include "eovim/nvim_api.h"
+#include "eovim/nvim_event.h"
+#include "eovim/nvim.h"
 
 /* Mempool to allocate the requests */
 static Eina_Mempool *_mempool = NULL;
