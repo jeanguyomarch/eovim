@@ -63,16 +63,21 @@ struct termview
       Eina_Bool bold;
       Eina_Bool underline;
       Eina_Bool undercurl;
-   } current;
+   } current; /**< Current style */
 
-   Eina_Rectangle scroll;
+   Eina_Rectangle scroll; /**< Scrolling region */
+
+   /* When mouse drag starts, we store in here the button that was pressed when
+    * dragging was initiated. Since there is no button 0, we use 0 as a value
+    * telling that there is no dragging */
+   int mouse_drag; /**< Doing mouse drag */
 
    /* Writing position */
-   unsigned int x;
-   unsigned int y;
+   unsigned int x; /**< Cursor X */
+   unsigned int y; /**< Cursor Y */
 };
 
-static Eina_Bool
+static void
 _coords_to_cell(const s_termview *sd,
                 int px, int py,
                 unsigned int *cell_x, unsigned int *cell_y)
@@ -82,14 +87,15 @@ _coords_to_cell(const s_termview *sd,
 
    evas_object_geometry_get(sd->textgrid, &ox, &oy, &ow, &oh);
 
-   /* Make sure the coordinate are within the textgrid */
-   EINA_SAFETY_ON_TRUE_RETURN_VAL((px < ox) || (py < oy), EINA_FALSE);
-   EINA_SAFETY_ON_TRUE_RETURN_VAL((px - ox >= ow) || (py - oy >= oh), EINA_FALSE);
+   /* Clamp cell_x in [0 ; cols[ */
+   if (px < ox) { *cell_x = 0; }
+   else if (px - ox >= ow) { *cell_x = sd->cols - 1; }
+   else { *cell_x = (unsigned int)((px - ox) / (int)sd->cell_w); }
 
-   if (cell_x) *cell_x = (unsigned int)((px - ox) / (int)sd->cell_w);
-   if (cell_y) *cell_y = (unsigned int)((py - oy) / (int)sd->cell_h);
-
-   return EINA_TRUE;
+   /* Clamp cell_y in [0 ; rows[ */
+   if (py < oy) { *cell_y = 0; }
+   else if (py - oy >= oh) { *cell_y = sd->rows - 1; }
+   else { *cell_y = (unsigned int)((py - oy) / (int)sd->cell_h); }
 }
 
 static const char *
@@ -139,11 +145,21 @@ _mouse_event(s_termview *sd, const char *event,
 }
 
 static void
-_textgrid_mouse_move_cb(void *data EINA_UNUSED,
+_textgrid_mouse_move_cb(void *data,
                         Evas *e EINA_UNUSED,
                         Evas_Object *obj EINA_UNUSED,
-                        void *event EINA_UNUSED)
+                        void *event)
 {
+   s_termview *const sd = data;
+
+   /* If there is no mouse drag, nothing to do! */
+   if (! sd->mouse_drag) { return; }
+
+   const Evas_Event_Mouse_Move *const ev = event;
+   unsigned int cx, cy;
+   
+   _coords_to_cell(sd, ev->cur.canvas.x, ev->cur.canvas.y, &cx, &cy);
+   _mouse_event(sd, "Drag", cx, cy, sd->mouse_drag);
 }
 
 static void
@@ -156,14 +172,9 @@ _textgrid_mouse_up_cb(void *data,
    const Evas_Event_Mouse_Up *const ev = event;
    unsigned int cx, cy;
 
-   /* Convert the mouse down location to a textgrid cell */
-   if (! _coords_to_cell(sd, ev->canvas.x, ev->canvas.y, &cx, &cy))
-     {
-        ERR("Wtf? Something went wrong");
-        return;
-     }
-
+   _coords_to_cell(sd, ev->canvas.x, ev->canvas.y, &cx, &cy);
    _mouse_event(sd, "Release", cx, cy, ev->button);
+   sd->mouse_drag = 0; /* Disable mouse dragging */
 }
 
 static void
@@ -176,14 +187,9 @@ _textgrid_mouse_down_cb(void *data,
    const Evas_Event_Mouse_Down *const ev = event;
    unsigned int cx, cy;
 
-   /* Convert the mouse down location to a textgrid cell */
-   if (! _coords_to_cell(sd, ev->canvas.x, ev->canvas.y, &cx, &cy))
-     {
-        ERR("Wtf? Something went wrong");
-        return;
-     }
-
+   _coords_to_cell(sd, ev->canvas.x, ev->canvas.y, &cx, &cy);
    _mouse_event(sd, "Mouse", cx, cy, ev->button);
+   sd->mouse_drag = ev->button; /* Enable mouse dragging */
 }
 
 static void
