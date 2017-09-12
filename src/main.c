@@ -20,8 +20,15 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "Envim.h"
 #include "envim/keymap.h"
+#include "envim/types.h"
+#include "envim/config.h"
+#include "envim/nvim.h"
+#include "envim/nvim_api.h"
+#include "envim/nvim_event.h"
+#include "envim/termview.h"
+#include "envim/main.h"
+#include "envim/log.h"
 #include <Ecore_Getopt.h>
 
 int _envim_log_domain = -1;
@@ -59,13 +66,11 @@ static const s_module _modules[] =
 #define MODULE(name_) \
    { .name = #name_, .init = name_ ## _init, .shutdown = name_ ## _shutdown }
 
-   MODULE(types),
    MODULE(config),
    MODULE(keymap),
    MODULE(nvim_api),
    MODULE(nvim_event),
    MODULE(termview),
-   MODULE(request),
    MODULE(nvim),
 
 #undef MODULE

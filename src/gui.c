@@ -20,7 +20,13 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "Envim.h"
+#include "envim/types.h"
+#include "envim/gui.h"
+#include "envim/nvim.h"
+#include "envim/main.h"
+#include "envim/log.h"
+#include "envim/config.h"
+#include <Elementary.h>
 
 static void
 _focus_in_cb(void *data,

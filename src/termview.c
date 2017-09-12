@@ -24,8 +24,8 @@
 #include "envim/log.h"
 #include "envim/main.h"
 #include "envim/keymap.h"
-#include "nvim_api.h"
-#include "Envim.h"
+#include "envim/nvim_api.h"
+#include "envim/nvim.h"
 
 #include <Edje.h>
 
@@ -126,22 +126,11 @@ _mouse_event(s_termview *sd, const char *event,
    /* Determine which button we pressed */
    const char *const button = _mouse_button_to_string(btn);
 
-   /* Convert the mouse input as an input format. Our API uses stringshares,
-    * so we are obliged to make a stringshare of the string, but this is pure
-    * loss. */
+   /* Convert the mouse input as an input format. */
    const int bytes = snprintf(input, sizeof(input),
                               "<%s%s><%u,%u>", button, event, cx, cy);
-   Eina_Stringshare *const shr = eina_stringshare_add_length(
-      input, (unsigned int)bytes
-   );
-   if (EINA_UNLIKELY(! shr))
-     {
-        CRI("Failed to create stringshare from string '%s'", input);
-        return;
-     }
 
-   nvim_input(sd->nvim, shr, NULL, NULL, NULL);
-   eina_stringshare_del(shr);
+   nvim_api_input(sd->nvim, input, (unsigned int)bytes);
 }
 
 static void
@@ -201,15 +190,21 @@ _termview_key_down_cb(void *data,
    s_termview *const sd = data;
    const Evas_Event_Key_Down *const ev = event;
    const char *send = ev->string;
+   unsigned int send_size;
 
    /* If ev->string is not set, we will try to load  ev->key from the keymap */
    if (! send && ev->key)
-     send = keymap_get(ev->key);
+     {
+        send = keymap_get(ev->key);
+        send_size = (unsigned int)eina_stringshare_strlen(send);
+     }
+   else
+     send_size = (unsigned int)strlen(send);
 
    /* If a key is availab,e pass it to neovim and update the ui */
    if (send)
      {
-        nvim_input(sd->nvim, send, NULL, NULL, NULL);
+        nvim_api_input(sd->nvim, send, send_size);
         edje_object_signal_emit(sd->cursor, "key,down", "envim");
      }
    else
@@ -443,7 +438,7 @@ termview_resize(Evas_Object *obj,
     * space has changed
     */
    if (! request)
-     nvim_ui_try_resize(sd->nvim, cols, rows, NULL, NULL, NULL);
+     nvim_api_ui_try_resize(sd->nvim, cols, rows);
 }
 
 void

@@ -23,9 +23,9 @@
 #ifndef __ENVIM_CONFIG_H__
 #define __ENVIM_CONFIG_H__
 
+#include "envim/types.h"
 #include <Eina.h>
 
-typedef struct config s_config;
 typedef struct config_color s_config_color;
 
 struct config_color

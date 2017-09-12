@@ -20,7 +20,13 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "Envim.h"
+#include "envim/nvim_api.h"
+#include "envim/types.h"
+#include "envim/nvim.h"
+#include "envim/config.h"
+#include "envim/nvim_api.h"
+#include "envim/log.h"
+#include "envim/mode.h"
 
 typedef void (*f_nvim_notif)(s_nvim *nvim, Eina_List *args);
 enum
@@ -84,12 +90,8 @@ _handle_request_response(s_nvim *nvim,
      }
    DBG("Received response to request %"PRIu32, req_id);
 
-   /* Found the request, we can now get the data contained within the list */
-   const s_request *const req = eina_list_data_get(req_item);
-
-   /* Now that we have found the request, we can remove it from the pending
-    * list */
-   nvim->requests = eina_list_remove_list(nvim->requests, req_item);
+   /* Now that we have found the request, we can remove it */
+   nvim_api_request_free(nvim, req_item);
 
    /* If 3rd arg is an array, this is an error message. */
    const msgpack_object_type err_type = args->ptr[2].type;
@@ -117,9 +119,6 @@ _handle_request_response(s_nvim *nvim,
 
         CRI("Neovim reported an error: %s", err);
         eina_stringshare_del(err);
-
-        if (req->error_callback)
-          req->error_callback(nvim, req, req->callback_data);
      }
    else if (err_type != MSGPACK_OBJECT_NIL)
      {
@@ -127,29 +126,26 @@ _handle_request_response(s_nvim *nvim,
         goto fail;
      }
 
-   /*
-    * 4th argument contains the returned parameters It may be an ARRAY, if
-    * there are several parameters, or just a signle object if there is only
-    * ONE returned parameter.
-    * In the latter case, we encapsulate it within an array to have a unified
-    * interface.
-    */
-   const msgpack_object_array *out_args = &(args->ptr[3].via.array);
-   msgpack_object_array formatted_arg;
-   const msgpack_object_type answer_type = args->ptr[3].type;
-   if (answer_type != MSGPACK_OBJECT_ARRAY)
-     {
-        formatted_arg.size = 1;
-        formatted_arg.ptr = &(args->ptr[3]);
-        out_args = &formatted_arg;
-     }
-
-   /* And finally call the handler associated to the request type */
-   return nvim_api_response_dispatch(nvim, req, out_args);
+   /* We won't handle the 4th argment, which contain the returned parameters */
+   return EINA_TRUE;
 fail:
    return EINA_FALSE;
 }
 
+static Eina_Stringshare *
+_object_to_stringshare(const msgpack_object *obj)
+{
+   if (EINA_UNLIKELY(obj->type != MSGPACK_OBJECT_STR))
+     {
+        ERR("Object does not contain a string. Type is 0x%x", obj->type);
+        return NULL;
+     }
+   else
+     {
+        const msgpack_object_str *const str = &(obj->via.str);
+        return eina_stringshare_add_length(str->ptr, str->size);
+     }
+}
 
 static Eina_Bool
 _handle_notification(s_nvim *nvim,
@@ -166,7 +162,7 @@ _handle_notification(s_nvim *nvim,
         ERR("Second argument in notification is expected to be a string");
         goto fail;
      }
-   Eina_Stringshare *const method = pack_single_stringshare_get(&args->ptr[1]);
+   Eina_Stringshare *const method = _object_to_stringshare(&args->ptr[1]);
    if (EINA_UNLIKELY(! method))
      {
         CRI("Failed to create stringshare from Neovim method");
@@ -441,7 +437,7 @@ static void
 _attach(void *data)
 {
    s_nvim *const nvim = data;
-   nvim_ui_attach(nvim, 80, 24, NULL, NULL, NULL, NULL);
+   nvim_api_ui_attach(nvim, 80, 24);
 }
 
 s_nvim *

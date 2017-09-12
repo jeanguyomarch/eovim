@@ -20,26 +20,21 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __ENVIM_REQUEST_H__
-#define __ENVIM_REQUEST_H__
+#ifndef __ENVIM_API_H__
+#define __ENVIM_API_H__
 
 #include "envim/types.h"
+#include <Eina.h>
+#include <msgpack.h>
 
+Eina_Bool nvim_api_ui_attach(s_nvim *nvim, unsigned int width, unsigned int height);
+Eina_Bool nvim_api_ui_try_resize(s_nvim *nvim, unsigned int width, unsigned height);
+Eina_Bool nvim_api_input(s_nvim *nvim, const char *input, unsigned int input_size);
 
-struct request
-{
-   uint32_t uid;
-   const void *then_callback;
-   f_request_error error_callback;
-   void *callback_data;
-   e_request type;
-};
+void nvim_api_request_free(s_nvim *nvim, Eina_List *req_item);
+Eina_Bool nvim_api_event_dispatch(s_nvim *nvim, Eina_Stringshare *command, const msgpack_object_array *args);
 
+Eina_Bool nvim_api_init(void);
+void nvim_api_shutdown(void);
 
-Eina_Bool request_init(void);
-void request_shutdown(void);
-s_request *request_new(uint32_t req_uid, e_request req_type, const void *then_cb, f_request_error error_cb, void *cb_data);
-void request_free(s_request *req);
-
-
-#endif /* ! __ENVIM_REQUEST_H__ */
+#endif /* ! __ENVIM_API_H__ */

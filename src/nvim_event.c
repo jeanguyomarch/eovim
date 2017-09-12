@@ -20,7 +20,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "Envim.h"
+#include "envim/types.h"
+#include "envim/nvim.h"
+#include "envim/nvim_event.h"
+#include "envim/gui.h"
+#include "envim/mode.h"
 
 typedef enum
 {
@@ -58,6 +62,7 @@ typedef enum
    KW_MODES_START = KW_MODE_NORMAL,
    KW_MODES_END = KW_MODE_NORMAL,
 } e_kw;
+
 static Eina_Stringshare *_keywords[__KW_LAST];
 #define KW(Name) _keywords[Name]
 
@@ -275,8 +280,11 @@ nvim_event_mode_info_set(s_nvim *nvim,
           }
 
 #define _GET_OBJ(Kw) objs[(Kw) - KW_MODE_INFO_START]
+
         /* Now that we have filled the 'objs' structure, handle the mode */
-        Eina_Stringshare *const name = pack_single_stringshare_get(_GET_OBJ(KW_NAME));
+        Eina_Stringshare *const name = eina_stringshare_add_length(
+           _GET_OBJ(KW_NAME)->via.str.ptr, _GET_OBJ(KW_NAME)->via.str.size
+        );
         s_mode *mode = nvim_named_mode_get(nvim, name);
         if (! mode)
           {
@@ -284,6 +292,7 @@ nvim_event_mode_info_set(s_nvim *nvim,
              mode = mode_new(name, sname->ptr, sname->size);
              nvim_mode_add(nvim, mode);
           }
+        eina_stringshare_del(name);
 
 #define _GET_INT(Kw, Set)                                                     \
    if ((o = _GET_OBJ(Kw))) {                                                      \

@@ -24,16 +24,18 @@
 #define __ENVIM_TYPES_H__
 
 #include <Eina.h>
+#include <msgpack.h>
 #include <stdint.h>
 
 typedef int64_t t_int;
 typedef struct version s_version;
 typedef struct request s_request;
 typedef struct nvim s_nvim;
+typedef struct config s_config;
 typedef struct mode s_mode;
 typedef struct position s_position;
 typedef struct gui s_gui;
-typedef void (*f_request_error)(const s_nvim *nvim, const s_request *req, void *data);
+typedef Eina_Bool (*f_event_cb)(s_nvim *nvim, const msgpack_object_array *args);
 
 typedef enum
 {
@@ -41,6 +43,12 @@ typedef enum
    CURSOR_SHAPE_HORIZONTAL,
    CURSOR_SHAPE_VERTICAL,
 } e_cursor_shape;
+
+
+struct request
+{
+   uint32_t uid;
+};
 
 struct position
 {
