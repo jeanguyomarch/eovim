@@ -33,30 +33,11 @@ enum
 };
 
 static Ecore_Event_Handler *_event_handlers[__HANDLERS_LAST];
-static Eina_Hash *_nvim_instances = NULL;
+static s_nvim *_nvim_instance = NULL;
 
 /*============================================================================*
  *                                 Private API                                *
  *============================================================================*/
-
-static void
-_nvim_free_cb(void *data)
-{
-   /*
-    * It is this function that is actually responsible in freeing the
-    * resources reserved by a s_nvim structure. When entering this function,
-    * data is a valid instacne to be freed.
-    */
-
-   s_nvim *const nvim = data;
-
-   msgpack_sbuffer_destroy(&nvim->sbuffer);
-   msgpack_unpacker_destroy(&nvim->unpacker);
-   eina_hash_free(nvim->modes);
-   if (nvim->mode.name) { eina_stringshare_del(nvim->mode.name); }
-   free(nvim);
-}
-
 
 static Eina_List *
 _nvim_request_find(const s_nvim *nvim,
@@ -73,9 +54,10 @@ _nvim_request_find(const s_nvim *nvim,
 }
 
 static inline s_nvim *
-_nvim_get(const Ecore_Exe *exe)
+_nvim_get(void)
 {
-   return eina_hash_find(_nvim_instances, &exe);
+   /* We handle only one neovim instance */
+   return _nvim_instance;
 }
 
 
@@ -266,7 +248,7 @@ _nvim_deleted_cb(void *data EINA_UNUSED,
                  void *event)
 {
    const Ecore_Exe_Event_Del *const info = event;
-   s_nvim *const nvim = _nvim_get(info->exe);
+   s_nvim *const nvim = _nvim_get();
    const int pid = ecore_exe_pid_get(info->exe);
 
    /* Determine whether nvim died or not */
@@ -293,7 +275,7 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
                        void *event)
 {
    const Ecore_Exe_Event_Data *const info = event;
-   s_nvim *const nvim = _nvim_get(info->exe);
+   s_nvim *const nvim = _nvim_get();
    msgpack_unpacker *const unpacker = &nvim->unpacker;
    const size_t recv_size = (size_t)info->size;
 
@@ -434,15 +416,6 @@ nvim_init(void)
           }
      }
 
-   /* Create a hash table that allows to retrieve nvim instances from the event
-    * handlers */
-   _nvim_instances = eina_hash_pointer_new(_nvim_free_cb);
-   if (EINA_UNLIKELY(! _nvim_instances))
-     {
-        CRI("Failed to create hash table to hold running nvim instances");
-        goto fail;
-     }
-
    return EINA_TRUE;
 
 fail:
@@ -456,7 +429,6 @@ nvim_shutdown(void)
 {
    for (unsigned int i = 0; i < EINA_C_ARRAY_LENGTH(_event_handlers); i++)
      ecore_event_handler_del(_event_handlers[i]);
-   eina_hash_free(_nvim_instances);
 }
 
 uint32_t
@@ -478,9 +450,6 @@ nvim_new(const char *program,
          const char *const argv[])
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(program, NULL);
-
-   /* We will modify a global variable here */
-   EINA_MAIN_LOOP_CHECK_RETURN_VAL(NULL);
 
    Eina_Bool ok;
 
@@ -552,13 +521,8 @@ nvim_new(const char *program,
    DBG("Running %s", eina_strbuf_string_get(cmdline));
    eina_strbuf_free(cmdline);
 
-   /* Before leaving, we register the process in the running instances table */
-   ok = eina_hash_direct_add(_nvim_instances, &nvim->exe, nvim);
-   if (EINA_UNLIKELY(! ok))
-     {
-        CRI("Failed to register nvim instance in the hash table");
-        goto del_win;
-     }
+   /* Before leaving, we register the nvim instance */
+   _nvim_instance = nvim;
 
    ecore_job_add(_attach, nvim);
    return nvim;
@@ -578,16 +542,13 @@ fail:
 void
 nvim_free(s_nvim *nvim)
 {
-   /* We will modify a global variable here */
-   EINA_MAIN_LOOP_CHECK_RETURN;
-
    if (nvim)
      {
-        /*
-         * The actual freeing of the s_nvim is handled by the hash table free
-         * callback.
-         */
-        eina_hash_del_by_key(_nvim_instances, &nvim->exe);
+        msgpack_sbuffer_destroy(&nvim->sbuffer);
+        msgpack_unpacker_destroy(&nvim->unpacker);
+        eina_hash_free(nvim->modes);
+        if (nvim->mode.name) { eina_stringshare_del(nvim->mode.name); }
+        free(nvim);
      }
 }
 
@@ -612,7 +573,7 @@ Eina_Bool
 nvim_mode_add(s_nvim *nvim,
               s_mode *mode)
 {
-  return eina_hash_add(nvim->modes, mode->name, mode);
+   return eina_hash_add(nvim->modes, mode->name, mode);
 }
 
 void
