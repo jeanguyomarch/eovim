@@ -71,12 +71,85 @@ struct termview
    unsigned int y;
 };
 
+static Eina_Bool
+_coords_to_cell(const s_termview *sd,
+                int px, int py,
+                unsigned int *cell_x, unsigned int *cell_y)
+{
+   int ox, oy; /* Textgrid origin */
+   int ow, oh; /* Textgrid size */
+
+   evas_object_geometry_get(sd->textgrid, &ox, &oy, &ow, &oh);
+
+   /* Make sure the coordinate are within the textgrid */
+   EINA_SAFETY_ON_TRUE_RETURN_VAL((px < ox) || (py < oy), EINA_FALSE);
+   EINA_SAFETY_ON_TRUE_RETURN_VAL((px - ox >= ow) || (py - oy >= oh), EINA_FALSE);
+
+   if (cell_x) *cell_x = (unsigned int)((px - ox) / (int)sd->cell_w);
+   if (cell_y) *cell_y = (unsigned int)((py - oy) / (int)sd->cell_h);
+
+   return EINA_TRUE;
+}
+
+static const char *
+_mouse_button_to_string(int button)
+{
+   switch (button)
+     {
+      case 3:
+         return "Right";
+      case 2:
+         return "Middle";
+      case 1: /* Fall through */
+      default:
+        return "Left";
+     }
+}
+
 static void
 _textgrid_mouse_move_cb(void *data EINA_UNUSED,
                         Evas *e EINA_UNUSED,
                         Evas_Object *obj EINA_UNUSED,
                         void *event EINA_UNUSED)
 {
+}
+
+static void
+_textgrid_mouse_down_cb(void *data,
+                        Evas *e EINA_UNUSED,
+                        Evas_Object *obj EINA_UNUSED,
+                        void *event)
+{
+   s_termview *const sd = data;
+   const Evas_Event_Mouse_Down *const ev = event;
+   unsigned int cx, cy;
+   char input[64];
+   int bytes;
+   Eina_Stringshare *shr;
+
+   /* Convert the mouse down location to a textgrid cell */
+   if (! _coords_to_cell(sd, ev->canvas.x, ev->canvas.y, &cx, &cy))
+     {
+        ERR("Wtf? Something went wrong");
+        return;
+     }
+
+   /* Determine which button we pressed */
+   const char *const button = _mouse_button_to_string(ev->button);
+
+   /* Convert the mouse input as an input format. Our API uses stringshares,
+    * so we are obliged to make a stringshare of the string, but this is pure
+    * loss. */
+   bytes = snprintf(input, sizeof(input), "<%sMouse><%u,%u>", button, cx, cy);
+   shr = eina_stringshare_add_length(input, (unsigned int)bytes);
+   if (EINA_UNLIKELY(! shr))
+     {
+        CRI("Failed to create stringshare from string '%s'", input);
+        return;
+     }
+
+   nvim_input(sd->nvim, shr, NULL, NULL, NULL);
+   eina_stringshare_del(shr);
 }
 
 static void
@@ -150,6 +223,7 @@ _smart_add(Evas_Object *obj)
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_smart_member_add(o, obj);
    evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_MOVE, _textgrid_mouse_move_cb, sd);
+   evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_DOWN, _textgrid_mouse_down_cb, sd);
    evas_object_textgrid_cell_size_get(o, (int*)&sd->cell_w, (int*)&sd->cell_h);
    evas_object_show(o);
 
