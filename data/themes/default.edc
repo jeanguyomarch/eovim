@@ -28,6 +28,9 @@ collections {
    group { "eovim/main";
       images {
          image: "preferences.png" COMP;
+         image: "pm_shadow.png" COMP;
+         image: "pm_overlay.png" COMP;
+         image: "bg_bevel.png" COMP;
       }
       script {
          public bg_r, bg_g, bg_b, bg_a;
@@ -52,12 +55,78 @@ collections {
             }
          }
 
-         rect { "eovim.background"; nomouse;
+         /*===================================================================
+          * Background
+          *=================================================================*/
+         rect { "eovim.background"; nomouse; /* From terminology */
             desc { "default";
                rel.to: "eovim.main.view";
-               color: 0 0 0 0;
+               color: 128 128 128 255;
+               visible: 0; // XXX For now
+            }
+            desc { "selected";
+               inherit: "default";
+               color: 255 255 255 255;
             }
          }
+         image { "shadow"; nomouse; /* From terminology */
+            desc { "default";
+               fixed: 1 1;
+               rel.to: "eovim.main.view";
+               rel1.offset: -5 -5;
+               rel2.offset: 4 4;
+               image.normal: "pm_shadow.png";
+               image.border: 64 64 64 64;
+               image.border_scale_by: 0.1;
+               color: 255 255 255 128;
+               fill.smooth: 0;
+            }
+            desc { "selected";
+               inherit: "default";
+               rel1.offset: -40 -40;
+               rel2.offset: 39 39;
+               image.border_scale_by: 1.0;
+               color: 255 255 255 255;
+            }
+         }
+         image { "glow"; nomouse;
+            desc { "default";
+               rel.to: "eovim.main.view";
+               rel1.offset: -4 -4;
+               rel2.offset: 3 3;
+               image {
+                  normal: "cr_glow.png";
+                  border: 9 9 9 9;
+               }
+               color: 51 153 255 0;
+            }
+            desc { "selected";
+               inherit: "default";
+               color: 51 153 255 255;
+            }
+         }
+         //image { "overlay"; nomouse;
+         //   desc { "default";
+         //      fixed: 1 1;
+         //      rel.to: "eovim.main.view";
+         //      image.normal: "pm_overlay.png";
+         //      fill.smooth: 0;
+         //   }
+         //}
+        // image { "bevel"; nomouse;
+        //    desc { "default";
+        //       fixed: 1 1;
+        //       rel1.to: "eovim.main.view";
+        //       rel2.to: "eovim.main.view";
+        //       image.normal: "bg_bevel.png";
+        //       image.border: 3 3 3 3;
+        //       image.middle: 0;
+        //       fill.smooth: 0;
+        //    }
+        // }
+
+
+
 
          swallow { "eovim.main.view";
             desc { "default";
@@ -129,8 +198,8 @@ collections {
 
 
 
-#define EOVIM_CONFIG_PARTS \
-      X("eovim.config.box")
+         #define EOVIM_CONFIG_PARTS \
+         X("eovim.config.box")
 
          rect { "config_cache";
             desc { "default";
@@ -177,7 +246,7 @@ collections {
             }
 
             programs {
-#define X(Part) target: Part;
+               #define X(Part) target: Part;
                program { signal: "config,show"; source: "eovim";
                   action: STATE_SET "enabled";
                   transition: ACCELERATE 0.8;
@@ -194,7 +263,7 @@ collections {
                   transition: DECELERATE 0.5;
                   EOVIM_CONFIG_PARTS
                }
-#undef X
+               #undef X
             }
          }
          swallow { "eovim.config.box";
@@ -213,178 +282,5 @@ collections {
       }
    }
 
-   /*
-    * CURSOR: show where the text is being typed.
-    * NOTE: This group is mostly inspired from Terminology's cursor:
-    * https://www.enlightenment.org/about-terminology
-    */
-   group { "eovim/cursor";
-      images {
-        image: "cr_key.png" COMP;
-        image: "cr_out.png" COMP;
-        image: "cr_pulse.png" COMP;
-        image: "cr_glow.png" COMP;
-      }
-      parts {
-         part { name: "key"; nomouse;
-            mouse_events: 0;
-            description { state: "default" 0.0;
-               rel1 {
-                  to: "outline";
-                  offset: -5 -5;
-               }
-               rel2 {
-                  to: "outline";
-                  offset: 4 4;
-               }
-               image {
-                  normal: "cr_key.png";
-                  border: 4 4 4 4;
-               }
-               color: 51 153 255 0;
-            }
-            description { state: "on" 0.0;
-               inherit: "default" 0.0;
-               color: 51 153 255 255;
-            }
-            description { state: "out" 0.0;
-               inherit: "default" 0.0;
-               color:  51 153 255 0;
-               rel1.offset: -7 -15;
-               rel2.offset: 6 14;
-            }
-         }
-         part { name: "pulse";
-            mouse_events: 0;
-            description { state: "default" 0.0;
-               rel1 {
-                  to: "outline";
-                  offset: -4 -4;
-               }
-               rel2 {
-                  to: "outline";
-                  offset: 3 3;
-               }
-               image {
-                  normal: "cr_pulse.png";
-                  border: 4 4 4 4;
-               }
-               color: 51 153 255 0;
-            }
-            description { state: "on" 0.0;
-               inherit: "default" 0.0;
-               color: 51 153 255 255;
-            }
-            description { state: "out" 0.0;
-               inherit: "default" 0.0;
-               color: 51 153 255 0;
-               rel1.offset: -8 -8;
-               rel2.offset: 7 7;
-            }
-         }
-         part { name: "glow";
-            mouse_events: 0;
-            description { state: "default" 0.0;
-               rel1.offset: -4 -4;
-               rel2.offset: 3 3;
-               image {
-                  normal: "cr_glow.png";
-                  border: 9 9 9 9;
-               }
-               color: 51 153 255 40;
-            }
-            description { state: "focused" 0.0;
-               inherit: "default" 0.0;
-               color: 51 153 255 255;
-            }
-         }
-         part { name: "outline";
-            mouse_events: 0;
-            description { state: "default" 0.0;
-               image {
-                  normal: "cr_out.png";
-                  border: 3 3 3 3;
-               }
-               color: 51 153 255 80;
-            }
-            description { state: "focused" 0.0;
-               inherit: "default" 0.0;
-               color: 255 255 255 255;
-            }
-         }
-         programs {
-            program {
-               signal: "focus,in,noblink"; source: "eovim";
-               action: STATE_SET "focused" 0.0;
-               target: "glow";
-               target: "outline";
-            }
-            program { name: "focus_in";
-               signal: "focus,in"; source: "eovim";
-               action: STATE_SET "focused" 0.0;
-               target: "glow";
-               target: "outline";
-               after: "focus2";
-               after: "pulse";
-            }
-            program { name: "focus2";
-               in: 0.5 0.0;
-               action: STATE_SET "default" 0.0;
-               transition: DECELERATE 0.2;
-               target: "glow";
-               target: "outline";
-               after: "focus3";
-            }
-            program { name: "focus3";
-               in: 0.5 0.0;
-               action: STATE_SET "focused" 0.0;
-               target: "glow";
-               target: "outline";
-               after: "focus2";
-               after: "pulse";
-            }
-            program { name: "pulse";
-               action: STATE_SET "on" 0.0;
-               target: "pulse";
-               after: "pulse2";
-            }
-            program { name: "pulse2";
-               action: STATE_SET "out" 0.0;
-               transition: DECELERATE 0.4;
-               target: "pulse";
-            }
-            program {
-               signal: "focus,out"; source: "eovim";
-               action: ACTION_STOP;
-               target: "focus_in";
-               target: "focus2";
-               target: "focus3";
-               target: "pulse";
-               target: "pulse2";
-               after: "focus_out2";
-            }
-            program { name: "focus_out2";
-               action: STATE_SET "default" 0.0;
-               target: "glow";
-               target: "outline";
-            }
-            program {
-               signal: "key,down"; source: "eovim";
-               action: STATE_SET "default" 0.0;
-               target: "key";
-               after: "key2";
-            }
-            program { name: "key2";
-               action: STATE_SET "on" 0.0;
-               target: "key";
-               after: "key3";
-            }
-            program { name: "key3";
-               action: STATE_SET "out" 0.0;
-               transition: DECELERATE 0.3;
-               target: "key";
-            }
-         }
-      }
-   }
+#include "cursor.edc"
 }
