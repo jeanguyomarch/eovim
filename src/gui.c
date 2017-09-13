@@ -194,6 +194,7 @@ gui_add(s_gui *gui,
         CRI("Failed to get layout item");
         goto fail;
      }
+   gui->edje = elm_layout_edje_get(gui->layout);
    elm_layout_signal_callback_add(gui->layout, "config,open", "eovim",
                                   _config_show_cb, nvim);
    elm_layout_signal_callback_add(gui->layout, "config,close", "eovim",
@@ -204,6 +205,7 @@ gui_add(s_gui *gui,
    gui->termview = termview_add(gui->layout, nvim);
    /* FIXME Use a config */
    termview_font_set(gui->termview, "Mono", 14);
+   gui_bg_color_set(gui, 0, 0, 0, 255);
 
    /*
     * We set the resieing step of the window to the size of a cell of the
@@ -358,4 +360,20 @@ gui_busy_set(s_gui *gui,
 {
    const char *const signal = (busy) ? "eovim,busy,on" : "eovim,busy,off";
    elm_layout_signal_emit(gui->layout, signal, "eovim");
+}
+
+void
+gui_bg_color_set(s_gui *gui,
+                 int r, int g, int b, int a)
+{
+   Edje_Message_Int_Set *msg;
+
+   msg = alloca(sizeof(*msg) + (sizeof(int) * 4));
+   msg->count = 4;
+   msg->val[0] = r;
+   msg->val[1] = g;
+   msg->val[2] = b;
+   msg->val[3] = a;
+
+   edje_object_message_send(gui->edje, EDJE_MESSAGE_INT_SET, 0, msg);
 }

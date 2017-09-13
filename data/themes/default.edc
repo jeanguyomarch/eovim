@@ -29,11 +29,33 @@ collections {
       images {
          image: "preferences.png" COMP;
       }
+      script {
+         public bg_r, bg_g, bg_b, bg_a;
+
+         public message(Msg_Type:type, id, ...) {
+            new part = PART:"eovim.background";
+            custom_state(part, "default", 0.0);
+            set_int(bg_r, getarg(2));
+            set_int(bg_g, getarg(3));
+            set_int(bg_b, getarg(4));
+            set_int(bg_a, getarg(5));
+            set_state_val(part, STATE_COLOR, get_int(bg_r), get_int(bg_g), get_int(bg_b), get_int(bg_a));
+            set_state(part, "custom", 0.0);
+         }
+      }
+
       parts {
          rect { "tabs_headings";
             desc { "default";
                rel2.relative: 1.0 0.0; // XXX For now
                visible: 0; // XXX For now
+            }
+         }
+
+         rect { "eovim.background"; nomouse;
+            desc { "default";
+               rel.to: "eovim.main.view";
+               color: 0 0 0 0;
             }
          }
 
