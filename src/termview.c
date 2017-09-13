@@ -653,7 +653,7 @@ termview_scroll(Evas_Object *obj,
 {
    s_termview *const sd = evas_object_smart_data_get(obj);
    Evas_Object *const grid = sd->textgrid;
-   const size_t width = sizeof(Evas_Textgrid_Cell) * (unsigned)sd->scroll.w + 1;
+   const size_t width = sizeof(Evas_Textgrid_Cell) * ((unsigned)sd->scroll.w + 1);
    const int end_of_scroll = sd->scroll.y + sd->scroll.h;
    Evas_Textgrid_Cell *src, *dst, *tmp;
 
