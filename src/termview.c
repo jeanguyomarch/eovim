@@ -234,8 +234,6 @@ _termview_key_down_cb(void *data,
 
         switch (key[0])
         {
-         case 'C':
-            break;
          case 'V':
             elm_cnp_selection_get(sd->textgrid,
                                   ELM_SEL_TYPE_CLIPBOARD, ELM_SEL_FORMAT_TEXT,
