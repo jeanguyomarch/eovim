@@ -559,7 +559,7 @@ nvim_mode_set(s_nvim *nvim,
 }
 
 s_mode *
-nvim_named_mode_get(s_nvim *nvim,
+nvim_named_mode_get(const s_nvim *nvim,
                     Eina_Stringshare *name)
 {
    return eina_hash_find(nvim->modes, name);

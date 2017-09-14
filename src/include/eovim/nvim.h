@@ -60,7 +60,7 @@ void nvim_free(s_nvim *nvim);
 uint32_t nvim_get_next_uid(s_nvim *nvim);
 Eina_Bool nvim_api_response_dispatch(s_nvim *nvim, const s_request *req, const msgpack_object_array *args);
 Eina_Bool nvim_mode_add(s_nvim *nvim, s_mode *mode);
-s_mode *nvim_named_mode_get(s_nvim *nvim, Eina_Stringshare *name);
+s_mode *nvim_named_mode_get(const s_nvim *nvim, Eina_Stringshare *name);
 void nvim_mode_set(s_nvim *nvim, Eina_Stringshare *name, unsigned int index);
 void nvim_mouse_enabled_set(s_nvim *nvim, Eina_Bool enable);
 Eina_Bool nvim_mouse_enabled_get(const s_nvim *nvim);
