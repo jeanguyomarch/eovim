@@ -28,6 +28,10 @@
 
 struct request
 {
+   /* The name field is pointless, but there is a bug in eina_chained_mempool,
+    * and if the structure's size is less than a poitner's size, terrible
+    * things happen */
+   const char *name;
    uint32_t uid;
 };
 
@@ -48,8 +52,9 @@ _request_new(s_nvim *nvim,
         return NULL;
      }
 
+   req->name = rpc_name;
    req->uid = nvim_next_uid_get(nvim);
-   DBG("Preparing request '%s' with id %"PRIu32, rpc_name, req->uid);
+   INF("Preparing request '%s' with id %"PRIu32, rpc_name, req->uid);
 
    /* Clear the serialization buffer before pushing a new request */
    msgpack_sbuffer_clear(&nvim->sbuffer);
@@ -249,7 +254,7 @@ nvim_api_init(void)
                                NULL, sizeof(s_request), 8);
    if (EINA_UNLIKELY(! _mempool))
      {
-        CRI("Failed to initialize mempool");
+        CRI("Failed to initialize chained mempool");
         goto fail;
      }
 
