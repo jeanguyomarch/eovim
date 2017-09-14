@@ -428,7 +428,7 @@ nvim_shutdown(void)
 }
 
 uint32_t
-nvim_get_next_uid(s_nvim *nvim)
+nvim_next_uid_get(s_nvim *nvim)
 {
    return nvim->request_id++;
 }

@@ -43,7 +43,8 @@ _request_new(s_nvim *nvim,
         return NULL;
      }
 
-   req->uid = nvim_get_next_uid(nvim);
+   req->uid = nvim_next_uid_get(nvim);
+   DBG("Preparing request '%s' with id %"PRIu32, rpc_name, req->uid);
 
    /* Clear the serialization buffer before pushing a new request */
    msgpack_sbuffer_clear(&nvim->sbuffer);
@@ -81,6 +82,7 @@ _send_request(s_nvim *nvim)
         CRI("Failed to send %zu bytes to neovim", nvim->sbuffer.size);
         return EINA_FALSE;
      }
+   DBG("Sent %zu bytes to neovim", nvim->sbuffer.size);
    return EINA_TRUE;
 }
 
