@@ -208,7 +208,7 @@ _termview_key_down_cb(void *data,
         edje_object_signal_emit(sd->cursor, "key,down", "eovim");
      }
    else
-     ERR("Unhandled key '%s'", ev->key);
+     INF("Unhandled key '%s'", ev->key);
 }
 
 static void
