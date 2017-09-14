@@ -265,4 +265,5 @@ void
 nvim_api_shutdown(void)
 {
    eina_mempool_del(_mempool);
+   eina_hash_free(_callbacks);
 }
