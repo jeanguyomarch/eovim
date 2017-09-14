@@ -31,6 +31,7 @@ Eina_Bool nvim_api_ui_attach(s_nvim *nvim, unsigned int width, unsigned int heig
 Eina_Bool nvim_api_ui_try_resize(s_nvim *nvim, unsigned int width, unsigned height);
 Eina_Bool nvim_api_input(s_nvim *nvim, const char *input, unsigned int input_size);
 
+Eina_List *nvim_api_request_find(const s_nvim *nvim, uint32_t req_id);
 void nvim_api_request_free(s_nvim *nvim, Eina_List *req_item);
 Eina_Bool nvim_api_event_dispatch(s_nvim *nvim, Eina_Stringshare *command, const msgpack_object_array *args);
 

@@ -26,6 +26,11 @@
 #include "eovim/nvim_event.h"
 #include "eovim/nvim.h"
 
+struct request
+{
+   uint32_t uid;
+};
+
 /* Mempool to allocate the requests */
 static Eina_Mempool *_mempool = NULL;
 /* Events */
@@ -70,8 +75,20 @@ _request_new(s_nvim *nvim,
    return req;
 }
 
+static void
+_request_cleanup(s_nvim *nvim,
+                 s_request *req)
+{
+   Eina_List *const list = nvim_api_request_find(nvim, req->uid);
+   if (EINA_LIKELY(list != NULL))
+     {
+        nvim_api_request_free(nvim, list);
+     }
+}
+
 static Eina_Bool
-_send_request(s_nvim *nvim)
+_request_send(s_nvim *nvim,
+              s_request *req)
 {
    /* Finally, send that to the slave neovim process */
    const Eina_Bool ok = ecore_exe_send(
@@ -80,10 +97,25 @@ _send_request(s_nvim *nvim)
    if (EINA_UNLIKELY(! ok))
      {
         CRI("Failed to send %zu bytes to neovim", nvim->sbuffer.size);
+        _request_cleanup(nvim, req);
         return EINA_FALSE;
      }
    DBG("Sent %zu bytes to neovim", nvim->sbuffer.size);
    return EINA_TRUE;
+}
+
+Eina_List *
+nvim_api_request_find(const s_nvim *nvim,
+                      uint32_t req_id)
+{
+   const s_request *req;
+   Eina_List *it = NULL;
+
+   EINA_LIST_FOREACH(nvim->requests, it, req)
+     {
+        if (req->uid == req_id) { break; }
+     }
+   return it;
 }
 
 void
@@ -113,7 +145,7 @@ nvim_api_ui_attach(s_nvim *nvim,
    msgpack_pack_int64(pk, height);
    msgpack_pack_map(pk, 0);
 
-   return _send_request(nvim);
+   return _request_send(nvim, req);
 }
 
 Eina_Bool
@@ -133,7 +165,7 @@ nvim_api_ui_try_resize(s_nvim *nvim,
    msgpack_pack_int64(pk, width);
    msgpack_pack_int64(pk, height);
 
-   return _send_request(nvim);
+   return _request_send(nvim, req);
 }
 
 Eina_Bool
@@ -154,7 +186,7 @@ nvim_api_input(s_nvim *nvim,
    msgpack_pack_bin(pk, input_size);
    msgpack_pack_bin_body(pk, input, input_size);
 
-   return _send_request(nvim);
+   return _request_send(nvim, req);
 }
 
 Eina_Bool

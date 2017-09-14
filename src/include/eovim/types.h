@@ -45,11 +45,6 @@ typedef enum
 } e_cursor_shape;
 
 
-struct request
-{
-   uint32_t uid;
-};
-
 struct position
 {
    int64_t x;

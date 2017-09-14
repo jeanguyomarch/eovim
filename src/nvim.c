@@ -45,28 +45,12 @@ static s_nvim *_nvim_instance = NULL;
  *                                 Private API                                *
  *============================================================================*/
 
-static Eina_List *
-_nvim_request_find(const s_nvim *nvim,
-                   uint32_t req_id)
-{
-   const s_request *req;
-   Eina_List *it = NULL;
-
-   EINA_LIST_FOREACH(nvim->requests, it, req)
-     {
-        if (req->uid == req_id) { break; }
-     }
-   return it;
-}
-
 static inline s_nvim *
 _nvim_get(void)
 {
    /* We handle only one neovim instance */
    return _nvim_instance;
 }
-
-
 
 static Eina_Bool
 _handle_request_response(s_nvim *nvim,
@@ -81,10 +65,10 @@ _handle_request_response(s_nvim *nvim,
 
    /* Get the request from the pending requests list. */
    const uint32_t req_id = (uint32_t)args->ptr[1].via.u64;
-   Eina_List *const req_item = _nvim_request_find(nvim, req_id);
+   Eina_List *const req_item = nvim_api_request_find(nvim, req_id);
    if (EINA_UNLIKELY(! req_item))
      {
-        CRI("Uh... received a response to request %"PRIu32", but is was not "
+        CRI("Uh... received a response to request %"PRIu32", but it was not "
             "registered. Something wrong happend somewhere!", req_id);
         goto fail;
      }
