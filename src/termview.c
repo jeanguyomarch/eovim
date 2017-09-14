@@ -146,7 +146,7 @@ _textgrid_mouse_move_cb(void *data,
 
    const Evas_Event_Mouse_Move *const ev = event;
    unsigned int cx, cy;
-   
+
    _coords_to_cell(sd, ev->cur.canvas.x, ev->cur.canvas.y, &cx, &cy);
    _mouse_event(sd, "Drag", cx, cy, sd->mouse_drag);
 }
@@ -181,6 +181,31 @@ _textgrid_mouse_down_cb(void *data,
    sd->mouse_drag = ev->button; /* Enable mouse dragging */
 }
 
+static Eina_Bool
+_paste_cb(void *data,
+          Evas_Object *obj EINA_UNUSED,
+          Elm_Selection_Data *ev)
+{
+   EINA_SAFETY_ON_FALSE_RETURN_VAL(ev->format == ELM_SEL_FORMAT_TEXT, EINA_FALSE);
+
+   s_termview *const sd = data;
+   const char *const string = ev->data;
+   Eina_Bool ret = EINA_TRUE;
+
+   /* We can only pass UINT_MAX bytes to neovim, so if the input is greater
+    * than that (lol), we will truncate the paste... such a shame...
+    */
+   if (EINA_UNLIKELY(ev->len > UINT_MAX))
+     {
+        ERR("Integer overflow. Pasting will be truncated.");
+        ret = EINA_FALSE; /* We will not copy everything */
+     }
+
+   nvim_api_input(sd->nvim, string, (unsigned int)ev->len);
+
+   return ret;
+}
+
 static void
 _termview_key_down_cb(void *data,
                       Evas *e EINA_UNUSED,
@@ -189,8 +214,40 @@ _termview_key_down_cb(void *data,
 {
    s_termview *const sd = data;
    const Evas_Event_Key_Down *const ev = event;
+   const Evas_Modifier *const mod = ev->modifiers;
    const char *send = ev->string;
    unsigned int send_size;
+
+   const Eina_Bool ctrl = evas_key_modifier_is_set(mod, "Control");
+   const Eina_Bool shift = evas_key_modifier_is_set(mod, "Shift");
+
+   if (ctrl && shift)
+     {
+        /* When we hit CTRL+SHIFT, we will handle single character commands,
+         * such as CTRL+SHIFT+C and CTRL+SHIFT+V.
+         * To avoid string comparison, we match the first character only.
+         * However, some key names have multiple-character strings (Backspace).
+         * To avoid matching against them, we discard these
+         */
+        const char *const key = ev->key;
+        if ((! key) || (key[1] != '\0')) { return; /* Ignore */ }
+
+        switch (key[0])
+        {
+         case 'C':
+            break;
+         case 'V':
+            elm_cnp_selection_get(sd->textgrid,
+                                  ELM_SEL_TYPE_CLIPBOARD, ELM_SEL_FORMAT_TEXT,
+                                  _paste_cb, sd);
+            break;
+
+         default: /* Please the compiler! */
+            break;
+        }
+        /* Stop right here. Do nothing more. */
+        return;
+     }
 
    /* If ev->string is not set, we will try to load  ev->key from the keymap */
    if (! send && ev->key)
