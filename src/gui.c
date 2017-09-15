@@ -301,12 +301,13 @@ gui_style_set(s_gui *gui,
 }
 
 void
-gui_update_fg(s_gui *gui EINA_UNUSED,
+gui_update_fg(s_gui *gui,
               t_int color)
 {
    if (color >= 0)
      {
-        CRI("Unimplemented");
+        const s_termview_color col = termview_color_decompose((uint32_t)color);
+        termview_fg_color_set(gui->termview, col.r, col.g, col.b, col.a);
      }
 }
 
