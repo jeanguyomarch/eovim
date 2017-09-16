@@ -196,8 +196,8 @@ nvim_api_input(s_nvim *nvim,
 
    msgpack_packer *const pk = &nvim->packer;
    msgpack_pack_array(pk, 1);
-   msgpack_pack_bin(pk, input_size);
-   msgpack_pack_bin_body(pk, input, input_size);
+   msgpack_pack_str(pk, input_size);
+   msgpack_pack_str_body(pk, input, input_size);
 
    return _request_send(nvim, req);
 }
