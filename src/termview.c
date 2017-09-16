@@ -180,6 +180,23 @@ _textgrid_mouse_down_cb(void *data,
    sd->mouse_drag = ev->button; /* Enable mouse dragging */
 }
 
+static void
+_textgrid_mouse_wheel_cb(void *data,
+                         Evas *e EINA_UNUSED,
+                         Evas_Object *obj EINA_UNUSED,
+                         void *event)
+{
+   s_termview *const sd = data;
+   const Evas_Event_Mouse_Wheel *const ev = event;
+   const char *const dir = (ev->z < 0) ? "Up" : "Down";
+
+   char input[64];
+   const int bytes = snprintf(input, sizeof(input),
+                              "<ScrollWheel%s><%u,%u>", dir,
+                              ev->canvas.x, ev->canvas.y);
+   nvim_api_input(sd->nvim, input, (unsigned int)bytes);
+}
+
 static Eina_Bool
 _paste_cb(void *data,
           Evas_Object *obj EINA_UNUSED,
@@ -314,6 +331,7 @@ _smart_add(Evas_Object *obj)
    evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_MOVE, _textgrid_mouse_move_cb, sd);
    evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_DOWN, _textgrid_mouse_down_cb, sd);
    evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_UP, _textgrid_mouse_up_cb, sd);
+   evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_WHEEL, _textgrid_mouse_wheel_cb, sd);
    evas_object_textgrid_cell_size_get(o, (int*)&sd->cell_w, (int*)&sd->cell_h);
    evas_object_show(o);
 
