@@ -35,8 +35,7 @@
 static Evas_Smart *_smart = NULL;
 static Evas_Smart_Class _parent_sc = EVAS_SMART_CLASS_INIT_NULL;
 
-typedef struct termview s_termview;
-struct termview
+typedef struct
 {
    Evas_Object_Smart_Clipped_Data __clipped_data; /* Required by Evas */
 
@@ -75,7 +74,7 @@ struct termview
    /* Writing position */
    unsigned int x; /**< Cursor X */
    unsigned int y; /**< Cursor Y */
-};
+} s_termview;
 
 static void
 _coords_to_cell(const s_termview *sd,
