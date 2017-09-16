@@ -207,17 +207,57 @@ _paste_cb(void *data,
    s_termview *const sd = data;
    const char *const string = ev->data;
    Eina_Bool ret = EINA_TRUE;
+   unsigned int escaped_len = 0;
+
+   for (unsigned int i = 0; i < ev->len; i++)
+     {
+        /* We know that if we type '<' we must escape it as "<lt>", so we will
+         * hav to write 4 characters? Otherwise, there is no escaping, we will
+         * write only one character */
+        escaped_len += (string[i] == '<') ? 4 : 1;
+     }
 
    /* We can only pass UINT_MAX bytes to neovim, so if the input is greater
     * than that (lol), we will truncate the paste... such a shame...
     */
-   if (EINA_UNLIKELY(ev->len > UINT_MAX))
+   if (EINA_UNLIKELY(escaped_len > UINT_MAX))
      {
         ERR("Integer overflow. Pasting will be truncated.");
         ret = EINA_FALSE; /* We will not copy everything */
      }
 
-   nvim_api_input(sd->nvim, string, (unsigned int)ev->len);
+   if (escaped_len != ev->len)
+     {
+        /* If we have some escaping to do, we have to make copies of the input
+         * data, as we need to modify it. That's not great... but we how it
+         * goes. */
+        char *const escaped = malloc(escaped_len + 1);
+        if (EINA_UNLIKELY(! escaped))
+          {
+             CRI("Failed to allocate memory");
+             return EINA_FALSE;
+          }
+        char *ptr = escaped;
+         for (unsigned int i = 0; i < ev->len; i++)
+           {
+             if (string[i] == '<')
+               {
+                  strcpy(ptr, "<lt>");
+                  ptr += 4;
+               }
+             else *(ptr++) = string[i];
+           }
+         escaped[escaped_len] = '\0';
+
+         /* Send the data, then free the temporayy storage */
+        nvim_api_input(sd->nvim, escaped, escaped_len);
+        free(escaped);
+     }
+   else
+     {
+        /* Cool! No escaping to do! Send the pasted data as they are. */
+        nvim_api_input(sd->nvim, string, (unsigned int)ev->len);
+     }
 
    return ret;
 }
@@ -272,9 +312,15 @@ _termview_key_down_cb(void *data,
    else
      send_size = (unsigned int)strlen(send);
 
-   /* If a key is availab,e pass it to neovim and update the ui */
+   /* If a key is availabe pass it to neovim and update the ui */
    if (send)
      {
+        /* Escape the less than character '<' */
+        if ((send[0] == '<') && (send_size == 1))
+          {
+             send = "<lt>";
+             send_size = 4;
+          }
         nvim_api_input(sd->nvim, send, send_size);
         edje_object_signal_emit(sd->cursor, "key,down", "eovim");
      }
