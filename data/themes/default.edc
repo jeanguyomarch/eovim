@@ -33,17 +33,27 @@ collections {
          image: "bg_bevel.png" COMP;
       }
       script {
-         public bg_r, bg_g, bg_b, bg_a;
+         public gl_x1, gl_y1, gl_x2, gl_y2;
 
          public message(Msg_Type:type, id, ...) {
-            new part = PART:"eovim.background";
-            custom_state(part, "default", 0.0);
-            set_int(bg_r, getarg(2));
-            set_int(bg_g, getarg(3));
-            set_int(bg_b, getarg(4));
-            set_int(bg_a, getarg(5));
-            set_state_val(part, STATE_COLOR, get_int(bg_r), get_int(bg_g), get_int(bg_b), get_int(bg_a));
+            new part = PART:"eovim.completion";
+            custom_state(part, "visible", 0.0);
+            set_int(gl_x1, getarg(2));
+            set_int(gl_y1, getarg(3));
+            set_int(gl_x2, getarg(4));
+            set_int(gl_y2, getarg(5));
+
+            set_state_val(part, STATE_REL1_OFFSET, get_int(gl_x1), get_int(gl_y1));
+            set_state_val(part, STATE_REL2_OFFSET, get_int(gl_x2), get_int(gl_y2));
             set_state(part, "custom", 0.0);
+            //new part = PART:"eovim.background";
+            //custom_state(part, "default", 0.0);
+            //set_int(bg_r, getarg(2));
+            //set_int(bg_g, getarg(3));
+            //set_int(bg_b, getarg(4));
+            //set_int(bg_a, getarg(5));
+            //set_state_val(part, STATE_COLOR, get_int(bg_r), get_int(bg_g), get_int(bg_b), get_int(bg_a));
+            //set_state(part, "custom", 0.0);
          }
       }
 
@@ -268,8 +278,7 @@ collections {
          }
          swallow { "eovim.config.box";
             desc { "default";
-               rel1.to: "config";
-               rel2.to: "config";
+               rel.to: "config";
                rel2.relative: 1.0 0.0;
                align: 0.5 0.0;
                visible: 0;
@@ -277,6 +286,29 @@ collections {
             desc { "enabled";
                inherit: "default";
                visible: 1;
+            }
+         }
+
+         swallow { "eovim.completion";
+            desc { "default";
+               rel.to: "eovim.main.view";
+               rel2.relative: 0.0 0.0;
+               visible: 0;
+            }
+            desc { "visible";
+               inherit: "default";
+               visible: 1;
+            }
+
+            programs {
+               program { signal: "eovim,completion,show"; source: "eovim";
+                  action: STATE_SET "visible";
+                  target: "eovim.completion";
+               }
+               program { signal: "eovim,completion,hide"; source: "eovim";
+                  action: STATE_SET "default";
+                  target: "eovim.completion";
+               }
             }
          }
       }

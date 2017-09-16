@@ -293,8 +293,7 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
           }
         msgpack_object obj = result.data;
 
-        /* Uncomment to roughly dump the received messages */
-#if 0
+#if 0 /* Uncomment to roughly dump the received messages */
         msgpack_object_print(stderr, obj);
         fprintf(stderr, "\n--------\n");
 #endif

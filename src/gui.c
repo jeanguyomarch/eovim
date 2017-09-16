@@ -28,6 +28,8 @@
 #include "eovim/config.h"
 #include <Elementary.h>
 
+static Elm_Genlist_Item_Class *_itc = NULL;
+
 static void
 _focus_in_cb(void *data,
              Evas_Object *obj EINA_UNUSED,
@@ -181,6 +183,7 @@ gui_add(s_gui *gui,
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(gui, EINA_FALSE);
 
+   Evas_Object *o;
    gui->nvim = nvim;
 
    /* Window setup */
@@ -206,6 +209,11 @@ gui_add(s_gui *gui,
    /* FIXME Use a config */
    termview_font_set(gui->termview, "Mono", 14);
    gui_bg_color_set(gui, 0, 0, 0, 255);
+
+   o = gui->completion.gl = elm_genlist_add(gui->layout);
+   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_layout_content_set(gui->layout, "eovim.completion", o);
 
    /*
     * We set the resieing step of the window to the size of a cell of the
@@ -376,5 +384,150 @@ gui_bg_color_set(s_gui *gui,
    msg->val[2] = b;
    msg->val[3] = a;
 
-   edje_object_message_send(gui->edje, EDJE_MESSAGE_INT_SET, 0, msg);
+   CRI("Broken. Fixme.");
+   (void) gui;
+   //edje_object_message_send(gui->edje, EDJE_MESSAGE_INT_SET, 0, msg);
+}
+
+static char *
+_completion_gl_text_get(void *data,
+                        Evas_Object *obj EINA_UNUSED,
+                        const char *part EINA_UNUSED)
+{
+   Eina_Stringshare *const text = data;
+   return strndup(text, (size_t)eina_stringshare_strlen(text));
+}
+
+void
+gui_completion_add(s_gui *gui,
+                   s_completion *completion)
+{
+   eina_stringshare_ref(completion->word); // XXX
+
+   elm_genlist_item_append(gui->completion.gl, _itc, completion->word,
+                           NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
+}
+
+static Elm_Genlist_Item *
+_gl_nth_get(const Evas_Object *gl,
+            unsigned int index)
+{
+   /*
+    * Find the N-th element in a genlist. We use a dichotomic search to
+    * lower the algorithmic completxity.
+    */
+   const unsigned int items = elm_genlist_items_count(gl);
+   const unsigned int half = items / 2;
+   Elm_Genlist_Item *ret = NULL;
+
+   if (EINA_UNLIKELY(index >= items))
+     {
+        ERR("Attempt to get item %u out of %u", index, items);
+     }
+   else if (index <= half)
+     {
+        ret = elm_genlist_first_item_get(gl);
+        for (unsigned int i = 1; i < index; i++)
+          ret = elm_genlist_item_next_get(ret);
+     }
+   else
+     {
+        ret = elm_genlist_last_item_get(gl);
+        for (unsigned int i = items - 1; i >= index; i--)
+          ret = elm_genlist_item_prev_get(ret);
+     }
+
+   return ret;
+}
+
+void
+gui_completion_selected_set(s_gui *gui,
+                            int index)
+{
+   Evas_Object *const gl = gui->completion.gl;
+
+   /*
+    * If the index is negative, we unselect the previously selected items.
+    * Otherwise we select the item at the provded index.
+    */
+
+   if (index < 0)
+     {
+        Elm_Genlist_Item *const selected = elm_genlist_selected_item_get(gl);
+        if (selected)
+          elm_genlist_item_selected_set(selected, EINA_FALSE);
+     }
+   else /* index is >= 0, we can safely cast it as unsigned */
+     {
+        Elm_Genlist_Item *const item = _gl_nth_get(gl, (unsigned int)index);
+        elm_genlist_item_selected_set(item, EINA_TRUE);
+     }
+}
+
+void
+gui_completion_show(s_gui *gui,
+                    unsigned int selected,
+                    unsigned int x,
+                    unsigned int y)
+{
+   /* Show the completion panel */
+   elm_layout_signal_emit(gui->layout, "eovim,completion,show", "eovim");
+
+   /* Position the completion panel */
+   int px, py;
+   /*
+    * TODO This function should calculate the best place where to place the
+    * damn thing. For now we place it one row below the insertion point.
+    * This is pretty dumb as the completion panel would NOT be visible when
+    * editing the bottom lines of a window!
+    */
+   y++;
+
+   termview_cell_to_coords(gui->termview, x, y, &px, &py);
+
+   Edje_Message_Int_Set *msg;
+   msg = alloca(sizeof(*msg) + (sizeof(int) * 2));
+   msg->count = 4;
+   msg->val[0] = px;
+   msg->val[1] = py;
+   msg->val[2] = px + 400;
+   msg->val[3] = py + 200;
+   edje_object_message_send(gui->edje, EDJE_MESSAGE_INT_SET, 1, msg);
+
+   /* Select the appropriate item */
+   Elm_Genlist_Item *const sel = _gl_nth_get(gui->completion.gl, selected);
+   elm_genlist_item_selected_set(sel, EINA_TRUE);
+}
+
+void
+gui_completion_hide(s_gui *gui)
+{
+   elm_layout_signal_emit(gui->layout, "eovim,completion,hide", "eovim");
+}
+
+void
+gui_completion_clear(s_gui *gui)
+{
+   elm_genlist_clear(gui->completion.gl);
+}
+
+Eina_Bool
+gui_init(void)
+{
+   _itc = elm_genlist_item_class_new();
+   if (EINA_UNLIKELY(! _itc))
+     {
+        CRI("Failed to create genlist item class");
+        return EINA_FALSE;
+     }
+   _itc->item_style = "default";
+   _itc->func.text_get = _completion_gl_text_get;
+
+   return EINA_TRUE;
+}
+
+void
+gui_shutdown(void)
+{
+   elm_genlist_item_class_free(_itc);
 }

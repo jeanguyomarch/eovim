@@ -35,6 +35,7 @@ typedef struct config s_config;
 typedef struct mode s_mode;
 typedef struct position s_position;
 typedef struct gui s_gui;
+typedef struct completion s_completion;
 typedef Eina_Bool (*f_event_cb)(s_nvim *nvim, const msgpack_object_array *args);
 
 typedef enum
@@ -44,11 +45,12 @@ typedef enum
    CURSOR_SHAPE_VERTICAL,
 } e_cursor_shape;
 
-
-struct position
+struct completion
 {
-   int64_t x;
-   int64_t y;
+   Eina_Stringshare *word;
+   Eina_Stringshare *kind;
+   Eina_Stringshare *menu;
+   Eina_Stringshare *info;
 };
 
 struct version
@@ -57,18 +59,6 @@ struct version
    unsigned int minor;
    unsigned int patch;
 };
-
-static inline s_position
-position_make(int64_t x, int64_t y)
-{
-   const s_position pos = {
-      .x = x,
-      .y = y,
-   };
-   return pos;
-}
-
-#define T_INT_INVALID ((t_int)-1)
 
 Eina_Bool types_init(void);
 void types_shutdown(void);

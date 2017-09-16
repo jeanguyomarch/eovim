@@ -66,5 +66,6 @@ void termview_scroll_region_set(Evas_Object *obj, const Eina_Rectangle *region);
 void termview_scroll(Evas_Object *obj, int count);
 void termview_fg_color_set(Evas_Object *obj, int r, int g, int b, int a);
 s_termview_color termview_color_decompose(uint32_t col);
+void termview_cell_to_coords(const Evas_Object *obj, unsigned int cell_x, unsigned int cell_y, int *px, int *py);
 
 #endif /* ! __EOVIM_TERMVIEW_H__ */

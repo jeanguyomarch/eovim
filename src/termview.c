@@ -803,3 +803,19 @@ termview_fg_color_set(Evas_Object *obj,
    evas_object_textgrid_update_add(sd->textgrid, 0, 0,
                                    (int)sd->cols, (int)sd->rows);
 }
+
+void
+termview_cell_to_coords(const Evas_Object *obj,
+                        unsigned int cell_x,
+                        unsigned int cell_y,
+                        int *px,
+                        int *py)
+{
+   const s_termview *const sd = evas_object_smart_data_get(obj);
+
+   int wx, wy;
+   evas_object_geometry_get(sd->textgrid, &wx, &wy, NULL, NULL);
+
+   if (px) *px = (int)(cell_x * sd->cell_w) + wx;
+   if (py) *py = (int)(cell_y * sd->cell_h) + wy;
+}

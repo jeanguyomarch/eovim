@@ -94,16 +94,18 @@ static Eina_Stringshare *_keywords[__KW_LAST];
    const msgpack_object_array *const Ret = _array_of_args_extract(Args); \
    if (EINA_UNLIKELY(! Ret)) { return EINA_FALSE; }
 
+#define CHECK_TYPE(Obj, Type, ...) \
+   if (EINA_UNLIKELY((Obj)->type != Type)) { \
+      CRI("Expected type 0x%x. Got 0x%x", Type, (Obj)->type); \
+      return __VA_ARGS__; \
+   }
+
 
 static const msgpack_object_array *
 _array_of_args_extract(const msgpack_object_array *args)
 {
    const msgpack_object *const obj = &(args->ptr[1]);
-   if (EINA_UNLIKELY(obj->type != MSGPACK_OBJECT_ARRAY))
-     {
-        CRI("Expected array type. Got 0x%x", obj->type);
-        return NULL;
-     }
+   CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, NULL);
    return &(obj->via.array);
 }
 
@@ -130,12 +132,7 @@ _arg_stringshare_get(const msgpack_object_array *args,
                      Eina_Stringshare **arg)
 {
    const msgpack_object *const obj = &(args->ptr[index]);
-   if (EINA_UNLIKELY(obj->type != MSGPACK_OBJECT_STR))
-     {
-        CRI("Expected a string type for argument %u. Got 0x%x",
-            index, obj->type);
-        return EINA_FALSE;
-     }
+   CHECK_TYPE(obj, MSGPACK_OBJECT_STR, EINA_FALSE);
    const msgpack_object_str *const str = &(obj->via.str);
    *arg = eina_stringshare_add_length(str->ptr, str->size);
    if (EINA_UNLIKELY(! *arg))
@@ -152,12 +149,7 @@ _arg_bool_get(const msgpack_object_array *args,
               Eina_Bool *arg)
 {
    const msgpack_object *const obj = &(args->ptr[index]);
-   if (EINA_UNLIKELY((obj->type != MSGPACK_OBJECT_BOOLEAN)))
-     {
-        CRI("Expected a boolean type for argument %u. Got 0x%x",
-            index, obj->type);
-        return EINA_FALSE;
-     }
+   CHECK_TYPE(obj, MSGPACK_OBJECT_BOOLEAN, EINA_FALSE);
    *arg = obj->via.boolean;
    return EINA_TRUE;
 }
@@ -231,11 +223,7 @@ nvim_event_mode_info_set(s_nvim *nvim,
    for (unsigned int i = 0; i < kw_params->size; i++)
      {
         const msgpack_object *o = &(kw_params->ptr[i]);
-        if (EINA_UNLIKELY(o->type != MSGPACK_OBJECT_MAP))
-          {
-             CRI("Expected object to be a map. Type is 0x%x", o->type);
-             return EINA_FALSE;
-          }
+        CHECK_TYPE(o, MSGPACK_OBJECT_MAP, EINA_FALSE);
         const msgpack_object_map *const map = &(o->via.map);
 
         /* We will store for each map, pointers to the values */
@@ -426,19 +414,11 @@ nvim_event_highlight_set(s_nvim *nvim,
    for (unsigned int i = 1; i < args->size; i++)
      {
         const msgpack_object *const obj = &(args->ptr[i]);
-        if (EINA_UNLIKELY(obj->type != MSGPACK_OBJECT_ARRAY))
-          {
-             CRI("Expected an array type. Got 0x%x", obj->type);
-             return EINA_FALSE;
-          }
+        CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
         const msgpack_object_array *const arr = &(obj->via.array);
         CHECK_ARGS_COUNT(arr, ==, 1);
         const msgpack_object *const arr_arg = &(arr->ptr[0]);
-        if (EINA_UNLIKELY(arr_arg->type != MSGPACK_OBJECT_MAP))
-          {
-             CRI("Expected a map type. Got 0x%x", arr_arg->type);
-             return EINA_FALSE;
-          }
+        CHECK_TYPE(arr_arg, MSGPACK_OBJECT_MAP, EINA_FALSE);
 
         /*
          * Okay, we now have a map. We go through all its key-value pairs
@@ -450,11 +430,7 @@ nvim_event_highlight_set(s_nvim *nvim,
           {
              const msgpack_object_kv *const kv = &(map->ptr[j]);
              const msgpack_object *const key_obj = &(kv->key);
-             if (EINA_UNLIKELY(key_obj->type != MSGPACK_OBJECT_STR))
-               {
-                  CRI("Expected a string type. Got 0x%x", key_obj->type);
-                  return EINA_FALSE;
-               }
+             CHECK_TYPE(key_obj, MSGPACK_OBJECT_STR, EINA_FALSE);
              const msgpack_object_str *const key = &(key_obj->via.str);
              Eina_Stringshare *const shr_key = eina_stringshare_add_length(
                 key->ptr, key->size
@@ -558,19 +534,11 @@ nvim_event_put(s_nvim *nvim,
    for (unsigned int i = 1; i < args->size; i++)
      {
         const msgpack_object *const obj = &(args->ptr[i]);
-        if (EINA_UNLIKELY(obj->type != MSGPACK_OBJECT_ARRAY))
-          {
-             CRI("Expected an array type. Got 0x%x", obj->type);
-             return EINA_FALSE;
-          }
+        CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
         const msgpack_object_array *const arr = &(obj->via.array);
         CHECK_ARGS_COUNT(arr, ==, 1);
         const msgpack_object *const arr_arg = &(arr->ptr[0]);
-        if (EINA_UNLIKELY(arr_arg->type != MSGPACK_OBJECT_STR))
-          {
-             CRI("Expected a string type. Got 0x%x", arr_arg->type);
-             return EINA_FALSE;
-          }
+        CHECK_TYPE(arr_arg, MSGPACK_OBJECT_STR, EINA_FALSE);
 
         const msgpack_object_str *const str = &(arr_arg->via.str);
         if (EINA_UNLIKELY(ptr + str->size >= max))
@@ -672,27 +640,75 @@ nvim_event_set_icon(s_nvim *nvim EINA_UNUSED,
    CRI("Unimplemented");
    return EINA_TRUE;
 }
+
 Eina_Bool
-nvim_event_popupmenu_show(s_nvim *nvim EINA_UNUSED,
+nvim_event_popupmenu_show(s_nvim *nvim,
+                          const msgpack_object_array *args)
+{
+   CHECK_BASE_ARGS_COUNT(args, ==, 1);
+   ARRAY_OF_ARGS_EXTRACT(args, params);
+   CHECK_ARGS_COUNT(params, ==, 4);
+
+   const msgpack_object *const data_obj = &(params->ptr[0]);
+   CHECK_TYPE(data_obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
+   const msgpack_object_array *const data = &(data_obj->via.array);
+
+   t_int selected, row, col;
+   GET_ARG(params, 1, t_int, &selected);
+   GET_ARG(params, 2, t_int, &row);
+   GET_ARG(params, 3, t_int, &col);
+
+   for (unsigned int i = 0; i < data->size; i++)
+     {
+        CHECK_TYPE(&data->ptr[i], MSGPACK_OBJECT_ARRAY, EINA_FALSE);
+        const msgpack_object_array *const completion = &(data->ptr[i].via.array);
+        CHECK_ARGS_COUNT(completion, ==, 4);
+
+        s_completion compl;
+        GET_ARG(completion, 0, stringshare, &compl.word);
+        GET_ARG(completion, 1, stringshare, &compl.kind);
+        GET_ARG(completion, 2, stringshare, &compl.menu);
+        GET_ARG(completion, 3, stringshare, &compl.info);
+
+        gui_completion_add(&nvim->gui, &compl);
+
+        eina_stringshare_del(compl.word);
+        eina_stringshare_del(compl.kind);
+        eina_stringshare_del(compl.menu);
+        eina_stringshare_del(compl.info);
+     }
+
+   gui_completion_show(&nvim->gui, (unsigned int)selected,
+                       (unsigned int)col, (unsigned int)row);
+
+   return EINA_TRUE;
+}
+
+Eina_Bool
+nvim_event_popupmenu_hide(s_nvim *nvim,
                           const msgpack_object_array *args EINA_UNUSED)
 {
-   CRI("Unimplemented");
+   gui_completion_hide(&nvim->gui);
+   gui_completion_clear(&nvim->gui);
    return EINA_TRUE;
 }
+
 Eina_Bool
-nvim_event_popupmenu_hide(s_nvim *nvim EINA_UNUSED,
-                          const msgpack_object_array *args EINA_UNUSED)
+nvim_event_popupmenu_select(s_nvim *nvim,
+                            const msgpack_object_array *args)
 {
-   CRI("Unimplemented");
+   CHECK_BASE_ARGS_COUNT(args, ==, 1);
+   ARRAY_OF_ARGS_EXTRACT(args, params);
+   CHECK_ARGS_COUNT(params, ==, 1);
+
+   t_int selected;
+   GET_ARG(params, 0, t_int, &selected);
+
+   gui_completion_selected_set(&nvim->gui, (int)selected);
+
    return EINA_TRUE;
 }
-Eina_Bool
-nvim_event_popupmenu_select(s_nvim *nvim EINA_UNUSED,
-                            const msgpack_object_array *args EINA_UNUSED)
-{
-   CRI("Unimplemented");
-   return EINA_TRUE;
-}
+
 Eina_Bool
 nvim_event_tabline_update(s_nvim *nvim EINA_UNUSED,
                           const msgpack_object_array *args EINA_UNUSED)

@@ -34,6 +34,10 @@ struct gui
    Evas_Object *layout;
    Evas_Object *edje;
    Evas_Object *termview;
+   
+   struct {
+      Evas_Object *gl;
+   } completion;
 
    struct {
       Evas_Object *box;
@@ -42,6 +46,9 @@ struct gui
 
    s_nvim *nvim;
 };
+
+Eina_Bool gui_init(void);
+void gui_shutdown(void);
 
 Eina_Bool gui_add(s_gui *gui, s_nvim *nvim);
 void gui_del(s_gui *gui);
@@ -60,5 +67,11 @@ void gui_busy_set(s_gui *gui, Eina_Bool busy);
 void gui_bg_color_set(s_gui *gui, int r, int g, int b, int a);
 void gui_config_show(s_gui *gui);
 void gui_config_hide(s_gui *gui);
+
+void gui_completion_show(s_gui *gui, unsigned int selected, unsigned int x, unsigned int y);
+void gui_completion_hide(s_gui *gui);
+void gui_completion_clear(s_gui *gui);
+void gui_completion_add(s_gui *gui, s_completion *completion);
+void gui_completion_selected_set(s_gui *gui, int index);
 
 #endif /* ! __EOVIM_GUI_H__ */

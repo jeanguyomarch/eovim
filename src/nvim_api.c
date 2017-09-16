@@ -148,7 +148,15 @@ nvim_api_ui_attach(s_nvim *nvim,
    msgpack_pack_array(pk, 3);
    msgpack_pack_int64(pk, width);
    msgpack_pack_int64(pk, height);
-   msgpack_pack_map(pk, 0);
+
+   /* Pack the options */
+   msgpack_pack_map(pk, 2);
+   msgpack_pack_str(pk, 3); /* 'rgb' key */
+   msgpack_pack_str_body(pk, "rgb", 3);
+   msgpack_pack_true(pk); /* 'rgb' value */
+   msgpack_pack_str(pk, 13); /* 'ext_popupmenu' key */
+   msgpack_pack_str_body(pk, "ext_popupmenu", 13);
+   msgpack_pack_true(pk); /* 'ext_popupmenu' value */
 
    return _request_send(nvim, req);
 }

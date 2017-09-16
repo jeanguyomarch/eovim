@@ -70,6 +70,7 @@ static const s_module _modules[] =
    MODULE(keymap),
    MODULE(nvim_api),
    MODULE(nvim_event),
+   MODULE(gui),
    MODULE(termview),
    MODULE(nvim),
 
