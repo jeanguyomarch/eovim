@@ -297,7 +297,7 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
         fprintf(stderr, "\n--------\n");
 #endif
 
-        if (obj.type != MSGPACK_OBJECT_ARRAY)
+        if (EINA_UNLIKELY(obj.type != MSGPACK_OBJECT_ARRAY))
           {
              ERR("Unexpected msgpack type 0x%x", obj.type);
              goto end_unpack;
@@ -313,7 +313,7 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
              goto end_unpack;
           }
 
-        if (args->ptr[0].type != MSGPACK_OBJECT_POSITIVE_INTEGER)
+        if (EINA_UNLIKELY(args->ptr[0].type != MSGPACK_OBJECT_POSITIVE_INTEGER))
           {
              ERR("First argument in response is expected to be an integer");
              goto end_unpack;
