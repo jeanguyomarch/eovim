@@ -521,9 +521,8 @@ nvim_event_put(s_nvim *nvim,
     */
    CHECK_BASE_ARGS_COUNT(args, >=, 1);
 
-   static char buf[2048];
-   const char *const max = &(buf[sizeof(buf)]);
-   char *ptr = buf;
+   /* Reset the put decode buffer */
+   eina_ustrbuf_reset(nvim->decode);
 
    /*
     * Go through all the arguments. Each argument is an array that contains
@@ -541,20 +540,20 @@ nvim_event_put(s_nvim *nvim,
         CHECK_TYPE(arr_arg, MSGPACK_OBJECT_STR, EINA_FALSE);
 
         const msgpack_object_str *const str = &(arr_arg->via.str);
-        if (EINA_UNLIKELY(ptr + str->size >= max))
+        int index = 0;
+        const Eina_Unicode cp = eina_unicode_utf8_next_get(str->ptr, &index);
+        if (EINA_UNLIKELY(cp == 0))
           {
-             CRI("String is too big! Truncating!");
-             break;
+             ERR("Failed to decode utf-8 string. Skipping.");
+             continue;
           }
-        memcpy(ptr, str->ptr, str->size);
-        ptr += str->size;
+        eina_ustrbuf_append_char(nvim->decode, cp);
      }
-   /* This is just for printing purposes. We actually don't care if the final
-    * string is NUL-terminated or not. */
-   *ptr = '\0';
 
    /* Finally, pass the string and its length to the gui */
-   gui_put(&nvim->gui, buf, (unsigned int)(ptr - buf));
+   gui_put(&nvim->gui,
+           eina_ustrbuf_string_get(nvim->decode),
+           (unsigned int)eina_ustrbuf_length_get(nvim->decode));
 
    return EINA_TRUE;
 }

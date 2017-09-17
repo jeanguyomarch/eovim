@@ -612,7 +612,7 @@ termview_eol_clear(Evas_Object *obj)
 
 void
 termview_put(Evas_Object *obj,
-             const char *string,
+             const Eina_Unicode *ustring,
              unsigned int size)
 {
    s_termview *const sd = evas_object_smart_data_get(obj);
@@ -630,7 +630,7 @@ termview_put(Evas_Object *obj,
    for (unsigned int x = 0; x < size; x++)
      {
         Evas_Textgrid_Cell *const c = &(cells[x + sd->x]);
-        c->codepoint = string[x];
+        c->codepoint = ustring[x];
         if (sd->current.reverse)
           {
              c->fg = sd->current.bg;

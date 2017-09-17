@@ -49,6 +49,8 @@ struct nvim
    msgpack_packer packer;
    uint32_t request_id;
 
+   Eina_UStrbuf *decode;
+
    /** True when 24-bits colors are expected, False to use the 256 terminal
     * colors */
    Eina_Bool true_colors;

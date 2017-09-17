@@ -464,6 +464,13 @@ nvim_new(const char *program,
 
    nvim->true_colors = ! termcolors;
 
+   nvim->decode = eina_ustrbuf_new();
+   if (EINA_UNLIKELY(! nvim->decode))
+     {
+        CRI("Failed to create unicode string buffer");
+        goto del_mem;
+     }
+
    /* Create the config */
    nvim->config = config_new();
 
@@ -477,7 +484,7 @@ nvim_new(const char *program,
    if (EINA_UNLIKELY(! nvim->modes))
      {
         CRI("Failed to create Eina_Hash");
-        goto del_mem;
+        goto del_ustrbuf;
      }
 
    /* Create the GUI window */
@@ -512,6 +519,8 @@ del_win:
    gui_del(&nvim->gui);
 del_hash:
    eina_hash_free(nvim->modes);
+del_ustrbuf:
+   eina_ustrbuf_free(nvim->decode);
 del_mem:
    free(nvim);
 del_strbuf:
@@ -529,6 +538,7 @@ nvim_free(s_nvim *nvim)
         msgpack_unpacker_destroy(&nvim->unpacker);
         eina_hash_free(nvim->modes);
         if (nvim->mode.name) { eina_stringshare_del(nvim->mode.name); }
+        eina_ustrbuf_free(nvim->decode);
         free(nvim);
      }
 }

@@ -286,10 +286,10 @@ gui_eol_clear(s_gui *gui)
 
 void
 gui_put(s_gui *gui,
-        const char *string,
+        const Eina_Unicode *ustring,
         unsigned int size)
 {
-   termview_put(gui->termview, string, size);
+   termview_put(gui->termview, ustring, size);
 }
 
 void
