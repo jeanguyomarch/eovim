@@ -191,9 +191,10 @@ _textgrid_mouse_wheel_cb(void *data,
    const char *const dir = (ev->z < 0) ? "Up" : "Down";
 
    char input[64];
+   unsigned int cx, cy;
+   _coords_to_cell(sd, ev->canvas.x, ev->canvas.y, &cx, &cy);
    const int bytes = snprintf(input, sizeof(input),
-                              "<ScrollWheel%s><%u,%u>", dir,
-                              ev->canvas.x, ev->canvas.y);
+                              "<ScrollWheel%s><%u,%u>", dir, cx, cy);
    nvim_api_input(sd->nvim, input, (unsigned int)bytes);
 }
 
