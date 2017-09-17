@@ -28,7 +28,6 @@
 #include "eovim/log.h"
 #include "eovim/mode.h"
 
-typedef void (*f_nvim_notif)(s_nvim *nvim, Eina_List *args);
 enum
 {
    HANDLER_ADD,
