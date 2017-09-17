@@ -34,14 +34,15 @@ struct gui
    Evas_Object *layout;
    Evas_Object *edje;
    Evas_Object *termview;
-   
+
    struct {
       Evas_Object *gl;
    } completion;
 
    struct {
       Evas_Object *box;
-      Evas_Object *fg_col;
+      Evas_Object *bg_sel;
+      Evas_Object *bg_sel_frame;
    } config;
 
    s_nvim *nvim;

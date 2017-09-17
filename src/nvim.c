@@ -472,7 +472,12 @@ nvim_new(const char *program,
      }
 
    /* Create the config */
-   nvim->config = config_new();
+   nvim->config = config_load();
+   if (EINA_UNLIKELY(! nvim->config))
+     {
+        CRI("Failed to initialize a configuration");
+        goto del_ustrbuf;
+     }
 
    /* Initialze msgpack for RPC */
    msgpack_sbuffer_init(&nvim->sbuffer);
@@ -484,7 +489,7 @@ nvim_new(const char *program,
    if (EINA_UNLIKELY(! nvim->modes))
      {
         CRI("Failed to create Eina_Hash");
-        goto del_ustrbuf;
+        goto del_config;
      }
 
    /* Create the GUI window */
@@ -519,6 +524,8 @@ del_win:
    gui_del(&nvim->gui);
 del_hash:
    eina_hash_free(nvim->modes);
+del_config:
+   config_free(nvim->config);
 del_ustrbuf:
    eina_ustrbuf_free(nvim->decode);
 del_mem:
@@ -538,6 +545,7 @@ nvim_free(s_nvim *nvim)
         msgpack_unpacker_destroy(&nvim->unpacker);
         eina_hash_free(nvim->modes);
         if (nvim->mode.name) { eina_stringshare_del(nvim->mode.name); }
+        config_free(nvim->config);
         eina_ustrbuf_free(nvim->decode);
         free(nvim);
      }

@@ -404,11 +404,11 @@ _smart_add(Evas_Object *obj)
         return;
      }
 
-   termview_fg_color_set(obj, 255, 255, 255, 255);
+   /* Set a default foreground color */
+   termview_fg_color_set(obj, 255, 215, 175, 255);
 
    /* Palette item #0 is the default BG */
    sd->palette_id_generator = 2; /* BG + FG */
-
 }
 
 static void

@@ -28,6 +28,12 @@
 #include "eovim/config.h"
 #include <Elementary.h>
 
+typedef enum
+{
+   THEME_MSG_BG         = 0,
+   THEME_MSG_COMPL      = 1,
+} e_theme_msg;
+
 static Elm_Genlist_Item_Class *_itc = NULL;
 
 static void
@@ -78,6 +84,7 @@ _config_hide_cb(void *data,
 {
    s_nvim *const nvim = data;
    gui_config_hide(&nvim->gui);
+   config_save(nvim->config);
 }
 
 static Evas_Object *
@@ -110,39 +117,81 @@ _config_box_add(s_gui *gui)
    return o;
 }
 
-static Evas_Object *
-_colorselector_add(Evas_Object *parent)
-{
-   Evas_Object *const o = elm_colorselector_add(parent);
-   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_show(o);
-
-   return o;
-}
-
 static void
-_fg_color_changed_cb(void *data,
+_bg_color_changed_cb(void *data,
                      Evas_Object *obj,
                      void *event_info EINA_UNUSED)
 {
    s_gui *const gui = data;
+   s_config *const config = gui->nvim->config;
    int r, g, b, a;
 
-   elm_colorselector_color_get(obj, &r, &g, &b, &a);
-   config_fg_color_set(gui->nvim->config, r, g, b, a);
-   termview_fg_color_set(gui->termview, r, g, b, a);
+   if (config->use_bg_color)
+     {
+        elm_colorselector_color_get(obj, &r, &g, &b, &a);
+        config_bg_color_set(config, r, g, b, a);
+        gui_bg_color_set(gui, r, g, b, a);
+     }
+}
+
+static void
+_bg_sel_changed_cb(void *data,
+                   Evas_Object *obj,
+                   void *event_info EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   const Eina_Bool use_bg = elm_check_state_get(obj);
+   /* FIXME use elm_frame_collapse_go(). Prettier, but does not work */
+   elm_frame_collapse_set(gui->config.bg_sel_frame, !use_bg);
+   config_use_bg_color_set(gui->nvim->config, use_bg);
+
+   if (use_bg)
+     _bg_color_changed_cb(gui, gui->config.bg_sel, NULL);
+   else
+     elm_layout_signal_emit(gui->layout, "eovim,background,unmask", "eovim");
 }
 
 static Evas_Object *
-_config_fg_add(s_gui *gui, Evas_Object *parent)
+_config_bg_add(s_gui *gui, Evas_Object *parent)
 {
-   Evas_Object *const f = _frame_add(parent, "Default Foreground Color");
-   Evas_Object *const sel = _colorselector_add(f);
+   const s_config *config = gui->nvim->config;
 
-   evas_object_smart_callback_add(sel, "changed", _fg_color_changed_cb, gui);
+   Evas_Object *const f = _frame_add(parent, "Background Settings");
+   Evas_Object *const box = elm_box_add(f);
+   elm_box_horizontal_set(box, EINA_FALSE);
+   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(box, 0.0, EVAS_HINT_FILL);
+   elm_box_align_set(box, 0.0, 0.0);
 
-   elm_object_content_set(f, sel);
+   /* check that toggles the color selector */
+   Evas_Object *const check = elm_check_add(box);
+   evas_object_size_hint_align_set(check, 0.0, 0.0);
+   elm_object_text_set(check, "Enable unified colored background");
+   elm_check_state_set(check, config->use_bg_color);
+   evas_object_smart_callback_add(check, "changed", _bg_sel_changed_cb, gui);
+   evas_object_show(check);
+
+   /* frame that allows the color selector to collapse */
+   Evas_Object *const sel_frame = _frame_add(box, "Unified Color Selection");
+   elm_frame_autocollapse_set(sel_frame, EINA_FALSE);
+   elm_frame_collapse_set(sel_frame, ! config->use_bg_color);
+
+   /* color selector */
+   Evas_Object *const sel = elm_colorselector_add(box);
+   evas_object_smart_callback_add(sel, "changed", _bg_color_changed_cb, gui);
+   evas_object_size_hint_weight_set(sel, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(sel, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_show(sel);
+   elm_object_content_set(sel_frame, sel);
+   const s_config_color *const col = config->bg_color;
+   elm_colorselector_color_set(sel, col->r, col->g, col->b, col->a);
+
+   elm_box_pack_start(box, check);
+   elm_box_pack_end(box, sel_frame);
+   elm_object_content_set(f, box);
+
+   gui->config.bg_sel = sel;
+   gui->config.bg_sel_frame = sel_frame;
 
    return f;
 }
@@ -155,7 +204,7 @@ gui_config_show(s_gui *gui)
    Evas_Object *const box = _config_box_add(gui);
    Evas_Object *o;
 
-   o = _config_fg_add(gui, box);
+   o = _config_bg_add(gui, box);
    elm_box_pack_end(box, o);
    elm_layout_content_set(gui->layout, "eovim.config.box", box);
 
@@ -208,7 +257,6 @@ gui_add(s_gui *gui,
    gui->termview = termview_add(gui->layout, nvim);
    /* FIXME Use a config */
    termview_font_set(gui->termview, "Mono", 14);
-   gui_bg_color_set(gui, 0, 0, 0, 255);
 
    o = gui->completion.gl = elm_genlist_add(gui->layout);
    evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, 0.0);
@@ -224,7 +272,7 @@ gui_add(s_gui *gui,
    elm_win_size_step_set(gui->win, (int)cell_w, (int)cell_h);
 
    elm_layout_content_set(gui->layout, "eovim.main.view", gui->termview);
-   _config_fg_add(gui, gui->layout);
+   _config_bg_add(gui, gui->layout);
 
    evas_object_show(gui->termview);
    evas_object_show(gui->layout);
@@ -385,9 +433,8 @@ gui_bg_color_set(s_gui *gui,
    msg->val[2] = b;
    msg->val[3] = a;
 
-   CRI("Broken. Fixme.");
-   (void) gui;
-   //edje_object_message_send(gui->edje, EDJE_MESSAGE_INT_SET, 0, msg);
+   elm_layout_signal_emit(gui->layout, "eovim,background,mask", "eovim");
+   edje_object_message_send(gui->edje, EDJE_MESSAGE_INT_SET, THEME_MSG_BG, msg);
 }
 
 static char *
@@ -493,7 +540,7 @@ gui_completion_show(s_gui *gui,
    msg->val[1] = py;
    msg->val[2] = px + 400;
    msg->val[3] = py + 200;
-   edje_object_message_send(gui->edje, EDJE_MESSAGE_INT_SET, 1, msg);
+   edje_object_message_send(gui->edje, EDJE_MESSAGE_INT_SET, THEME_MSG_COMPL, msg);
 
    /* Select the appropriate item */
    Elm_Genlist_Item *const sel = _gl_nth_get(gui->completion.gl, selected);

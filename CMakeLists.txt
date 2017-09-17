@@ -11,8 +11,9 @@ find_package(PkgConfig REQUIRED)
 find_package(Eina REQUIRED)
 find_package(Eet REQUIRED)
 find_package(Evas REQUIRED)
-find_package(Ecore REQUIRED)
+find_package(Ecore REQUIRED COMPONENTS File)
 find_package(Edje REQUIRED)
+find_package(Efreet REQUIRED)
 find_package(Elementary REQUIRED)
 pkg_check_modules(MSGPACK msgpack REQUIRED)
 
@@ -55,6 +56,8 @@ target_include_directories(eovim
    ${EVAS_INCLUDE_DIRS}
    ${EDJE_INCLUDE_DIRS}
    ${ECORE_INCLUDE_DIRS}
+   ${ECORE_FILE_INCLUDE_DIRS}
+   ${EFREET_INCLUDE_DIRS}
    ${ELEMENTARY_INCLUDE_DIRS}
    ${MSGPACK_INCLUDE_DIRS}
 )
@@ -68,6 +71,8 @@ target_link_libraries(eovim
    ${EVAS_LIBRARIES}
    ${EDJE_LIBRARIES}
    ${ECORE_LIBRARIES}
+   ${ECORE_FILE_LIBRARIES}
+   ${EFREET_LIBRARIES}
    ${ELEMENTARY_LIBRARIES}
    ${MSGPACK_LIBRARIES}
 )
