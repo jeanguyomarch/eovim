@@ -99,3 +99,12 @@ target_compile_definitions(eovim
    PACKAGE_DATA_DIR=\"${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}\"
    BUILD_DATA_DIR=\"${CMAKE_BINARY_DIR}\"
 )
+
+install(
+   TARGETS eovim
+   RUNTIME DESTINATION bin
+)
+install(
+   FILES "${BUILD_THEMES_DIR}/default.edj"
+   DESTINATION "share/${CMAKE_PROJECT_NAME}/themes"
+)

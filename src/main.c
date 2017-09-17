@@ -150,6 +150,15 @@ elm_main(int argc,
         goto log_unregister;
      }
 
+   /*
+    * App settings
+    */
+   elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_LAST_WINDOW_CLOSED);
+   elm_language_set("");
+   elm_app_compile_bin_dir_set(PACKAGE_BIN_DIR);
+   elm_app_compile_lib_dir_set(PACKAGE_LIB_DIR);
+   elm_app_compile_data_dir_set(PACKAGE_DATA_DIR);
+   elm_app_info_set(elm_main, "eovim", "themes/default.edj");
 
    const char *const env = getenv("EOVIM_IN_TREE");
    _in_tree = (env) ? !!atoi(env) : EINA_FALSE;
@@ -173,17 +182,6 @@ elm_main(int argc,
              goto modules_shutdown;
           }
      }
-
-   /*
-    * App settings
-    */
-   elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_LAST_WINDOW_CLOSED);
-   elm_language_set("");
-   elm_app_compile_bin_dir_set(PACKAGE_BIN_DIR);
-   elm_app_compile_lib_dir_set(PACKAGE_LIB_DIR);
-   elm_app_compile_data_dir_set(PACKAGE_DATA_DIR);
-   elm_app_info_set(elm_main, "eovim", "themes/default.edj");
-
    /*
     * Create the GUI client
     */
