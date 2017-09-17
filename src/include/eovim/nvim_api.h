@@ -27,7 +27,7 @@
 #include <Eina.h>
 #include <msgpack.h>
 
-Eina_Bool nvim_api_ui_attach(s_nvim *nvim, unsigned int width, unsigned int height, Eina_Bool true_colors);
+Eina_Bool nvim_api_ui_attach(s_nvim *nvim, unsigned int width, unsigned int height);
 Eina_Bool nvim_api_ui_try_resize(s_nvim *nvim, unsigned int width, unsigned height);
 Eina_Bool nvim_api_input(s_nvim *nvim, const char *input, unsigned int input_size);
 

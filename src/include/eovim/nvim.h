@@ -58,7 +58,7 @@ struct nvim
 
 Eina_Bool nvim_init(void);
 void nvim_shutdown(void);
-s_nvim *nvim_new(const char *program, unsigned int argc, const char *const argv[]);
+s_nvim *nvim_new(const char *program, Eina_Bool termcolors, unsigned int argc, const char *const argv[]);
 void nvim_free(s_nvim *nvim);
 uint32_t nvim_next_uid_get(s_nvim *nvim);
 Eina_Bool nvim_api_response_dispatch(s_nvim *nvim, const s_request *req, const msgpack_object_array *args);

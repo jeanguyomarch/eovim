@@ -46,6 +46,7 @@ static const Ecore_Getopt _options =
    "An EFL GUI client for NeoVim",
    EINA_FALSE, /* Not strict: allows forwarding */
    {
+      ECORE_GETOPT_STORE_TRUE('T', "termcolors", "Use 256 terminal colors"),
       ECORE_GETOPT_STORE_STR('t', "theme", "Name of the theme to be used"),
       ECORE_GETOPT_STORE_STR('\0', "nvim", "Path to the nvim program"),
       ECORE_GETOPT_HELP('h', "help"),
@@ -117,7 +118,9 @@ elm_main(int argc,
    Eina_Bool quit_option = EINA_FALSE;
    char *nvim_prog = "nvim";
    char *theme = "default";
+   Eina_Bool termcolors = EINA_FALSE;
    Ecore_Getopt_Value values[] = {
+      ECORE_GETOPT_VALUE_BOOL(termcolors),
       ECORE_GETOPT_VALUE_STR(theme),
       ECORE_GETOPT_VALUE_STR(nvim_prog),
       ECORE_GETOPT_VALUE_BOOL(quit_option),
@@ -184,7 +187,8 @@ elm_main(int argc,
    /*
     * Create the GUI client
     */
-   s_nvim *const nvim = nvim_new(nvim_prog, (unsigned int)(argc -args),
+   s_nvim *const nvim = nvim_new(nvim_prog, termcolors,
+                                 (unsigned int)(argc - args),
                                  (const char *const *)(&argv[args]));
    if (EINA_UNLIKELY(! nvim))
      {

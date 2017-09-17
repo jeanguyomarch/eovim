@@ -134,8 +134,7 @@ nvim_api_request_free(s_nvim *nvim,
 
 Eina_Bool
 nvim_api_ui_attach(s_nvim *nvim,
-                   unsigned int width, unsigned int height,
-                   Eina_Bool true_colors)
+                   unsigned int width, unsigned int height)
 {
    const char api[] = "nvim_ui_attach";
    s_request *const req = _request_new(nvim, api, sizeof(api) - 1);
@@ -155,13 +154,11 @@ nvim_api_ui_attach(s_nvim *nvim,
    msgpack_pack_str(pk, 3); /* 'rgb' key */
    msgpack_pack_str_body(pk, "rgb", 3);
    /* 'rgb' value */
-   if (true_colors) msgpack_pack_true(pk);
+   if (nvim->true_colors) msgpack_pack_true(pk);
    else msgpack_pack_false(pk);
    msgpack_pack_str(pk, 13); /* 'ext_popupmenu' key */
    msgpack_pack_str_body(pk, "ext_popupmenu", 13);
    msgpack_pack_true(pk); /* 'ext_popupmenu' value */
-
-   nvim->true_colors = true_colors;
 
    return _request_send(nvim, req);
 }

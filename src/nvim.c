@@ -419,11 +419,12 @@ static void
 _attach(void *data)
 {
    s_nvim *const nvim = data;
-   nvim_api_ui_attach(nvim, 80, 24, EINA_FALSE);
+   nvim_api_ui_attach(nvim, 80, 24);
 }
 
 s_nvim *
 nvim_new(const char *program,
+         Eina_Bool termcolors,
          unsigned int args_count,
          const char *const argv[])
 {
@@ -460,6 +461,8 @@ nvim_new(const char *program,
         CRI("Failed to create nvim structure");
         goto del_strbuf;
      }
+
+   nvim->true_colors = ! termcolors;
 
    /* Create the config */
    nvim->config = config_new();
