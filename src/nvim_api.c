@@ -54,7 +54,7 @@ _request_new(s_nvim *nvim,
 
    req->name = rpc_name;
    req->uid = nvim_next_uid_get(nvim);
-   INF("Preparing request '%s' with id %"PRIu32, rpc_name, req->uid);
+   DBG("Preparing request '%s' with id %"PRIu32, rpc_name, req->uid);
 
    /* Clear the serialization buffer before pushing a new request */
    msgpack_sbuffer_clear(&nvim->sbuffer);
