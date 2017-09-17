@@ -420,7 +420,7 @@ static void
 _attach(void *data)
 {
    s_nvim *const nvim = data;
-   nvim_api_ui_attach(nvim, 80, 24);
+   nvim_api_ui_attach(nvim, 80, 24, EINA_FALSE);
 }
 
 s_nvim *
