@@ -190,6 +190,10 @@ _textgrid_mouse_wheel_cb(void *data,
 {
    s_termview *const sd = data;
    const Evas_Event_Mouse_Wheel *const ev = event;
+
+   /* If mouse is NOT enabled, we don't handle mouse events */
+   if (! nvim_mouse_enabled_get(sd->nvim)) { return; }
+
    const char *const dir = (ev->z < 0) ? "Up" : "Down";
 
    char input[64];
