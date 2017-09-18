@@ -445,18 +445,28 @@ _completion_gl_text_get(void *data,
                         Evas_Object *obj EINA_UNUSED,
                         const char *part EINA_UNUSED)
 {
-   Eina_Stringshare *const text = data;
-   return strndup(text, (size_t)eina_stringshare_strlen(text));
+   const s_completion *const compl = data;
+   return strndup(compl->word, (size_t)eina_stringshare_strlen(compl->word));
+}
+
+static void
+_completion_sel_cb(void *data EINA_UNUSED,
+                   Evas_Object *obj EINA_UNUSED,
+                   void *event)
+{
+   const Elm_Genlist_Item *const item = event;
+   const s_completion *const compl = elm_object_item_data_get(item);
+
+   DBG("word: %s", compl->word);
 }
 
 void
 gui_completion_add(s_gui *gui,
                    s_completion *completion)
 {
-   eina_stringshare_ref(completion->word); // XXX
-
-   elm_genlist_item_append(gui->completion.gl, _itc, completion->word,
-                           NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
+   elm_genlist_item_append(gui->completion.gl, _itc, completion,
+                           NULL, ELM_GENLIST_ITEM_NONE,
+                           _completion_sel_cb, NULL);
 }
 
 static Elm_Genlist_Item *
@@ -563,6 +573,19 @@ gui_completion_clear(s_gui *gui)
    elm_genlist_clear(gui->completion.gl);
 }
 
+static void
+_completion_item_del(void *data,
+                     Evas_Object *obj EINA_UNUSED)
+{
+   s_completion *const compl = data;
+
+   eina_stringshare_del(compl->word);
+   eina_stringshare_del(compl->kind);
+   eina_stringshare_del(compl->menu);
+   eina_stringshare_del(compl->info);
+   free(compl);
+}
+
 Eina_Bool
 gui_init(void)
 {
@@ -574,6 +597,7 @@ gui_init(void)
      }
    _itc->item_style = "default";
    _itc->func.text_get = _completion_gl_text_get;
+   _itc->func.del = _completion_item_del;
 
    return EINA_TRUE;
 }

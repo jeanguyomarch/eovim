@@ -663,18 +663,18 @@ nvim_event_popupmenu_show(s_nvim *nvim,
         const msgpack_object_array *const completion = &(data->ptr[i].via.array);
         CHECK_ARGS_COUNT(completion, ==, 4);
 
-        s_completion compl;
-        GET_ARG(completion, 0, stringshare, &compl.word);
-        GET_ARG(completion, 1, stringshare, &compl.kind);
-        GET_ARG(completion, 2, stringshare, &compl.menu);
-        GET_ARG(completion, 3, stringshare, &compl.info);
+        s_completion *const compl = malloc(sizeof(s_completion));
+        if (EINA_UNLIKELY(! compl))
+          {
+             CRI("Failed to allocate memory for completion");
+             return EINA_FALSE;
+          }
+        GET_ARG(completion, 0, stringshare, &compl->word);
+        GET_ARG(completion, 1, stringshare, &compl->kind);
+        GET_ARG(completion, 2, stringshare, &compl->menu);
+        GET_ARG(completion, 3, stringshare, &compl->info);
 
-        gui_completion_add(&nvim->gui, &compl);
-
-        eina_stringshare_del(compl.word);
-        eina_stringshare_del(compl.kind);
-        eina_stringshare_del(compl.menu);
-        eina_stringshare_del(compl.info);
+        gui_completion_add(&nvim->gui, compl);
      }
 
    gui_completion_show(&nvim->gui, (unsigned int)selected,
