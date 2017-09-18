@@ -512,6 +512,7 @@ gui_completion_selected_set(s_gui *gui,
      {
         Elm_Genlist_Item *const item = _gl_nth_get(gl, (unsigned int)index);
         elm_genlist_item_selected_set(item, EINA_TRUE);
+        elm_genlist_item_bring_in(item, ELM_GENLIST_ITEM_SCROLLTO_IN);
      }
 }
 
