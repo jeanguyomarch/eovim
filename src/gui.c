@@ -478,13 +478,13 @@ _gl_nth_get(const Evas_Object *gl,
    else if (index <= half)
      {
         ret = elm_genlist_first_item_get(gl);
-        for (unsigned int i = 1; i < index; i++)
+        for (unsigned int i = 0; i < index; i++)
           ret = elm_genlist_item_next_get(ret);
      }
    else
      {
         ret = elm_genlist_last_item_get(gl);
-        for (unsigned int i = items - 1; i >= index; i--)
+        for (unsigned int i = items - 2; i >= index; i--)
           ret = elm_genlist_item_prev_get(ret);
      }
 
