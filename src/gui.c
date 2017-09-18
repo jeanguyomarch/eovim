@@ -258,10 +258,13 @@ gui_add(s_gui *gui,
    /* FIXME Use a config */
    termview_font_set(gui->termview, "Mono", 14);
 
+   /* Create the completion genlist, and attach it to the theme layout.
+    * It shall not be subject to focus. */
    o = gui->completion.gl = elm_genlist_add(gui->layout);
    evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, 0.0);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_layout_content_set(gui->layout, "eovim.completion", o);
+   elm_object_tree_focus_allow_set(o, EINA_FALSE);
 
    /*
     * We set the resieing step of the window to the size of a cell of the
