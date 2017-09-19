@@ -25,6 +25,7 @@
 #include "eovim/nvim.h"
 #include "eovim/main.h"
 #include "eovim/log.h"
+#include "eovim/nvim_api.h"
 #include "eovim/config.h"
 #include <Elementary.h>
 
@@ -450,23 +451,68 @@ _completion_gl_text_get(void *data,
 }
 
 static void
-_completion_sel_cb(void *data EINA_UNUSED,
+_completion_sel_cb(void *data,
                    Evas_Object *obj EINA_UNUSED,
                    void *event)
 {
+   s_gui *const gui = data;
    const Elm_Genlist_Item *const item = event;
-   const s_completion *const compl = elm_object_item_data_get(item);
 
-   DBG("word: %s", compl->word);
+   /* If the completion.event is set, the item was selected because of a
+    * neovim event, not because the user did clic on the item.
+    * So we reset the event, and abort the function right here */
+   if (gui->completion.event)
+     {
+        gui->completion.event = EINA_FALSE;
+        return;
+     }
+
+   /* Get the indexes of the currently selected item and the item we have
+    * clicked on and we want to insert. */
+   const int sel_idx = gui->completion.sel
+      ? elm_genlist_item_index_get(gui->completion.sel)
+      : 1; /* No item selected? Take the first one */
+   const int compl_idx = elm_genlist_item_index_get(item);
+
+   /* Create a string buffer that will hold the input to be passed to neovim */
+   Eina_Strbuf *const input = eina_strbuf_new();
+   if (EINA_UNLIKELY(! input))
+     {
+        CRI("Failed to create string buffer");
+        return;
+     }
+
+   /* If the item to be completed is greater than the selected item, spam the
+    * <C-n> to make neovim advance the selection. Otherwise, the <C-p>.
+    * If the indexes are the same, do nothing. */
+   if (sel_idx < compl_idx)
+     {
+        for (int i = sel_idx; i < compl_idx; i++)
+          eina_strbuf_append_length(input, "<C-n>", 5);
+     }
+   else if (sel_idx > compl_idx)
+     {
+        for (int i = compl_idx; i >= sel_idx; i--)
+          eina_strbuf_append_length(input, "<C-p>", 5);
+     }
+   /* Send a signal to end the completion */
+   eina_strbuf_append_length(input, "<C-y>", 5);
+
+   /* Pass all these data to neovim and cleanup behind us */
+   nvim_api_input(gui->nvim, eina_strbuf_string_get(input),
+                  (unsigned int)eina_strbuf_length_get(input));
+   eina_strbuf_free(input);
 }
 
 void
 gui_completion_add(s_gui *gui,
                    s_completion *completion)
 {
-   elm_genlist_item_append(gui->completion.gl, _itc, completion,
-                           NULL, ELM_GENLIST_ITEM_NONE,
-                           _completion_sel_cb, NULL);
+   elm_genlist_item_append(
+      gui->completion.gl, _itc, completion,
+      NULL, ELM_GENLIST_ITEM_NONE,
+      _completion_sel_cb, gui
+   );
 }
 
 static Elm_Genlist_Item *
@@ -515,14 +561,18 @@ gui_completion_selected_set(s_gui *gui,
    if (index < 0)
      {
         Elm_Genlist_Item *const selected = elm_genlist_selected_item_get(gl);
+        gui->completion.event = EINA_FALSE;
         if (selected)
           elm_genlist_item_selected_set(selected, EINA_FALSE);
+        gui->completion.sel = NULL;
      }
    else /* index is >= 0, we can safely cast it as unsigned */
      {
         Elm_Genlist_Item *const item = _gl_nth_get(gl, (unsigned int)index);
+        gui->completion.event = EINA_TRUE;
         elm_genlist_item_selected_set(item, EINA_TRUE);
         elm_genlist_item_bring_in(item, ELM_GENLIST_ITEM_SCROLLTO_IN);
+        gui->completion.sel = item;
      }
 }
 
@@ -532,6 +582,10 @@ gui_completion_show(s_gui *gui,
                     unsigned int x,
                     unsigned int y)
 {
+   /* Before starting to setup the ui, we mark the completion as incoming
+    * from neovim */
+   gui->completion.event = EINA_TRUE;
+
    /* Show the completion panel */
    elm_layout_signal_emit(gui->layout, "eovim,completion,show", "eovim");
 
@@ -570,6 +624,7 @@ gui_completion_hide(s_gui *gui)
 void
 gui_completion_clear(s_gui *gui)
 {
+   gui->completion.sel = NULL;
    elm_genlist_clear(gui->completion.gl);
 }
 

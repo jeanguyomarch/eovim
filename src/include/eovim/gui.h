@@ -37,6 +37,8 @@ struct gui
 
    struct {
       Evas_Object *gl;
+      Elm_Genlist_Item *sel;
+      Eina_Bool event;
    } completion;
 
    struct {
