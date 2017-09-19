@@ -29,6 +29,9 @@
 #include "eovim/config.h"
 #include <Elementary.h>
 
+static const double _font_min = 4.0;
+static const double _font_max = 72.0;
+
 typedef enum
 {
    THEME_MSG_BG         = 0,
@@ -156,8 +159,29 @@ _bg_sel_changed_cb(void *data,
      elm_layout_signal_emit(gui->layout, "eovim,background,unmask", "eovim");
 }
 
+static void
+_font_size_cb(void *data,
+              Evas_Object *obj,
+              void *event_info EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   s_config *const config = gui->nvim->config;
+   const unsigned int size = (unsigned int)elm_slider_value_get(obj);
+
+   config_font_size_set(config, size);
+   termview_font_set(gui->termview, "Mono", size);
+
+   int tv_w, tv_h;
+   unsigned int w, h;
+   termview_cell_size_get(gui->termview, &w, &h);
+   evas_object_geometry_get(gui->termview, NULL, NULL, &tv_w, &tv_h);
+
+   gui_resize(gui, (unsigned)tv_w / w, (unsigned)tv_h / h);
+}
+
 static Evas_Object *
-_config_bg_add(s_gui *gui, Evas_Object *parent)
+_config_bg_add(s_gui *gui,
+               Evas_Object *parent)
 {
    const s_config *config = gui->nvim->config;
 
@@ -201,6 +225,31 @@ _config_bg_add(s_gui *gui, Evas_Object *parent)
    return f;
 }
 
+static Evas_Object *
+_config_font_size_add(s_gui *gui,
+                      Evas_Object *parent)
+{
+   const s_config *config = gui->nvim->config;
+
+   /* Frame container */
+   Evas_Object *const f = _frame_add(parent, "Font Size Settings");
+
+   /* Slider */
+   Evas_Object *const sl = elm_slider_add(f);
+   evas_object_size_hint_weight_set(sl, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(sl, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_slider_span_size_set(sl, 40);
+   elm_slider_unit_format_set(sl, "%1.0f");
+   elm_slider_indicator_format_set(sl, "%1.0f");
+   elm_slider_min_max_set(sl, _font_min, _font_max);
+   elm_slider_value_set(sl, config->font_size);
+   evas_object_smart_callback_add(sl, "delay,changed", _font_size_cb, gui);
+   evas_object_show(sl);
+
+   elm_object_content_set(f, sl);
+   return f;
+}
+
 void
 gui_config_show(s_gui *gui)
 {
@@ -211,10 +260,14 @@ gui_config_show(s_gui *gui)
 
    o = _config_bg_add(gui, box);
    elm_box_pack_end(box, o);
+
+   o = _config_font_size_add(gui, box);
+   elm_box_pack_end(box, o);
+
    elm_layout_content_set(gui->layout, "eovim.config.box", box);
 
    elm_layout_signal_emit(gui->layout, "config,show", "eovim");
-   evas_object_focus_set(o, EINA_TRUE);
+   evas_object_focus_set(gui->termview, EINA_FALSE);
 
 
    gui->config.box = box;
@@ -260,7 +313,7 @@ gui_add(s_gui *gui,
 
    gui->termview = termview_add(gui->layout, nvim);
    /* FIXME Use a config */
-   termview_font_set(gui->termview, "Mono", 14);
+   termview_font_set(gui->termview, "Mono", gui->nvim->config->font_size);
 
    /* Create the completion genlist, and attach it to the theme layout.
     * It shall not be subject to focus. */
@@ -610,7 +663,7 @@ gui_completion_show(s_gui *gui,
    msg->val[0] = px;
    msg->val[1] = py;
    msg->val[2] = px + 400;
-   msg->val[3] = py + 200;
+   msg->val[3] = py + 100;
    edje_object_message_send(gui->edje, EDJE_MESSAGE_INT_SET, THEME_MSG_COMPL, msg);
 
    /* Select the appropriate item */

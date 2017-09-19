@@ -65,6 +65,7 @@ config_init(void)
     * ===================================================================== */
 
    EDD_BASIC_ADD(version, EET_T_UINT);
+   EDD_BASIC_ADD(font_size, EET_T_UINT);
    EDD_COLOR_ADD(bg_color);
    EDD_BASIC_ADD(use_bg_color, EET_T_UCHAR);
 
@@ -95,6 +96,13 @@ config_use_bg_color_set(s_config *config,
    config->use_bg_color = !!use;
 }
 
+void
+config_font_size_set(s_config *config,
+                     unsigned int font_size)
+{
+   config->font_size = font_size;
+}
+
 static s_config *
 _config_new(void)
 {
@@ -106,6 +114,7 @@ _config_new(void)
      }
 
    config->version = CONFIG_VERSION;
+   config->font_size = 12;
    config->bg_color = malloc(sizeof(s_config_color));
    config_bg_color_set(config, 0, 0, 0, 255);
    config->use_bg_color = EINA_FALSE;
