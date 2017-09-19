@@ -84,8 +84,12 @@ _config_hide_cb(void *data,
                 const char *source EINA_UNUSED)
 {
    s_nvim *const nvim = data;
-   gui_config_hide(&nvim->gui);
+   s_gui *const gui = &nvim->gui;
+   gui_config_hide(gui);
    config_save(nvim->config);
+
+   elm_object_focus_set(gui->layout, EINA_FALSE);
+   evas_object_focus_set(gui->termview, EINA_TRUE);
 }
 
 static Evas_Object *
@@ -220,7 +224,6 @@ void
 gui_config_hide(s_gui *gui)
 {
    elm_layout_signal_emit(gui->layout, "config,hide", "eovim");
-   evas_object_focus_set(gui->termview, EINA_TRUE);
 
    elm_layout_content_unset(gui->layout, "eovim.config.box");
    evas_object_del(gui->config.box);
