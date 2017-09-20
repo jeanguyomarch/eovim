@@ -234,10 +234,7 @@ collections {
 
 
 
-         #define EOVIM_CONFIG_PARTS \
-         X("eovim.config.box")
-
-         rect { "config_cache";
+         rect { "config_cache"; mouse;
             desc { "default";
                color: 0 0 0 0;
                visible: 0;
@@ -282,24 +279,22 @@ collections {
             }
 
             programs {
-               #define X(Part) target: Part;
                program { signal: "config,show"; source: "eovim";
                   action: STATE_SET "enabled";
                   transition: ACCELERATE 0.8;
                   target: "config";
                   target: "config_cache";
                   target: "config_close";
-                  EOVIM_CONFIG_PARTS
+                  target: "eovim.config.box";
                }
                program { signal: "config,hide"; source: "eovim";
                   action: STATE_SET "default";
+                  transition: DECELERATE 0.5;
                   target: "config";
                   target: "config_cache";
                   target: "config_close";
-                  transition: DECELERATE 0.5;
-                  EOVIM_CONFIG_PARTS
+                  target: "eovim.config.box";
                }
-               #undef X
             }
          }
          swallow { "eovim.config.box";
@@ -311,6 +306,7 @@ collections {
             }
             desc { "enabled";
                inherit: "default";
+               rel2.relative: 1.0 1.0;
                visible: 1;
             }
          }

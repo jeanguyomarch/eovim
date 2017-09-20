@@ -66,6 +66,7 @@ config_init(void)
 
    EDD_BASIC_ADD(version, EET_T_UINT);
    EDD_BASIC_ADD(font_size, EET_T_UINT);
+   EDD_BASIC_ADD(font_name, EET_T_STRING);
    EDD_COLOR_ADD(bg_color);
    EDD_BASIC_ADD(use_bg_color, EET_T_UCHAR);
 
@@ -103,6 +104,13 @@ config_font_size_set(s_config *config,
    config->font_size = font_size;
 }
 
+void
+config_font_name_set(s_config *config,
+                     Eina_Stringshare *font_name)
+{
+   eina_stringshare_replace(&config->font_name, font_name);
+}
+
 static s_config *
 _config_new(void)
 {
@@ -114,6 +122,7 @@ _config_new(void)
      }
 
    config->version = CONFIG_VERSION;
+   config->font_name = eina_stringshare_add("Mono");
    config->font_size = 12;
    config->bg_color = malloc(sizeof(s_config_color));
    config_bg_color_set(config, 0, 0, 0, 255);
@@ -165,7 +174,7 @@ config_load(void)
              CRI("Configuration is corrupted.");
              goto new_config; /* Try to create a default config */
           }
-
+        cfg->font_name = eina_stringshare_add(cfg->font_name);
      }
    else
      {
@@ -212,6 +221,7 @@ end:
 void
 config_free(s_config *config)
 {
+   eina_stringshare_del(config->font_name);
    free(config->bg_color);
    free(config);
 }

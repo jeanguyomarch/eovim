@@ -512,11 +512,22 @@ termview_add(Evas_Object *parent,
 }
 
 void
+termview_refresh(Evas_Object *obj)
+{
+   s_termview *const sd = evas_object_smart_data_get(obj);
+   evas_object_textgrid_update_add(sd->textgrid, 0, 0, (int)sd->cols, (int)sd->rows);
+}
+
+void
 termview_font_set(Evas_Object *obj,
                   const char *font_name,
                   unsigned int font_size)
 {
+   EINA_SAFETY_ON_NULL_RETURN(font_name);
+   EINA_SAFETY_ON_TRUE_RETURN(font_size == 0);
+
    s_termview *const sd = evas_object_smart_data_get(obj);
+
    evas_object_textgrid_font_set(sd->textgrid, font_name, (int)font_size);
    evas_object_textgrid_cell_size_get(sd->textgrid,
                                       (int*)&sd->cell_w, (int*)&sd->cell_h);

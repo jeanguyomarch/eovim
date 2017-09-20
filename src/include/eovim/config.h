@@ -40,6 +40,7 @@ struct config
 {
    unsigned int version;
    unsigned int font_size;
+   Eina_Stringshare *font_name;
    s_config_color *bg_color;
    Eina_Bool use_bg_color;
 };
@@ -50,6 +51,7 @@ void config_bg_color_set(s_config *config, int r, int g, int b, int a);
 void config_free(s_config *config);
 void config_save(s_config *config);
 void config_font_size_set(s_config *config, unsigned int font_size);
+void config_font_name_set(s_config *config, Eina_Stringshare *font_name);
 void config_use_bg_color_set(s_config *config, Eina_Bool use);
 s_config *config_load(void);
 

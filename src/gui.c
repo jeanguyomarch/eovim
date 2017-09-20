@@ -27,10 +27,17 @@
 #include "eovim/log.h"
 #include "eovim/nvim_api.h"
 #include "eovim/config.h"
+#include "contrib/contrib.h"
 #include <Elementary.h>
 
 static const double _font_min = 4.0;
 static const double _font_max = 72.0;
+
+typedef struct
+{
+   Eina_Stringshare *name;
+   Eina_Stringshare *fancy;
+} s_font;
 
 typedef enum
 {
@@ -39,6 +46,7 @@ typedef enum
 } e_theme_msg;
 
 static Elm_Genlist_Item_Class *_itc = NULL;
+static Elm_Genlist_Item_Class *_font_itc = NULL;
 
 static void
 _focus_in_cb(void *data,
@@ -102,28 +110,32 @@ _frame_add(Evas_Object *parent,
    Evas_Object *f;
 
    f = elm_frame_add(parent);
-   elm_frame_autocollapse_set(f, EINA_TRUE);
+   elm_frame_autocollapse_set(f, EINA_FALSE);
    elm_object_text_set(f, text);
    evas_object_size_hint_weight_set(f, EVAS_HINT_EXPAND, 0.0);
-   evas_object_size_hint_fill_set(f, EVAS_HINT_FILL, 0.0);
+   evas_object_size_hint_align_set(f, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_show(f);
 
    return f;
 }
 
-static Evas_Object *
-_config_box_add(s_gui *gui)
+static void
+_recalculate_gui_size(s_gui *gui)
 {
-   Evas_Object *o;
-
-   o = elm_box_add(gui->layout);
-   elm_box_horizontal_set(o, EINA_FALSE);
-   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, 0.0);
-   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, 0.0);
-   evas_object_show(o);
-
-   return o;
+   int tv_w, tv_h;
+   unsigned int w, h;
+   termview_cell_size_get(gui->termview, &w, &h);
+   evas_object_geometry_get(gui->termview, NULL, NULL, &tv_w, &tv_h);
+   const unsigned int cols = (unsigned)tv_w / w;
+   const unsigned int rows = (unsigned)tv_h / h;
+   gui_resize(gui, cols, rows);
+   termview_refresh(gui->termview);
 }
+
+
+/*============================================================================*
+ *                          Background Color Handling                         *
+ *============================================================================*/
 
 static void
 _bg_color_changed_cb(void *data,
@@ -159,26 +171,6 @@ _bg_sel_changed_cb(void *data,
      elm_layout_signal_emit(gui->layout, "eovim,background,unmask", "eovim");
 }
 
-static void
-_font_size_cb(void *data,
-              Evas_Object *obj,
-              void *event_info EINA_UNUSED)
-{
-   s_gui *const gui = data;
-   s_config *const config = gui->nvim->config;
-   const unsigned int size = (unsigned int)elm_slider_value_get(obj);
-
-   config_font_size_set(config, size);
-   termview_font_set(gui->termview, "Mono", size);
-
-   int tv_w, tv_h;
-   unsigned int w, h;
-   termview_cell_size_get(gui->termview, &w, &h);
-   evas_object_geometry_get(gui->termview, NULL, NULL, &tv_w, &tv_h);
-
-   gui_resize(gui, (unsigned)tv_w / w, (unsigned)tv_h / h);
-}
-
 static Evas_Object *
 _config_bg_add(s_gui *gui,
                Evas_Object *parent)
@@ -189,35 +181,37 @@ _config_bg_add(s_gui *gui,
    Evas_Object *const box = elm_box_add(f);
    elm_box_horizontal_set(box, EINA_FALSE);
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(box, 0.0, EVAS_HINT_FILL);
-   elm_box_align_set(box, 0.0, 0.0);
+   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, 0.0);
 
    /* check that toggles the color selector */
-   Evas_Object *const check = elm_check_add(box);
+   Evas_Object *const check = elm_check_add(parent);
    evas_object_size_hint_align_set(check, 0.0, 0.0);
    elm_object_text_set(check, "Enable unified colored background");
    elm_check_state_set(check, config->use_bg_color);
    evas_object_smart_callback_add(check, "changed", _bg_sel_changed_cb, gui);
-   evas_object_show(check);
 
    /* frame that allows the color selector to collapse */
-   Evas_Object *const sel_frame = _frame_add(box, "Unified Color Selection");
+   Evas_Object *const sel_frame = _frame_add(parent, "Unified Color Selection");
    elm_frame_autocollapse_set(sel_frame, EINA_FALSE);
    elm_frame_collapse_set(sel_frame, ! config->use_bg_color);
 
    /* color selector */
-   Evas_Object *const sel = elm_colorselector_add(box);
+   Evas_Object *const sel = elm_colorselector_add(parent);
    evas_object_smart_callback_add(sel, "changed", _bg_color_changed_cb, gui);
    evas_object_size_hint_weight_set(sel, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(sel, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_show(sel);
-   elm_object_content_set(sel_frame, sel);
+   evas_object_size_hint_align_set(sel, EVAS_HINT_FILL, 0.0);
    const s_config_color *const col = config->bg_color;
    elm_colorselector_color_set(sel, col->r, col->g, col->b, col->a);
 
    elm_box_pack_start(box, check);
    elm_box_pack_end(box, sel_frame);
+   elm_object_content_set(sel_frame, sel);
    elm_object_content_set(f, box);
+
+   evas_object_show(box);
+   evas_object_show(sel_frame);
+   evas_object_show(sel);
+   evas_object_show(check);
 
    gui->config.bg_sel = sel;
    gui->config.bg_sel_frame = sel_frame;
@@ -225,18 +219,36 @@ _config_bg_add(s_gui *gui,
    return f;
 }
 
+/*============================================================================*
+ *                             Font Size Handling                             *
+ *============================================================================*/
+
+static void
+_font_size_cb(void *data,
+              Evas_Object *obj,
+              void *event_info EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   s_config *const config = gui->nvim->config;
+   const unsigned int size = (unsigned int)elm_slider_value_get(obj);
+
+   config_font_size_set(config, size);
+   termview_font_set(gui->termview, config->font_name, size);
+   _recalculate_gui_size(gui);
+}
+
 static Evas_Object *
 _config_font_size_add(s_gui *gui,
                       Evas_Object *parent)
 {
-   const s_config *config = gui->nvim->config;
+   const s_config *const config = gui->nvim->config;
 
    /* Frame container */
    Evas_Object *const f = _frame_add(parent, "Font Size Settings");
 
    /* Slider */
    Evas_Object *const sl = elm_slider_add(f);
-   evas_object_size_hint_weight_set(sl, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_weight_set(sl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(sl, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_slider_span_size_set(sl, 40);
    elm_slider_unit_format_set(sl, "%1.0f");
@@ -250,18 +262,131 @@ _config_font_size_add(s_gui *gui,
    return f;
 }
 
+/*============================================================================*
+ *                             Font Name Handling                             *
+ *============================================================================*/
+
+static int
+_font_sort_cb(const void *a, const void *b)
+{
+   return strcasecmp(a, b);
+}
+
+static void
+_font_item_del(void *data,
+               Evas_Object *obj EINA_UNUSED)
+{
+   s_font *const font = data;
+
+   eina_stringshare_del(font->fancy);
+   eina_stringshare_del(font->name);
+   free(font);
+}
+
+static char *
+_font_text_get(void *data,
+               Evas_Object *obj EINA_UNUSED,
+               const char *part EINA_UNUSED)
+{
+   const s_font *const font = data;
+   return strndup(font->fancy, (size_t)eina_stringshare_strlen(font->fancy));
+}
+
+static void
+_font_sel_cb(void *data,
+             Evas_Object *obj EINA_UNUSED,
+             void *event)
+{
+   s_gui *const gui = data;
+   s_config *const config = gui->nvim->config;
+   const Elm_Genlist_Item *const item = event;
+   const s_font *const font = elm_object_item_data_get(item);
+
+   /*
+    * Write the font name in the config and change the font of the termview.
+    */
+   config_font_name_set(config, font->name);
+   termview_font_set(gui->termview, config->font_name, config->font_size);
+   _recalculate_gui_size(gui);
+}
+
+static Evas_Object *
+_config_font_name_add(s_gui *gui,
+                      Evas_Object *parent)
+{
+   const s_config *const config = gui->nvim->config;
+
+   /* Frame container */
+   Evas_Object *const f = _frame_add(parent, "Font Name Settings");
+   evas_object_size_hint_weight_set(f, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+
+   /* Fonts list */
+   Evas_Object *const gl = elm_genlist_add(f);
+   evas_object_size_hint_weight_set(gl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(gl, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_content_set(f, gl);
+   evas_object_show(gl);
+
+   /* Get a sorted list of all available fonts */
+   Evas *const evas = evas_object_evas_get(parent);
+   Eina_List *fonts = evas_font_available_list(evas);
+   fonts = eina_list_sort(fonts, eina_list_count(fonts), _font_sort_cb);
+
+   /* Add each font to the list of possible fonts */
+   Eina_List *l;
+   const char *fname;
+   EINA_LIST_FOREACH(fonts, l, fname)
+     {
+        s_font *const font = malloc(sizeof(s_font));
+        if (EINA_UNLIKELY(! font))
+          {
+             CRI("Failed to allocate memory");
+             goto fail;
+          }
+        const int ret = contrib_parse_font_name(fname, &font->name, &font->fancy);
+        if (EINA_UNLIKELY(ret < 0))
+          {
+             WRN("Failed to parse font '%s'", fname);
+             free(font);
+             continue;
+          }
+
+        elm_genlist_item_append(
+           gl, _font_itc, font, NULL, ELM_GENLIST_ITEM_NONE, _font_sel_cb, gui
+        );
+     }
+
+   evas_font_available_list_free(evas, fonts);
+
+   return f;
+
+fail:
+   evas_font_available_list_free(evas, fonts);
+   evas_object_del(f);
+   return NULL;
+}
+
 void
 gui_config_show(s_gui *gui)
 {
    if (gui->config.box) { return; }
 
-   Evas_Object *const box = _config_box_add(gui);
+   Evas_Object *const box = elm_box_add(gui->layout);
+   elm_box_horizontal_set(box, EINA_FALSE);
+   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_box_align_set(box, 0.5, 0.0);
+   evas_object_show(box);
+
    Evas_Object *o;
 
    o = _config_bg_add(gui, box);
    elm_box_pack_end(box, o);
 
    o = _config_font_size_add(gui, box);
+   elm_box_pack_end(box, o);
+
+   o = _config_font_name_add(gui, box);
    elm_box_pack_end(box, o);
 
    elm_layout_content_set(gui->layout, "eovim.config.box", box);
@@ -289,6 +414,7 @@ gui_add(s_gui *gui,
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(gui, EINA_FALSE);
 
+   const s_config *const config = nvim->config;
    Evas_Object *o;
    gui->nvim = nvim;
 
@@ -312,8 +438,7 @@ gui_add(s_gui *gui,
    evas_object_smart_callback_add(gui->win, "focus,in", _focus_in_cb, gui);
 
    gui->termview = termview_add(gui->layout, nvim);
-   /* FIXME Use a config */
-   termview_font_set(gui->termview, "Mono", gui->nvim->config->font_size);
+   termview_font_set(gui->termview, config->font_name, config->font_size);
 
    /* Create the completion genlist, and attach it to the theme layout.
     * It shall not be subject to focus. */
@@ -332,7 +457,6 @@ gui_add(s_gui *gui,
    elm_win_size_step_set(gui->win, (int)cell_w, (int)cell_h);
 
    elm_layout_content_set(gui->layout, "eovim.main.view", gui->termview);
-   _config_bg_add(gui, gui->layout);
 
    evas_object_show(gui->termview);
    evas_object_show(gui->layout);
@@ -700,6 +824,7 @@ _completion_item_del(void *data,
 Eina_Bool
 gui_init(void)
 {
+   /* Completion list item class */
    _itc = elm_genlist_item_class_new();
    if (EINA_UNLIKELY(! _itc))
      {
@@ -710,11 +835,26 @@ gui_init(void)
    _itc->func.text_get = _completion_gl_text_get;
    _itc->func.del = _completion_item_del;
 
+   /* Font list item class */
+   _font_itc = elm_genlist_item_class_new();
+   if (EINA_UNLIKELY(! _font_itc))
+     {
+        CRI("Failed to create genlist item class");
+        goto fail;
+     }
+   _font_itc->item_style = "default";
+   _font_itc->func.text_get = _font_text_get;
+   _font_itc->func.del = _font_item_del;
+
    return EINA_TRUE;
+fail:
+   elm_genlist_item_class_free(_itc);
+   return EINA_FALSE;
 }
 
 void
 gui_shutdown(void)
 {
+   elm_genlist_item_class_free(_font_itc);
    elm_genlist_item_class_free(_itc);
 }

@@ -48,6 +48,11 @@ add_executable(eovim
    "${SRC_DIR}/termview.c"
    "${SRC_DIR}/nvim_event.c"
    "${SRC_DIR}/nvim_api.c"
+   "${SRC_DIR}/contrib.c"
+)
+set_source_files_properties(
+   "${SRC_DIR}/contrib.c"
+   PROPERTIES COMPILE_FLAGS "-w -Wall" # -Wall only
 )
 target_include_directories(eovim
    SYSTEM PRIVATE
