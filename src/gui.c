@@ -600,8 +600,23 @@ void
 gui_busy_set(s_gui *gui,
              Eina_Bool busy)
 {
-   const char *const signal = (busy) ? "eovim,busy,on" : "eovim,busy,off";
-   elm_layout_signal_emit(gui->layout, signal, "eovim");
+   if (busy)
+     {
+        /* Trigger the busy signal only if the gui was not busy */
+        if (++gui->busy_count == 1)
+          elm_layout_signal_emit(gui->layout, "eovim,busy,on", "eovim");
+     }
+   else
+     {
+        /* Stop the busy signal only if the gui has one busy reference */
+        if (--gui->busy_count == 0)
+          elm_layout_signal_emit(gui->layout, "eovim,busy,off", "eovim");
+        if (EINA_UNLIKELY(gui->busy_count < 0))
+          {
+             ERR("busy count underflowed");
+             gui->busy_count = 0;
+          }
+     }
 }
 
 void

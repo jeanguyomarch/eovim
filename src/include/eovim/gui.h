@@ -49,6 +49,10 @@ struct gui
    } config;
 
    s_nvim *nvim;
+
+   /** Keep track of how many times gui_busy_set() was called. This prevents
+    * useless calls to the theme or nested set issues */
+   int busy_count;
 };
 
 Eina_Bool gui_init(void);
