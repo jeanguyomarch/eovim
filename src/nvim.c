@@ -464,6 +464,10 @@ nvim_new(const char *program,
 
    nvim->true_colors = ! termcolors;
 
+   /* We will enable mouse handling by default. We do not receive the
+    * information from neovim unless we change mode. This is annoying. */
+   nvim->mouse_enabled = EINA_TRUE;
+
    nvim->decode = eina_ustrbuf_new();
    if (EINA_UNLIKELY(! nvim->decode))
      {
