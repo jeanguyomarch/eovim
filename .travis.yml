@@ -1,0 +1,26 @@
+language: c
+
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - sourceline: 'ppa:niko2040/e19'
+            - ubuntu-toolchain-r-test
+          packages:
+            - libefl-dev
+            - gcc-7
+      env:
+        - MATRIX_EVAL="CC=gcc-7"
+
+    - os: osx
+      osx_image: xcode8
+      env:
+        - MATRIX_EVAL="brew install efl msgpack"
+
+
+before_install:
+  - eval "${MATRIX_EVAL}"
+
+script: ./scripts/get-msgpack.sh && mkdir build && cd build && cmake .. && cmake --build .
