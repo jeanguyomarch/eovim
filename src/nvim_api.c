@@ -246,7 +246,6 @@ nvim_api_init(void)
    CB("put", nvim_event_put),
    CB("bell", nvim_event_bell),
    CB("visual_bell", nvim_event_visual_bell),
-   CB("flush", nvim_event_flush),
    CB("update_fg", nvim_event_update_fg),
    CB("update_bg", nvim_event_update_bg),
    CB("update_sp", nvim_event_update_sp),

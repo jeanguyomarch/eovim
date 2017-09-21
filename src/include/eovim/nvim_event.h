@@ -43,7 +43,6 @@ Eina_Bool nvim_event_highlight_set(s_nvim *nvim, const msgpack_object_array *arg
 Eina_Bool nvim_event_put(s_nvim *nvim, const msgpack_object_array *args);
 Eina_Bool nvim_event_bell(s_nvim *nvim, const msgpack_object_array *args);
 Eina_Bool nvim_event_visual_bell(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_flush(s_nvim *nvim, const msgpack_object_array *args);
 Eina_Bool nvim_event_update_fg(s_nvim *nvim, const msgpack_object_array *args);
 Eina_Bool nvim_event_update_bg(s_nvim *nvim, const msgpack_object_array *args);
 Eina_Bool nvim_event_update_sp(s_nvim *nvim, const msgpack_object_array *args);
