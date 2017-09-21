@@ -69,6 +69,7 @@ config_init(void)
    EDD_BASIC_ADD(font_name, EET_T_STRING);
    EDD_COLOR_ADD(bg_color);
    EDD_BASIC_ADD(use_bg_color, EET_T_UCHAR);
+   EDD_BASIC_ADD(mute_bell, EET_T_UCHAR);
 
    return EINA_TRUE;
 }
@@ -111,6 +112,13 @@ config_font_name_set(s_config *config,
    eina_stringshare_replace(&config->font_name, font_name);
 }
 
+void
+config_bell_mute_set(s_config *config,
+                     Eina_Bool mute)
+{
+   config->mute_bell = !!mute;
+}
+
 static s_config *
 _config_new(void)
 {
@@ -127,6 +135,7 @@ _config_new(void)
    config->bg_color = malloc(sizeof(s_config_color));
    config_bg_color_set(config, 0, 0, 0, 255);
    config->use_bg_color = EINA_FALSE;
+   config->mute_bell = EINA_FALSE;
 
    return config;
 }

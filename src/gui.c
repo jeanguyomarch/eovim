@@ -175,7 +175,7 @@ static Evas_Object *
 _config_bg_add(s_gui *gui,
                Evas_Object *parent)
 {
-   const s_config *config = gui->nvim->config;
+   const s_config *const config = gui->nvim->config;
 
    Evas_Object *const f = _frame_add(parent, "Background Settings");
    Evas_Object *const box = elm_box_add(f);
@@ -218,6 +218,51 @@ _config_bg_add(s_gui *gui,
 
    return f;
 }
+
+
+/*============================================================================*
+ *                            Bell Config Handling                            *
+ *============================================================================*/
+
+static void
+_bell_mute_changed_cb(void *data,
+                      Evas_Object *obj,
+                      void *event_info EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   const Eina_Bool mute = elm_check_state_get(obj);
+   config_bell_mute_set(gui->nvim->config, mute);
+}
+
+static Evas_Object *
+_config_bell_add(s_gui *gui,
+                 Evas_Object *parent)
+{
+   const s_config *const config = gui->nvim->config;
+
+   /* Frame container */
+   Evas_Object *const f = _frame_add(parent, "Bell Settings");
+
+   /* Settings box */
+   Evas_Object *const box = elm_box_add(f);
+   elm_box_horizontal_set(box, EINA_FALSE);
+   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, 0.0);
+   evas_object_show(box);
+
+   /* Bell mute checkbox */
+   Evas_Object *const mute = elm_check_add(box);
+   evas_object_size_hint_align_set(mute, 0.0, 0.0);
+   elm_object_text_set(mute, "Mute the audible bell");
+   elm_check_state_set(mute, config->mute_bell);
+   evas_object_smart_callback_add(mute, "changed", _bell_mute_changed_cb, gui);
+   evas_object_show(mute);
+   elm_box_pack_end(box, mute);
+
+   elm_object_content_set(f, box);
+   return f;
+}
+
 
 /*============================================================================*
  *                             Font Size Handling                             *
@@ -381,6 +426,9 @@ gui_config_show(s_gui *gui)
    Evas_Object *o;
 
    o = _config_bg_add(gui, box);
+   elm_box_pack_end(box, o);
+
+   o = _config_bell_add(gui, box);
    elm_box_pack_end(box, o);
 
    o = _config_font_size_add(gui, box);
@@ -827,7 +875,9 @@ gui_completion_clear(s_gui *gui)
 void
 gui_bell_ring(s_gui *gui)
 {
-   elm_layout_signal_emit(gui->layout, "eovim,bell,ring", "eovim");
+   /* Ring the bell, but only if it was not muted */
+   if (! gui->nvim->config->mute_bell)
+     elm_layout_signal_emit(gui->layout, "eovim,bell,ring", "eovim");
 }
 
 static void

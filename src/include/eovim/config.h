@@ -43,6 +43,7 @@ struct config
    Eina_Stringshare *font_name;
    s_config_color *bg_color;
    Eina_Bool use_bg_color;
+   Eina_Bool mute_bell;
 };
 
 Eina_Bool config_init(void);
@@ -53,6 +54,7 @@ void config_save(s_config *config);
 void config_font_size_set(s_config *config, unsigned int font_size);
 void config_font_name_set(s_config *config, Eina_Stringshare *font_name);
 void config_use_bg_color_set(s_config *config, Eina_Bool use);
+void config_bell_mute_set(s_config *config, Eina_Bool mute);
 s_config *config_load(void);
 
 #endif /* ! __EOVIM_CONFIG_H__ */
