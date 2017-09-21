@@ -559,12 +559,13 @@ nvim_event_put(s_nvim *nvim,
 }
 
 Eina_Bool
-nvim_event_bell(s_nvim *nvim EINA_UNUSED,
+nvim_event_bell(s_nvim *nvim,
                 const msgpack_object_array *args EINA_UNUSED)
 {
-   CRI("Unimplemented");
+   gui_bell_ring(&nvim->gui);
    return EINA_TRUE;
 }
+
 Eina_Bool
 nvim_event_visual_bell(s_nvim *nvim EINA_UNUSED,
                        const msgpack_object_array *args EINA_UNUSED)

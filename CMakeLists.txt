@@ -31,6 +31,7 @@ add_custom_command(
    -author "${CMAKE_SOURCE_DIR}/AUTHORS"
    -license "${CMAKE_SOURCE_DIR}/LICENSE"
    -id "${THEMES_DIR}/img"
+   -sd "${THEMES_DIR}/snd"
 
    COMMENT "Generating Edje Theme"
 )

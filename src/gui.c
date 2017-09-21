@@ -808,6 +808,13 @@ gui_completion_clear(s_gui *gui)
    elm_genlist_clear(gui->completion.gl);
 }
 
+
+void
+gui_bell_ring(s_gui *gui)
+{
+   elm_layout_signal_emit(gui->layout, "eovim,bell,ring", "eovim");
+}
+
 static void
 _completion_item_del(void *data,
                      Evas_Object *obj EINA_UNUSED)

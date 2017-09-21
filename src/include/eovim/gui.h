@@ -78,4 +78,6 @@ void gui_completion_clear(s_gui *gui);
 void gui_completion_add(s_gui *gui, s_completion *completion);
 void gui_completion_selected_set(s_gui *gui, int index);
 
+void gui_bell_ring(s_gui *gui);
+
 #endif /* ! __EOVIM_GUI_H__ */
