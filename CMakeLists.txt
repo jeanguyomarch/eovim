@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(eovim LANGUAGES C VERSION 0.0.99)
 
+include(CPack)
+
 set(CMAKE_MODULE_PATH
    "${CMAKE_MODULE_PATH}${CMAKE_SOURCE_DIR}/cmake/Modules")
 
