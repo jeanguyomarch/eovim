@@ -109,6 +109,7 @@ main_edje_file_get(void)
    return eina_strbuf_string_get(_edje_file);
 }
 
+EAPI_MAIN int elm_main(int argc, char **argv);
 EAPI_MAIN int
 elm_main(int argc,
          char **argv)
