@@ -565,6 +565,16 @@ termview_resize(Evas_Object *obj,
    sd->cols = cols;
    sd->rows = rows;
 
+   /* When we resize the termview, we have reset the scrolling region to the
+    * whole termview. */
+   const Eina_Rectangle region = {
+      .x = 0,
+      .y = 0,
+      .w = (int)cols - 1,
+      .h = (int)rows - 1,
+   };
+   termview_scroll_region_set(obj, &region);
+
    /*
     * If request is TRUE, it means that the resizing request comes from neovim
     * itself. It would make no sense to tell back neovim we want to resize the
