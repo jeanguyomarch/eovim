@@ -90,7 +90,19 @@ set_property(
    TARGET eovim
    PROPERTY C_STANDARD 11
 )
-if (CMAKE_COMPILER_IS_GNUCC)
+if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
+   target_compile_options(eovim
+      PRIVATE
+      -Weverything
+      -Wno-reserved-id-macro
+      -Wno-padded
+      -Wno-gnu-empty-initializer
+      -Wno-gnu-flexible-array-initializer
+      -Wno-pedantic
+      -Wno-assign-enum
+      -Wno-bad-function-cast
+   )
+elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
    target_compile_options(eovim
       PRIVATE
       -Wall
