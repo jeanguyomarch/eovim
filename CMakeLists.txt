@@ -1,13 +1,15 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(eovim LANGUAGES C VERSION 0.0.99)
 
+set(CMAKE_MODULE_PATH
+   "${CMAKE_MODULE_PATH}${CMAKE_SOURCE_DIR}/cmake/Modules")
+
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(THEMES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data/themes")
 set(BUILD_THEMES_DIR "${CMAKE_BINARY_DIR}/themes")
 
 file(MAKE_DIRECTORY ${BUILD_THEMES_DIR})
 
-find_package(PkgConfig REQUIRED)
 find_package(Eina REQUIRED)
 find_package(Eet REQUIRED)
 find_package(Evas REQUIRED)
@@ -15,7 +17,7 @@ find_package(Ecore REQUIRED COMPONENTS File)
 find_package(Edje REQUIRED)
 find_package(Efreet REQUIRED)
 find_package(Elementary REQUIRED)
-pkg_check_modules(MSGPACK msgpack REQUIRED)
+find_package(MsgPack REQUIRED)
 
 add_custom_command(
    OUTPUT "${BUILD_THEMES_DIR}/default.edj"
