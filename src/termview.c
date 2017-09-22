@@ -671,8 +671,7 @@ termview_put(Evas_Object *obj,
    evas_object_textgrid_cellrow_set(sd->textgrid, (int)sd->y, cells);
    evas_object_textgrid_update_add(sd->textgrid,
                                    (int)sd->x, (int)sd->y, (int)size, 1);
-   sd->x += size;
-   termview_cursor_goto(obj, sd->x, sd->y);
+   termview_cursor_goto(obj, sd->x + size, sd->y);
 }
 
 void
