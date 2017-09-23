@@ -438,9 +438,11 @@ _smart_resize(Evas_Object *obj,
    evas_object_resize(sd->textgrid, w, h);
    evas_object_smart_changed(obj);
 
-   termview_resize(obj,
-                  (unsigned int)w / sd->cell_w,
-                  (unsigned int)h / sd->cell_h, EINA_FALSE);
+   const unsigned int cols = (unsigned int)w / sd->cell_w;
+   const unsigned int rows = (unsigned int)h / sd->cell_h;
+
+   if (EINA_LIKELY((cols > 0) && (rows > 0)))
+     termview_resize(obj, cols, rows, EINA_FALSE);
 }
 
 static void
