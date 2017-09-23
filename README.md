@@ -36,7 +36,7 @@ eovim
 ## Usage
 
 ```bash
-eovim [files...]
+eovim [options] [files...]
 ```
 
 For now, `eovim` can be run without any argument. This is equivalent to run
@@ -46,6 +46,11 @@ be opened at startup the same way Neovim does.
 When `eovim` starts, it spawns an instance of Neovim. If it happens that `nvim`
 is not in your `PATH` or if you want to use an alterate binary of Neovim, you
 can feed it to `eovim` with the option `--nvim`.
+
+By default, `eovim` will connect to Neovim by requesting true colors (24-bits
+colordepth), which could be problematic for configurations that rely on
+terminal colors (256 colors). To enable the 256-colors mode, run `eovim` with
+the `--termcolors` (or `-T`) option.
 
 
 ## Hacking
