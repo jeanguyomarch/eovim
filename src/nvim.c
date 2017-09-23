@@ -243,7 +243,8 @@ _nvim_deleted_cb(void *data EINA_UNUSED,
      }
    else
      {
-        INF("Process with PID %i terminated", pid);
+        INF("Process with PID %i terminated with exit code %i",
+            pid, info->exit_code);
         gui_del(&nvim->gui);
      }
    return ECORE_CALLBACK_PASS_ON;
@@ -502,8 +503,10 @@ nvim_new(const char *program,
         CRI("Failed to execute nvim instance");
         goto del_hash;
      }
+   _nvim_instance = nvim;
    DBG("Running %s", eina_strbuf_string_get(cmdline));
    eina_strbuf_free(cmdline);
+   nvim_api_ui_attach(nvim, 80, 24);
 
    /* Create the GUI window */
    if (EINA_UNLIKELY(! gui_add(&nvim->gui, nvim)))
@@ -511,10 +514,8 @@ nvim_new(const char *program,
         CRI("Failed to set up the graphical user interface");
         goto del_process;
      }
-   nvim_api_ui_attach(nvim, 80, 24);
 
    /* Before leaving, we register the nvim instance */
-   _nvim_instance = nvim;
    return nvim;
 
 del_process:
@@ -530,6 +531,7 @@ del_mem:
 del_strbuf:
    eina_strbuf_free(cmdline);
 fail:
+   _nvim_instance = NULL;
    return NULL;
 }
 
@@ -545,6 +547,7 @@ nvim_free(s_nvim *nvim)
         config_free(nvim->config);
         eina_ustrbuf_free(nvim->decode);
         free(nvim);
+        _nvim_instance = NULL;
      }
 }
 
