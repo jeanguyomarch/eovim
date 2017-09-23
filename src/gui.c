@@ -360,6 +360,7 @@ _config_font_name_add(s_gui *gui,
                       Evas_Object *parent)
 {
    const s_config *const config = gui->nvim->config;
+   Elm_Genlist_Item *sel_item = NULL;
 
    /* Frame container */
    Evas_Object *const f = _frame_add(parent, "Font Name Settings");
@@ -396,9 +397,20 @@ _config_font_name_add(s_gui *gui,
              continue;
           }
 
-        elm_genlist_item_append(
+        Elm_Genlist_Item *const item = elm_genlist_item_append(
            gl, _font_itc, font, NULL, ELM_GENLIST_ITEM_NONE, _font_sel_cb, gui
         );
+
+        /* Keep track of the item that has the config's font selection */
+        if (font->name == config->font_name)
+          sel_item = item;
+     }
+
+   /* Select in the genlist the currently used font */
+   if (EINA_LIKELY(sel_item != NULL))
+     {
+        elm_genlist_item_selected_set(sel_item, EINA_TRUE);
+        elm_genlist_item_bring_in(sel_item, ELM_GENLIST_ITEM_SCROLLTO_IN);
      }
 
    evas_font_available_list_free(evas, fonts);
