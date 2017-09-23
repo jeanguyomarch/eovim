@@ -57,12 +57,10 @@ typedef struct
    struct {
       uint8_t fg;
       uint8_t bg;
-      uint8_t sp;
       Eina_Bool reverse;
       Eina_Bool italic;
       Eina_Bool bold;
       Eina_Bool underline;
-      Eina_Bool undercurl;
    } current; /**< Current style */
 
    Eina_Rectangle scroll; /**< Scrolling region */
@@ -802,8 +800,14 @@ termview_style_set(Evas_Object *obj,
    sd->current.reverse = style->reverse;
    sd->current.italic = style->italic;
    sd->current.bold = style->bold;
-   sd->current.underline = style->underline;
-   sd->current.undercurl = style->undercurl;
+   sd->current.underline = style->underline || style->undercurl;
+
+   static Eina_Bool show_warning = EINA_TRUE;
+   if (EINA_UNLIKELY(style->undercurl && show_warning))
+     {
+        WRN("Undercurl was requested but is not supportd.");
+        show_warning = EINA_FALSE;
+     }
 }
 
 void
