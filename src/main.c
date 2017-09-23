@@ -203,12 +203,12 @@ elm_main(int argc,
 
    nvim_free(nvim);
 
-
    /* Everything seemed to have run fine :) */
    return_code = EXIT_SUCCESS;
 modules_shutdown:
    for (--mod_it; mod_it >= _modules; mod_it--)
      mod_it->shutdown();
+   eina_strbuf_free(_edje_file);
 log_unregister:
    eina_log_domain_unregister(_eovim_log_domain);
 end:
