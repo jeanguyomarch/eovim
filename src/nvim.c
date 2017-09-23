@@ -419,13 +419,6 @@ nvim_next_uid_get(s_nvim *nvim)
    return nvim->request_id++;
 }
 
-static void
-_attach(void *data)
-{
-   s_nvim *const nvim = data;
-   nvim_api_ui_attach(nvim, 80, 24);
-}
-
 s_nvim *
 nvim_new(const char *program,
          Eina_Bool termcolors,
@@ -500,14 +493,7 @@ nvim_new(const char *program,
         goto del_config;
      }
 
-   /* Create the GUI window */
-   if (EINA_UNLIKELY(! gui_add(&nvim->gui, nvim)))
-     {
-        CRI("Failed to set up the graphical user interface");
-        goto del_hash;
-     }
-
-   /* Last step: create the neovim process */
+   /* Create the neovim process */
    nvim->exe = ecore_exe_pipe_run(
       eina_strbuf_string_get(cmdline),
       ECORE_EXE_PIPE_READ | ECORE_EXE_PIPE_WRITE | ECORE_EXE_PIPE_ERROR  |
@@ -517,19 +503,25 @@ nvim_new(const char *program,
    if (! nvim->exe)
      {
         CRI("Failed to execute nvim instance");
-        goto del_win;
+        goto del_hash;
      }
    DBG("Running %s", eina_strbuf_string_get(cmdline));
    eina_strbuf_free(cmdline);
 
+   /* Create the GUI window */
+   if (EINA_UNLIKELY(! gui_add(&nvim->gui, nvim)))
+     {
+        CRI("Failed to set up the graphical user interface");
+        goto del_process;
+     }
+   nvim_api_ui_attach(nvim, 80, 24);
+
    /* Before leaving, we register the nvim instance */
    _nvim_instance = nvim;
-
-   ecore_job_add(_attach, nvim);
    return nvim;
 
-del_win:
-   gui_del(&nvim->gui);
+del_process:
+   ecore_exe_kill(nvim->exe);
 del_hash:
    eina_hash_free(nvim->modes);
 del_config:
