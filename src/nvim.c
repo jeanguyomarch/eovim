@@ -237,8 +237,12 @@ _nvim_deleted_cb(void *data EINA_UNUSED,
 
    if (show_error)
      {
-        // TODO gui error
         ERR("Process with PID %i died", pid);
+        gui_die(
+           &nvim->gui,
+           "The Neovim process %i died. Eovim cannot continue its execution",
+           pid
+        );
      }
    else
      {

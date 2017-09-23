@@ -75,6 +75,7 @@ void gui_busy_set(s_gui *gui, Eina_Bool busy);
 void gui_bg_color_set(s_gui *gui, int r, int g, int b, int a);
 void gui_config_show(s_gui *gui);
 void gui_config_hide(s_gui *gui);
+void gui_die(s_gui *gui, const char *fmt, ...);
 
 void gui_completion_show(s_gui *gui, unsigned int selected, unsigned int x, unsigned int y);
 void gui_completion_hide(s_gui *gui);

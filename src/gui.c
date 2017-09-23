@@ -538,6 +538,43 @@ gui_del(s_gui *gui)
      }
 }
 
+static void
+_die_cb(void *data,
+        Evas_Object *obj EINA_UNUSED,
+        void *info EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   gui_del(gui);
+}
+
+void
+gui_die(s_gui *gui,
+        const char *fmt, ...)
+{
+   /* Kill the termview */
+   Evas_Object *const view = elm_layout_content_unset(gui->layout, "eovim.main.view");
+   evas_object_del(view);
+
+   /* Collect the message */
+   char text[512];
+   va_list args;
+   va_start(args, fmt);
+   vsnprintf(text, sizeof(text), fmt, args);
+   va_end(args);
+
+   /* Create a button to allow the user to quit */
+   Evas_Object *const btn = elm_button_add(gui->layout);
+   evas_object_smart_callback_add(btn, "clicked", _die_cb, gui);
+   elm_object_text_set(btn, "Quit");
+
+   /* Send a popup to notify the error and terminate */
+   Evas_Object *const pop = elm_popup_add(gui->layout);
+   elm_object_text_set(pop, text);
+   evas_object_smart_callback_add(pop, "dismissed", _die_cb, gui);
+   elm_object_part_content_set(pop, "button1", btn);
+   evas_object_show(pop);
+}
+
 void
 gui_resize(s_gui *gui,
            unsigned int cols,
