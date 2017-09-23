@@ -9,8 +9,14 @@ set(CMAKE_MODULE_PATH
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(THEMES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data/themes")
 set(BUILD_THEMES_DIR "${CMAKE_BINARY_DIR}/themes")
+set(BUILD_INCLUDE_DIR "${CMAKE_BINARY_DIR}/include")
 
-file(MAKE_DIRECTORY ${BUILD_THEMES_DIR})
+file(MAKE_DIRECTORY "${BUILD_THEMES_DIR}")
+file(MAKE_DIRECTORY "${BUILD_INCLUDE_DIR}/eovim")
+configure_file(
+   "${CMAKE_SOURCE_DIR}/cmake/Modules/version.h.in"
+   "${BUILD_INCLUDE_DIR}/eovim/version.h"
+   @ONLY)
 
 find_package(Eina REQUIRED)
 find_package(Eet REQUIRED)
@@ -74,6 +80,7 @@ target_include_directories(eovim
 target_include_directories(eovim
    PRIVATE
    "${SRC_DIR}/include"
+   "${BUILD_INCLUDE_DIR}"
 )
 target_link_libraries(eovim
    ${EINA_LIBRARIES}

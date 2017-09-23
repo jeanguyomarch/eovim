@@ -29,6 +29,7 @@
 #include "eovim/termview.h"
 #include "eovim/main.h"
 #include "eovim/log.h"
+#include "eovim/version.h"
 #include <Ecore_Getopt.h>
 
 int _eovim_log_domain = -1;
@@ -40,7 +41,7 @@ static const Ecore_Getopt _options =
 {
    "eovim",
    "%prog [options] [files...]",
-   "0.2.1",
+   EOVIM_VERSION,
    "2017 (c) Jean Guyomarc'h",
    "MIT",
    "An EFL GUI client for NeoVim",
