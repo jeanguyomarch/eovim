@@ -31,6 +31,7 @@
 
 #define COL_DEFAULT_BG 0
 #define COL_DEFAULT_FG 1
+#define COL_REVERSE_FG 2
 
 static Evas_Smart *_smart = NULL;
 static Evas_Smart_Class _parent_sc = EVAS_SMART_CLASS_INIT_NULL;
@@ -404,11 +405,16 @@ _smart_add(Evas_Object *obj)
         return;
      }
 
+   evas_object_textgrid_palette_set(
+      sd->textgrid, EVAS_TEXTGRID_PALETTE_EXTENDED,
+      COL_REVERSE_FG, 0, 0, 0, 255
+   );
+
    /* Set a default foreground color */
    termview_fg_color_set(obj, 255, 215, 175, 255);
 
    /* Palette item #0 is the default BG */
-   sd->palette_id_generator = 2; /* BG + FG */
+   sd->palette_id_generator = 3; /* BG + FG + REV_FG */
 }
 
 static void
@@ -654,7 +660,10 @@ termview_put(Evas_Object *obj,
         c->codepoint = ustring[x];
         if (sd->current.reverse)
           {
-             c->fg = sd->current.bg;
+             if (sd->current.bg == COL_DEFAULT_BG)
+               c->fg = COL_REVERSE_FG;
+             else
+               c->fg = sd->current.bg;
              c->bg = sd->current.fg;
           }
         else
@@ -768,15 +777,11 @@ _make_palette(s_termview *sd,
 static uint8_t
 _make_palette_from_color(s_termview *sd,
                          t_int color,
-                         Eina_Bool fg,
-                         Eina_Bool reverse)
+                         Eina_Bool fg)
 {
    if (color < 0)
      {
-        if (reverse)
-          return (fg) ? COL_DEFAULT_BG : COL_DEFAULT_FG;
-        else
-          return (fg) ? COL_DEFAULT_FG : COL_DEFAULT_BG;
+        return (fg) ? COL_DEFAULT_FG : COL_DEFAULT_BG;
      }
    else
      {
@@ -792,15 +797,8 @@ termview_style_set(Evas_Object *obj,
 {
    s_termview *const sd = evas_object_smart_data_get(obj);
 
-   sd->current.fg = _make_palette_from_color(
-      sd, style->fg_color, EINA_TRUE, style->reverse
-   );
-   sd->current.bg = _make_palette_from_color(
-      sd, style->bg_color, EINA_FALSE, style->reverse
-   );
-   sd->current.sp = _make_palette_from_color(
-      sd, style->sp_color, EINA_TRUE, style->reverse
-   );
+   sd->current.fg = _make_palette_from_color(sd, style->fg_color, EINA_TRUE);
+   sd->current.bg = _make_palette_from_color(sd, style->bg_color, EINA_FALSE);
    sd->current.reverse = style->reverse;
    sd->current.italic = style->italic;
    sd->current.bold = style->bold;
