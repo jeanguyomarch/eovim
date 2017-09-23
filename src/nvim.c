@@ -230,14 +230,11 @@ _nvim_deleted_cb(void *data EINA_UNUSED,
    s_nvim *const nvim = _nvim_get();
    const int pid = ecore_exe_pid_get(info->exe);
 
-   /* Determine whether nvim died or not */
-   Eina_Bool show_error = EINA_TRUE;
-   if ((info->exited) && (info->exit_code == 0))
-     show_error = EINA_FALSE;
-
-   if (show_error)
+   /* We consider that neovim crashed if it receives an uncaught signal */
+   if (info->signalled)
      {
-        ERR("Process with PID %i died", pid);
+        ERR("Process with PID %i died of uncaught signal %i",
+            pid, info->exit_signal);
         gui_die(
            &nvim->gui,
            "The Neovim process %i died. Eovim cannot continue its execution",
