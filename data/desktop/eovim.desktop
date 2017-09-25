@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Eovim
+Keywords=editor;
+Exec=eovim
+Categories=Development;
+StartupWMClass=eovim

@@ -142,3 +142,7 @@ install(
    FILES "${BUILD_THEMES_DIR}/default.edj"
    DESTINATION "share/${CMAKE_PROJECT_NAME}/themes"
 )
+install(
+   FILES "${CMAKE_SOURCE_DIR}/data/desktop/eovim.desktop"
+   DESTINATION "share/applications"
+)
