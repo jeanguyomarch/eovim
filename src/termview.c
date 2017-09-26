@@ -213,9 +213,9 @@ _paste_cb(void *data,
    s_termview *const sd = data;
    const char *const string = ev->data;
    Eina_Bool ret = EINA_TRUE;
-   unsigned int escaped_len = 0;
+   size_t escaped_len = 0;
 
-   for (unsigned int i = 0; i < ev->len; i++)
+   for (size_t i = 0; i < ev->len; i++)
      {
         /* We know that if we type '<' we must escape it as "<lt>", so we will
          * hav to write 4 characters? Otherwise, there is no escaping, we will
@@ -256,7 +256,7 @@ _paste_cb(void *data,
          escaped[escaped_len] = '\0';
 
          /* Send the data, then free the temporayy storage */
-        nvim_api_input(sd->nvim, escaped, escaped_len);
+        nvim_api_input(sd->nvim, escaped, (unsigned int)escaped_len);
         free(escaped);
      }
    else
