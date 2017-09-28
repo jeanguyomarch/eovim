@@ -250,7 +250,7 @@ collections {
                visible: 0;
             }
             desc { "enabled";
-               color: 128 128 128 128;
+               color: 0 0 0 128;
             }
          }
          external { "config_close"; source: "elm/button";
