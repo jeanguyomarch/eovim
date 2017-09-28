@@ -651,12 +651,9 @@ gui_update_fg(s_gui *gui,
 
 void
 gui_update_bg(s_gui *gui EINA_UNUSED,
-              t_int color)
+              t_int color EINA_UNUSED)
 {
-   if (color >= 0)
-     {
-        CRI("Unimplemented");
-     }
+   /* We don't handle that. */
 }
 
 void
