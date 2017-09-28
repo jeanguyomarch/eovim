@@ -279,9 +279,18 @@ _termview_key_down_cb(void *data,
    const Evas_Modifier *const mod = ev->modifiers;
    const char *send = ev->string;
    unsigned int send_size;
+   char nvim_compose = '\0';
+   char buf[32];
 
    const Eina_Bool ctrl = evas_key_modifier_is_set(mod, "Control");
    const Eina_Bool shift = evas_key_modifier_is_set(mod, "Shift");
+   const Eina_Bool super = evas_key_modifier_is_set(mod, "Super");
+   const Eina_Bool alt = evas_key_modifier_is_set(mod, "Alt");
+
+   /* Register modifiers */
+   if (super) { nvim_compose = 'D'; }
+   if (alt) { nvim_compose = 'M'; }
+   if (ctrl) { nvim_compose = 'C'; }
 
    if (ctrl && shift)
      {
@@ -309,17 +318,29 @@ _termview_key_down_cb(void *data,
         return;
      }
 
-   /* If ev->string is not set, we will try to load  ev->key from the keymap */
-   if (! send && ev->key)
+   if (nvim_compose && ev->key)
      {
-        send = keymap_get(ev->key);
-        send_size = (unsigned int)eina_stringshare_strlen(send);
+        /* If we can compose, create an aggregate string we will send to
+         * neovim. */
+        send_size = (unsigned int)snprintf(buf, sizeof(buf), "<%c-%c>",
+                                           nvim_compose, ev->key[0]);
+        send = buf;
      }
    else
-     send_size = (unsigned int)strlen(send);
+     {
+        /* If ev->string is not set, we will try to load  ev->key from the
+         * keymap */
+        if (! send && ev->key)
+          {
+             send = keymap_get(ev->key);
+             send_size = (unsigned int)eina_stringshare_strlen(send);
+          }
+        else
+          send_size = (unsigned int)strlen(send);
+     }
 
    /* If a key is availabe pass it to neovim and update the ui */
-   if (send)
+   if (EINA_LIKELY(send && (send_size > 0)))
      {
         /* Escape the less than character '<' */
         if ((send[0] == '<') && (send_size == 1))
