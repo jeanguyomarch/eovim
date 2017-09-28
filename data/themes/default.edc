@@ -280,8 +280,11 @@ collections {
          }
          external { "config"; source: "elm/bg"; nomouse;
             desc { "default";
-               rel1.relative: 0.5 0.5;
-               rel2.relative: 0.5 0.5;
+               rel1.relative: 0.0 0.5;
+               rel2.relative: 1.0 0.5;
+               rel1.offset: 50 0;
+               rel2.offset: -50 0;
+               visible: 0;
             }
             desc { "enabled";
                rel1.offset: 50 50;
