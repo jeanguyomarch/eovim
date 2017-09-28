@@ -30,6 +30,7 @@
 #include "eovim/main.h"
 #include "eovim/log.h"
 #include "eovim/version.h"
+#include "eovim/test.h"
 #include <Ecore_Getopt.h>
 
 int _eovim_log_domain = -1;
@@ -72,6 +73,7 @@ static const s_module _modules[] =
    MODULE(keymap),
    MODULE(nvim_api),
    MODULE(nvim_event),
+   MODULE(test),
    MODULE(gui),
    MODULE(termview),
    MODULE(nvim),
