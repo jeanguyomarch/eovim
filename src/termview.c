@@ -279,18 +279,26 @@ _termview_key_down_cb(void *data,
    const Evas_Modifier *const mod = ev->modifiers;
    const char *send = ev->string;
    unsigned int send_size;
+   const char *const key_map = keymap_get(ev->key);
    char nvim_compose = '\0';
    char buf[32];
+
+   /* Skip the AltGr key. */
+   if (!strcmp(ev->key, "ISO_Level3_Shift") ||
+       !strcmp(ev->key, "AltGr"))
+     return;
 
    const Eina_Bool ctrl = evas_key_modifier_is_set(mod, "Control");
    const Eina_Bool shift = evas_key_modifier_is_set(mod, "Shift");
    const Eina_Bool super = evas_key_modifier_is_set(mod, "Super");
    const Eina_Bool alt = evas_key_modifier_is_set(mod, "Alt");
 
-   /* Register modifiers */
+   /* Register modifiers. Ctrl and shit are special: we enable composition
+    * only if the key is present in the keymap (it is a special key). */
+   if (ctrl && key_map) { nvim_compose = 'C'; }
+   if (shift && key_map) { nvim_compose = 'S'; }
    if (super) { nvim_compose = 'D'; }
    if (alt) { nvim_compose = 'M'; }
-   if (ctrl) { nvim_compose = 'C'; }
 
    if (ctrl && shift)
      {
@@ -322,8 +330,8 @@ _termview_key_down_cb(void *data,
      {
         /* If we can compose, create an aggregate string we will send to
          * neovim. */
-        send_size = (unsigned int)snprintf(buf, sizeof(buf), "<%c-%c>",
-                                           nvim_compose, ev->key[0]);
+        send_size = (unsigned int)snprintf(buf, sizeof(buf), "<%c-%s>",
+                                           nvim_compose, ev->key);
         send = buf;
      }
    else
@@ -332,7 +340,7 @@ _termview_key_down_cb(void *data,
          * keymap */
         if (! send && ev->key)
           {
-             send = keymap_get(ev->key);
+             send = key_map;
              send_size = (unsigned int)eina_stringshare_strlen(send);
           }
         else
