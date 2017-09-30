@@ -7,9 +7,8 @@ Eovim is the Enlightened Neovim. That's just an [EFL][1] GUI client for
 
 [![Build Status](https://travis-ci.org/jeanguyomarch/eovim.svg?branch=master)](https://travis-ci.org/jeanguyomarch/eovim)
 
-Eovim is still at an early alpha stage. However, it should be possible to use
-it for developping daily, as most of the Neovim interfaces have been
-implemented.
+Eovim is still at an alpha stage. However, it should be possible to use it for
+developping daily, as most of the Neovim interfaces have been implemented.
 
 ## Installation
 
@@ -28,10 +27,11 @@ you can start hacking:
 Then this is straightforward CMake build:
 
 ```bash
+./scripts/get-msgpack.sh # Optional, but advised.
 mkdir -p build && cd build
 cmake -G "Unix Makefiles" ..
-make
-make install # Possibly as root (i.e. via sudo)
+cmake --build .
+cmake --build . --target install # Possibly as root (i.e. via sudo)
 eovim
 ```
 
