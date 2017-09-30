@@ -613,13 +613,15 @@ nvim_event_update_sp(s_nvim *nvim,
    gui_update_sp(&nvim->gui, color);
    return EINA_TRUE;
 }
+
 Eina_Bool
 nvim_event_suspend(s_nvim *nvim EINA_UNUSED,
                    const msgpack_object_array *args EINA_UNUSED)
 {
-   CRI("Unimplemented");
+   /* Nothing to do */
    return EINA_TRUE;
 }
+
 Eina_Bool
 nvim_event_set_title(s_nvim *nvim EINA_UNUSED,
                      const msgpack_object_array *args EINA_UNUSED)
@@ -627,6 +629,7 @@ nvim_event_set_title(s_nvim *nvim EINA_UNUSED,
    CRI("Unimplemented");
    return EINA_TRUE;
 }
+
 Eina_Bool
 nvim_event_set_icon(s_nvim *nvim EINA_UNUSED,
                     const msgpack_object_array *args EINA_UNUSED)
