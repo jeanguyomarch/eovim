@@ -158,7 +158,7 @@ nvim_api_ui_attach(s_nvim *nvim,
    else msgpack_pack_false(pk);
    msgpack_pack_str(pk, 13); /* 'ext_popupmenu' key */
    msgpack_pack_str_body(pk, "ext_popupmenu", 13);
-   msgpack_pack_true(pk); /* 'ext_popupmenu' value */
+   msgpack_pack_false(pk); /* 'ext_popupmenu' value */ /* FIXME */
 
    return _request_send(nvim, req);
 }
