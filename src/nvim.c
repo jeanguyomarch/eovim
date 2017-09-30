@@ -450,8 +450,9 @@ nvim_new(const s_nvim_options *opts,
    if (opts->nvimrc) ok &= eina_strbuf_append_printf(cmdline, " -u \"%s\"", opts->nvimrc);
    if (opts->no_plugins) ok &= eina_strbuf_append(cmdline, " --noplugin");
 
+   /* XXX I remove this for now. */
    /* End of neovim options */
-   ok &= eina_strbuf_append(cmdline, " --");
+   //ok &= eina_strbuf_append(cmdline, " --");
    for (unsigned int i = 0; i < args_count; i++)
      {
         ok &= eina_strbuf_append_printf(cmdline, " \"%s\"", argv[i]);
