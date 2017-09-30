@@ -25,61 +25,68 @@
 
 typedef struct
 {
-   const char *const in;
-   const char *const out;
-} s_keymap;
+   const char *const key;
+   const s_keymap keymap;
+} s_kv_keymap;
 
+#define KM(Key, Std) {                  \
+   .key = Key,                          \
+   .keymap = {                          \
+      .size = sizeof(Std) - 1,          \
+      .name = Std                       \
+   }                                    \
+}
 
-#define KM(In, Out) { .in = In, .out = Out }
-#define KM_STD(In) KM(In, "<" In ">")
+#define KM_IDENT(Key) KM(Key, Key)
 
-static const s_keymap _map[] =
+static const s_kv_keymap _map[] =
 {
-   KM_STD("Up"),
-   KM_STD("Down"),
-   KM_STD("Left"),
-   KM_STD("Right"),
-   KM_STD("F1"),
-   KM_STD("F2"),
-   KM_STD("F3"),
-   KM_STD("F4"),
-   KM_STD("F5"),
-   KM_STD("F6"),
-   KM_STD("F7"),
-   KM_STD("F8"),
-   KM_STD("F9"),
-   KM_STD("F10"),
-   KM_STD("F11"),
-   KM_STD("F12"),
-   KM_STD("F13"),
-   KM_STD("F14"),
-   KM_STD("F15"),
-   KM_STD("F16"),
-   KM_STD("F17"),
-   KM_STD("F18"),
-   KM_STD("F19"),
-   KM_STD("F20"),
-   KM_STD("F21"),
-   KM_STD("F22"),
-   KM_STD("F23"),
-   KM_STD("F24"),
-   KM_STD("F25"),
-   KM_STD("F26"),
-   KM_STD("F27"),
-   KM_STD("F28"),
-   KM_STD("F29"),
-   KM_STD("F30"),
-   KM_STD("F31"),
-   KM_STD("F32"),
-   KM_STD("F33"),
-   KM_STD("F34"),
-   KM_STD("F34"),
-   KM_STD("F35"),
-   KM_STD("F37"),
-   KM_STD("Home"),
-   KM_STD("End"),
-   KM("Prior", "<PageUp>"),
-   KM("Next", "<PageDown>"),
+   KM_IDENT("Up"),
+   KM_IDENT("Down"),
+   KM_IDENT("Left"),
+   KM_IDENT("Right"),
+   KM_IDENT("F1"),
+   KM_IDENT("F2"),
+   KM_IDENT("F3"),
+   KM_IDENT("F4"),
+   KM_IDENT("F5"),
+   KM_IDENT("F6"),
+   KM_IDENT("F7"),
+   KM_IDENT("F8"),
+   KM_IDENT("F9"),
+   KM_IDENT("F10"),
+   KM_IDENT("F11"),
+   KM_IDENT("F12"),
+   KM_IDENT("F13"),
+   KM_IDENT("F14"),
+   KM_IDENT("F15"),
+   KM_IDENT("F16"),
+   KM_IDENT("F17"),
+   KM_IDENT("F18"),
+   KM_IDENT("F19"),
+   KM_IDENT("F20"),
+   KM_IDENT("F21"),
+   KM_IDENT("F22"),
+   KM_IDENT("F23"),
+   KM_IDENT("F24"),
+   KM_IDENT("F25"),
+   KM_IDENT("F26"),
+   KM_IDENT("F27"),
+   KM_IDENT("F28"),
+   KM_IDENT("F29"),
+   KM_IDENT("F30"),
+   KM_IDENT("F31"),
+   KM_IDENT("F32"),
+   KM_IDENT("F33"),
+   KM_IDENT("F34"),
+   KM_IDENT("F34"),
+   KM_IDENT("F35"),
+   KM_IDENT("F37"),
+   KM_IDENT("Home"),
+   KM_IDENT("End"),
+   KM("less", "lt"),
+   KM("Prior", "PageUp"),
+   KM("Next", "PageDown"),
 };
 
 static Eina_Hash *_keymap = NULL;
@@ -88,7 +95,7 @@ Eina_Bool
 keymap_init(void)
 {
    /* First, create the hash table that wil hold the keymap */
-   _keymap = eina_hash_string_superfast_new(EINA_FREE_CB(eina_stringshare_del));
+   _keymap = eina_hash_string_superfast_new(NULL);
    if (EINA_UNLIKELY(! _keymap))
      {
         CRI("Failed to create hash table");
@@ -99,17 +106,10 @@ keymap_init(void)
     * stringshares */
    for (unsigned int i = 0; i < EINA_C_ARRAY_LENGTH(_map); i++)
      {
-        const s_keymap *const km = &(_map[i]);
-        Eina_Stringshare *const val = eina_stringshare_add(km->out);
-        if (EINA_UNLIKELY(! val))
+        const s_kv_keymap *const kv = &(_map[i]);
+        if (EINA_UNLIKELY(! eina_hash_add(_keymap, kv->key, &kv->keymap)))
           {
-             CRI("Failed to create stringshare from string '%s'", km->out);
-             goto fail;
-          }
-        if (EINA_UNLIKELY(! eina_hash_add(_keymap, km->in, val)))
-          {
-             CRI("Failed to add '%s' => '%s", km->in, val);
-             eina_stringshare_del(val);
+             CRI("Failed to add keymap entry '%s'", kv->key);
              goto fail;
           }
      }
@@ -127,7 +127,7 @@ keymap_shutdown(void)
    eina_hash_free(_keymap);
 }
 
-Eina_Stringshare *
+const s_keymap *
 keymap_get(const char *input)
 {
    return eina_hash_find(_keymap, input);

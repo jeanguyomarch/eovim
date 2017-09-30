@@ -277,11 +277,11 @@ _termview_key_down_cb(void *data,
    s_termview *const sd = data;
    const Evas_Event_Key_Down *const ev = event;
    const Evas_Modifier *const mod = ev->modifiers;
-   const char *send = ev->string;
    unsigned int send_size;
-   const char *const key_map = keymap_get(ev->key);
+   const s_keymap *const keymap = keymap_get(ev->key);
    char nvim_compose = '\0';
    char buf[32];
+   const char *send;
 
    /* Skip the AltGr key. */
    if (!strcmp(ev->key, "ISO_Level3_Shift") ||
@@ -295,8 +295,8 @@ _termview_key_down_cb(void *data,
 
    /* Register modifiers. Ctrl and shit are special: we enable composition
     * only if the key is present in the keymap (it is a special key). */
-   if (ctrl && key_map) { nvim_compose = 'C'; }
-   if (shift && key_map) { nvim_compose = 'S'; }
+   if (ctrl && keymap) { nvim_compose = 'C'; }
+   if (shift && keymap) { nvim_compose = 'S'; }
    if (super) { nvim_compose = 'D'; }
    if (alt) { nvim_compose = 'M'; }
 
@@ -328,34 +328,36 @@ _termview_key_down_cb(void *data,
 
    if (nvim_compose && ev->key)
      {
+        const char *const key = keymap ? keymap->name : ev->key;
         /* If we can compose, create an aggregate string we will send to
          * neovim. */
         send_size = (unsigned int)snprintf(buf, sizeof(buf), "<%c-%s>",
-                                           nvim_compose, ev->key);
+                                           nvim_compose, key);
         send = buf;
+     }
+   else if (keymap)
+     {
+        send_size = (unsigned int)snprintf(buf, sizeof(buf), "<%s>",
+                                           keymap->name);
+        send = buf;
+     }
+   else if (ev->string)
+     {
+        send = ev->string;
+        send_size = (unsigned int)strlen(send);
      }
    else
      {
-        /* If ev->string is not set, we will try to load  ev->key from the
-         * keymap */
-        if (! send && ev->key)
-          {
-             send = key_map;
-             send_size = (unsigned int)eina_stringshare_strlen(send);
-          }
-        else
-          send_size = (unsigned int)strlen(send);
+        /* Only pass ev->key if it is not a complex string. This allow to
+         * filter out things like Control_L. */
+        const unsigned int size = (unsigned int)strlen(ev->key);
+        send_size = (size == 1) ? size : 0;
+        send = ev->key; /* Never NULL */
      }
 
    /* If a key is availabe pass it to neovim and update the ui */
-   if (EINA_LIKELY(send && (send_size > 0)))
+   if (EINA_LIKELY(send_size > 0))
      {
-        /* Escape the less than character '<' */
-        if ((send[0] == '<') && (send_size == 1))
-          {
-             send = "<lt>";
-             send_size = 4;
-          }
         nvim_api_input(sd->nvim, send, send_size);
         edje_object_signal_emit(sd->cursor, "key,down", "eovim");
      }

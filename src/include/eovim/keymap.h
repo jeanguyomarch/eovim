@@ -25,8 +25,14 @@
 
 #include <Eina.h>
 
+typedef struct
+{
+   const unsigned int size;
+   const char *const name;
+} s_keymap;
+
 Eina_Bool keymap_init(void);
 void keymap_shutdown(void);
-Eina_Stringshare *keymap_get(const char *input);
+const s_keymap *keymap_get(const char *input);
 
 #endif /* ! __EOVIM_KEYMAP_H__ */
