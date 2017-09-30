@@ -21,18 +21,18 @@ you can start hacking:
   mandatory to communicate with Neovim. You are advised to run the script
   `scripts/get-msgpack.sh` to install msgpack. This will retrieve and compile
   a static version of msgpack that `eovim` can work with.
-- [Neovim][2] (version 0.2.1 or greater),
-- CMake.
+- [Neovim][2] version 0.2.1 or greater (earlier versions have not been tested),
+- [CMake][5].
 
-Then this is straightforward CMake build:
+After making sure you have installed the dependencies aforementioned, run the
+following installation procedure:
 
 ```bash
 ./scripts/get-msgpack.sh # Optional, but advised.
 mkdir -p build && cd build
-cmake -G "Unix Makefiles" ..
+cmake -G "Unix Makefiles" -DCMAKE_TYPE_BUILD=Release ..
 cmake --build .
 cmake --build . --target install # Possibly as root (i.e. via sudo)
-eovim
 ```
 
 ## Usage
@@ -53,6 +53,8 @@ By default, `eovim` will connect to Neovim by requesting true colors (24-bits
 colordepth), which could be problematic for configurations that rely on
 terminal colors (256 colors). To enable the 256-colors mode, run `eovim` with
 the `--termcolors` (or `-T`) option.
+
+To get a list of all the available options, run `eovim --help`.
 
 
 ## Hacking
@@ -81,3 +83,4 @@ not original creations.
 [2]: https://neovim.io
 [3]: https://github.com/msgpack/msgpack-c
 [4]: https://www.enlightenment.org/about-terminology
+[5]: https://cmake.org/
