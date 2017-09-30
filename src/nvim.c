@@ -419,12 +419,13 @@ nvim_next_uid_get(s_nvim *nvim)
 }
 
 s_nvim *
-nvim_new(const char *program,
-         Eina_Bool termcolors,
+nvim_new(const s_nvim_options *opts,
+         const char *program,
          unsigned int args_count,
          const char *const argv[])
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(program, NULL);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(opts, NULL);
 
    Eina_Bool ok;
 
@@ -439,7 +440,18 @@ nvim_new(const char *program,
         CRI("Failed to create strbuf");
         goto fail;
      }
-   ok = eina_strbuf_append_printf(cmdline, "\"%s\" --embed --headless --", program);
+   ok = eina_strbuf_append_printf(cmdline, "\"%s\" --embed --headless", program);
+   if (opts->binary) ok &= eina_strbuf_append(cmdline, " -b");
+   if (opts->diff) ok &= eina_strbuf_append(cmdline, " -d");
+   if (opts->read_only) ok &= eina_strbuf_append(cmdline, " -R");
+   if (opts->restricted) ok &= eina_strbuf_append(cmdline, " -Z");
+   if (opts->no_swap) ok &= eina_strbuf_append(cmdline, " -n");
+   if (opts->recover) ok &= eina_strbuf_append_printf(cmdline, " -r \"%s\"", opts->recover);
+   if (opts->nvimrc) ok &= eina_strbuf_append_printf(cmdline, " -u \"%s\"", opts->nvimrc);
+   if (opts->no_plugins) ok &= eina_strbuf_append(cmdline, " --noplugin");
+
+   /* End of neovim options */
+   ok &= eina_strbuf_append(cmdline, " --");
    for (unsigned int i = 0; i < args_count; i++)
      {
         ok &= eina_strbuf_append_printf(cmdline, " \"%s\"", argv[i]);
@@ -458,7 +470,7 @@ nvim_new(const char *program,
         goto del_strbuf;
      }
 
-   nvim->true_colors = ! termcolors;
+   nvim->true_colors = ! opts->termcolors;
 
    /* We will enable mouse handling by default. We do not receive the
     * information from neovim unless we change mode. This is annoying. */
@@ -589,4 +601,20 @@ Eina_Bool
 nvim_mouse_enabled_get(const s_nvim *nvim)
 {
    return nvim->mouse_enabled;
+}
+
+void
+nvim_options_defaults_set(s_nvim_options *opts)
+{
+   EINA_SAFETY_ON_NULL_RETURN(opts);
+
+   opts->recover = NULL;
+   opts->nvimrc = NULL;
+   opts->binary = EINA_FALSE;
+   opts->diff = EINA_FALSE;
+   opts->read_only = EINA_FALSE;
+   opts->restricted = EINA_FALSE;
+   opts->no_swap = EINA_FALSE;
+   opts->no_plugins = EINA_FALSE;
+   opts->termcolors = EINA_FALSE;
 }

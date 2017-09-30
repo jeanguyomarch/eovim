@@ -57,10 +57,23 @@ struct nvim
    Eina_Bool mouse_enabled;
 };
 
+typedef struct
+{
+   char *recover;
+   char *nvimrc;
+   Eina_Bool binary;
+   Eina_Bool diff;
+   Eina_Bool read_only;
+   Eina_Bool restricted;
+   Eina_Bool no_swap;
+   Eina_Bool no_plugins;
+   Eina_Bool termcolors;
+} s_nvim_options;
+
 
 Eina_Bool nvim_init(void);
 void nvim_shutdown(void);
-s_nvim *nvim_new(const char *program, Eina_Bool termcolors, unsigned int argc, const char *const argv[]);
+s_nvim *nvim_new(const s_nvim_options *opts, const char *program, unsigned int argc, const char *const argv[]);
 void nvim_free(s_nvim *nvim);
 uint32_t nvim_next_uid_get(s_nvim *nvim);
 Eina_Bool nvim_api_response_dispatch(s_nvim *nvim, const s_request *req, const msgpack_object_array *args);
@@ -69,5 +82,6 @@ s_mode *nvim_named_mode_get(const s_nvim *nvim, Eina_Stringshare *name);
 void nvim_mode_set(s_nvim *nvim, Eina_Stringshare *name, unsigned int index);
 void nvim_mouse_enabled_set(s_nvim *nvim, Eina_Bool enable);
 Eina_Bool nvim_mouse_enabled_get(const s_nvim *nvim);
+void nvim_options_defaults_set(s_nvim_options *opts);
 
 #endif /* ! __EOVIM_NVIM_H__ */

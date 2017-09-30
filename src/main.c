@@ -48,6 +48,17 @@ static const Ecore_Getopt _options =
    "An EFL GUI client for NeoVim",
    EINA_FALSE, /* Not strict: allows forwarding */
    {
+      /* Neovim options remapped */
+      ECORE_GETOPT_STORE_TRUE('b', "binary", "Run neovim in binary mode"),
+      ECORE_GETOPT_STORE_TRUE('d', "diff", "Run neovim in diff mode"),
+      ECORE_GETOPT_STORE_TRUE('R', "read-only", "Run neovim in read-only mode"),
+      ECORE_GETOPT_STORE_TRUE('Z', "restricted", "Run neovim in restricted mode"),
+      ECORE_GETOPT_STORE_TRUE('n', "no-swap", "Disable swap files use"),
+      ECORE_GETOPT_STORE_STR('r', "recover", "Recover crashed session"),
+      ECORE_GETOPT_STORE_STR('u', "nvimrc", "Override nvim.init with a custom file"),
+      ECORE_GETOPT_STORE_TRUE('N', "no-plugins", "Don't load plugin scripts"),
+
+      /* Eovim options */
       ECORE_GETOPT_STORE_TRUE('T', "termcolors", "Use 256 terminal colors"),
       ECORE_GETOPT_STORE_STR('t', "theme", "Name of the theme to be used"),
       ECORE_GETOPT_STORE_STR('\0', "nvim", "Path to the nvim program"),
@@ -122,9 +133,22 @@ elm_main(int argc,
    Eina_Bool quit_option = EINA_FALSE;
    char *nvim_prog = "nvim";
    char *theme = "default";
-   Eina_Bool termcolors = EINA_FALSE;
+   s_nvim_options opts;
+   nvim_options_defaults_set(&opts);
+
    Ecore_Getopt_Value values[] = {
-      ECORE_GETOPT_VALUE_BOOL(termcolors),
+      /* Neovim options remapped */
+      ECORE_GETOPT_VALUE_BOOL(opts.binary),
+      ECORE_GETOPT_VALUE_BOOL(opts.diff),
+      ECORE_GETOPT_VALUE_BOOL(opts.read_only),
+      ECORE_GETOPT_VALUE_BOOL(opts.restricted),
+      ECORE_GETOPT_VALUE_BOOL(opts.no_swap),
+      ECORE_GETOPT_VALUE_STR(opts.recover),
+      ECORE_GETOPT_VALUE_STR(opts.nvimrc),
+      ECORE_GETOPT_VALUE_BOOL(opts.no_plugins),
+
+      /* Eovim options */
+      ECORE_GETOPT_VALUE_BOOL(opts.termcolors),
       ECORE_GETOPT_VALUE_STR(theme),
       ECORE_GETOPT_VALUE_STR(nvim_prog),
       ECORE_GETOPT_VALUE_BOOL(quit_option),
@@ -189,7 +213,7 @@ elm_main(int argc,
    /*
     * Create the GUI client
     */
-   s_nvim *const nvim = nvim_new(nvim_prog, termcolors,
+   s_nvim *const nvim = nvim_new(&opts, nvim_prog,
                                  (unsigned int)(argc - args),
                                  (const char *const *)(&argv[args]));
    if (EINA_UNLIKELY(! nvim))
