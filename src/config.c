@@ -140,39 +140,51 @@ _config_new(void)
    return config;
 }
 
-static Eina_Strbuf *
-_config_path_get(void)
+static char *
+_config_path_get(const char *filename)
 {
-  /* Compose the path to the config file */
-   const char *const home = efreet_config_home_get();
-   Eina_Strbuf *const path = eina_strbuf_new();
-   if (EINA_UNLIKELY(! path))
+   if (filename)
      {
-        CRI("Failed to create stringbuffer");
-        return NULL;
+        /* If we pass an existing config path, get a copy of it */
+        return strdup(filename);
      }
-   eina_strbuf_append_printf(path, "%s/eovim/config", home);
-   ecore_file_mkpath(eina_strbuf_string_get(path));
-   eina_strbuf_append(path, "/eovim.cfg");
+   else
+     {
+        /* Compose the path to the config file */
+        const char *const home = efreet_config_home_get();
+        Eina_Strbuf *const buf = eina_strbuf_new();
+        if (EINA_UNLIKELY(! buf))
+          {
+             CRI("Failed to create stringbuffer");
+             return NULL;
+          }
+        eina_strbuf_append_printf(buf, "%s/eovim/config", home);
+        ecore_file_mkpath(eina_strbuf_string_get(buf));
+        eina_strbuf_append(buf, "/eovim.cfg");
 
-   return path;
+        /* Now that we have the final string, we get the storage string and
+         * discard the string buffer */
+        char *const path = eina_strbuf_string_steal(buf);
+        eina_strbuf_free(buf);
+
+        return path;
+     }
 }
 
 s_config *
-config_load(void)
+config_load(const char *file)
 {
    s_config *cfg = NULL;
-   Eina_Strbuf *const path = _config_path_get();
+   char *const path = _config_path_get(file);
    if (EINA_UNLIKELY(! path)) return NULL;
 
-   const char *const cfg_file = eina_strbuf_string_get(path);
-   if (ecore_file_exists(cfg_file))
+   if (ecore_file_exists(path))
      {
         /* If the file does exist, we will read from it */
-        Eet_File *const ef = eet_open(cfg_file, EET_FILE_MODE_READ);
+        Eet_File *const ef = eet_open(path, EET_FILE_MODE_READ);
         if (EINA_UNLIKELY(! ef))
           {
-             CRI("Failed to open file '%s'", cfg_file);
+             CRI("Failed to open file '%s'", path);
              goto end;
           }
 
@@ -184,6 +196,7 @@ config_load(void)
              goto new_config; /* Try to create a default config */
           }
         cfg->font_name = eina_stringshare_add(cfg->font_name);
+        cfg->path = path;
      }
    else
      {
@@ -195,36 +208,30 @@ new_config: /* Yes, f!ck you too */
              CRI("Failed to create a default configuration");
              goto end;
           }
+        cfg->path = path;
      }
 
 end:
-   eina_strbuf_free(path);
    return cfg;
 }
 
 void
 config_save(s_config *config)
 {
-   Eina_Strbuf *const path = _config_path_get();
-   if (EINA_UNLIKELY(! path)) return;
-
    /* Open and save the config file */
-   const char *const cfg_file = eina_strbuf_string_get(path);
-   Eet_File *const ef = eet_open(cfg_file, EET_FILE_MODE_WRITE);
+   Eet_File *const ef = eet_open(config->path, EET_FILE_MODE_WRITE);
    if (EINA_UNLIKELY(! ef))
      {
-        CRI("Failed to open file '%s'", cfg_file);
-        goto end;
+        CRI("Failed to open file '%s'", config->path);
+        return;
      }
    const int ok = eet_data_write(ef, _edd, _key, config, 1);
    eet_close(ef);
    if (EINA_UNLIKELY(! ok))
      {
         CRI("Failed to write the configuration");
-        goto end;
+        return;
      }
-end:
-   eina_strbuf_free(path);
 }
 
 void
@@ -232,5 +239,6 @@ config_free(s_config *config)
 {
    eina_stringshare_del(config->font_name);
    free(config->bg_color);
+   free(config->path);
    free(config);
 }

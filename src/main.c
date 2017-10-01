@@ -58,6 +58,8 @@ static const Ecore_Getopt _options =
       ECORE_GETOPT_STORE_TRUE('N', "no-plugins", "Don't load plugin scripts"),
 
       /* Eovim options */
+      ECORE_GETOPT_STORE_STR('\0', "config",
+            "Provide an alternate user configuration"),
       ECORE_GETOPT_STORE_TRUE('T', "termcolors", "Use 256 terminal colors"),
       ECORE_GETOPT_STORE_STR('t', "theme", "Name of the theme to be used"),
       ECORE_GETOPT_STORE_STR('\0', "nvim", "Path to the nvim program"),
@@ -146,6 +148,7 @@ elm_main(int argc,
       ECORE_GETOPT_VALUE_BOOL(opts.no_plugins),
 
       /* Eovim options */
+      ECORE_GETOPT_VALUE_STR(opts.config_path),
       ECORE_GETOPT_VALUE_BOOL(opts.termcolors),
       ECORE_GETOPT_VALUE_STR(theme),
       ECORE_GETOPT_VALUE_STR(nvim_prog),

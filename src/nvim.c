@@ -484,7 +484,7 @@ nvim_new(const s_nvim_options *opts,
      }
 
    /* Create the config */
-   nvim->config = config_load();
+   nvim->config = config_load(opts->config_path);
    if (EINA_UNLIKELY(! nvim->config))
      {
         CRI("Failed to initialize a configuration");
@@ -605,13 +605,6 @@ nvim_options_defaults_set(s_nvim_options *opts)
 {
    EINA_SAFETY_ON_NULL_RETURN(opts);
 
-   opts->recover = NULL;
-   opts->nvimrc = NULL;
-   opts->binary = EINA_FALSE;
-   opts->diff = EINA_FALSE;
-   opts->read_only = EINA_FALSE;
-   opts->restricted = EINA_FALSE;
-   opts->no_swap = EINA_FALSE;
-   opts->no_plugins = EINA_FALSE;
-   opts->termcolors = EINA_FALSE;
+   /* Set everything to EINA_FALSE/NULL */
+   memset(opts, 0, sizeof(s_nvim_options));
 }

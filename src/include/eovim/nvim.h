@@ -59,6 +59,7 @@ struct nvim
 
 typedef struct
 {
+   char *config_path;
    char *recover;
    char *nvimrc;
    Eina_Bool binary;
