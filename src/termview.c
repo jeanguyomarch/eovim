@@ -326,7 +326,7 @@ _termview_key_down_cb(void *data,
         return;
      }
 
-   if (nvim_compose && ev->key)
+   if (nvim_compose)
      {
         const char *const key = keymap ? keymap->name : ev->key;
         /* If we can compose, create an aggregate string we will send to
