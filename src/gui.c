@@ -508,6 +508,13 @@ gui_add(s_gui *gui,
    elm_layout_content_set(gui->layout, "eovim.completion", o);
    elm_object_tree_focus_allow_set(o, EINA_FALSE);
 
+   /* Set the background color, is requested in the config */
+   if (config->use_bg_color)
+     {
+        const s_config_color *const c = config->bg_color;
+        gui_bg_color_set(gui, c->r, c->g, c->b, c->a);
+     }
+
    /*
     * We set the resieing step of the window to the size of a cell of the
     * textgrid that is embedded within the termview.
