@@ -58,7 +58,6 @@ add_executable(eovim
    "${SRC_DIR}/mode.c"
    "${SRC_DIR}/keymap.c"
    "${SRC_DIR}/gui.c"
-   "${SRC_DIR}/test.c"
    "${SRC_DIR}/termview.c"
    "${SRC_DIR}/nvim_event.c"
    "${SRC_DIR}/nvim_api.c"
@@ -136,13 +135,6 @@ target_compile_definitions(eovim
    PACKAGE_DATA_DIR=\"${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}\"
    BUILD_DATA_DIR=\"${CMAKE_BINARY_DIR}\"
 )
-if (WITH_TESTS)
-  target_compile_definitions(eovim
-     PRIVATE
-     EOVIM_WITH_TESTS
-  )
-endif ()
-
 
 install(
    TARGETS eovim

@@ -27,7 +27,6 @@
 #include "eovim/nvim_api.h"
 #include "eovim/log.h"
 #include "eovim/mode.h"
-#include "eovim/test.h"
 
 enum
 {
@@ -529,8 +528,6 @@ nvim_new(const s_nvim_options *opts,
         goto del_process;
      }
 
-   /* Before leaving, we register the nvim instance */
-   test_nvim_register(nvim);
    return nvim;
 
 del_process:
@@ -555,7 +552,6 @@ nvim_free(s_nvim *nvim)
 {
    if (nvim)
      {
-        test_nvim_unregister(nvim);
         msgpack_sbuffer_destroy(&nvim->sbuffer);
         msgpack_unpacker_destroy(&nvim->unpacker);
         eina_hash_free(nvim->modes);

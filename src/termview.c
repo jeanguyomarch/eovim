@@ -968,26 +968,3 @@ termview_cell_to_coords(const Evas_Object *obj,
    if (px) *px = (int)(cell_x * sd->cell_w) + wx;
    if (py) *py = (int)(cell_y * sd->cell_h) + wy;
 }
-
-void
-termview_textgrid_dump(const Evas_Object *obj,
-                       FILE *stream)
-{
-   const s_termview *const sd = evas_object_smart_data_get(obj);
-
-   for (unsigned int y = 0; y < sd->rows; y++)
-     {
-        const Evas_Textgrid_Cell *const cells = evas_object_textgrid_cellrow_get(
-           sd->textgrid, (int)y
-        );
-        for (unsigned int x = 0; x < sd->cols; x++)
-          {
-             char *const utf8 = eina_unicode_unicode_to_utf8_range(
-                &cells[x].codepoint, 1,  NULL
-             );
-             fprintf(stream, "%s", utf8);
-             free(utf8);
-          }
-        fprintf(stream, "\n");
-     }
-}
