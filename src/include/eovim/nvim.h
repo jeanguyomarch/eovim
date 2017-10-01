@@ -69,6 +69,7 @@ typedef struct
    Eina_Bool no_swap;
    Eina_Bool no_plugins;
    Eina_Bool termcolors;
+   Eina_Bool fullscreen;
 } s_nvim_options;
 
 

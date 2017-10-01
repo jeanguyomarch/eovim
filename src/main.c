@@ -60,6 +60,7 @@ static const Ecore_Getopt _options =
       /* Eovim options */
       ECORE_GETOPT_STORE_STR('\0', "config",
             "Provide an alternate user configuration"),
+      ECORE_GETOPT_STORE_TRUE('F', "fullscreen", "Run Eovim in full screen"),
       ECORE_GETOPT_STORE_TRUE('T', "termcolors", "Use 256 terminal colors"),
       ECORE_GETOPT_STORE_STR('t', "theme", "Name of the theme to be used"),
       ECORE_GETOPT_STORE_STR('\0', "nvim", "Path to the nvim program"),
@@ -149,6 +150,7 @@ elm_main(int argc,
 
       /* Eovim options */
       ECORE_GETOPT_VALUE_STR(opts.config_path),
+      ECORE_GETOPT_VALUE_BOOL(opts.fullscreen),
       ECORE_GETOPT_VALUE_BOOL(opts.termcolors),
       ECORE_GETOPT_VALUE_STR(theme),
       ECORE_GETOPT_VALUE_STR(nvim_prog),

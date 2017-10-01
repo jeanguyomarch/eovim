@@ -84,5 +84,6 @@ void gui_completion_add(s_gui *gui, s_completion *completion);
 void gui_completion_selected_set(s_gui *gui, int index);
 
 void gui_bell_ring(s_gui *gui);
+void gui_fullscreen_set(s_gui *gui, Eina_Bool fullscreen);
 
 #endif /* ! __EOVIM_GUI_H__ */

@@ -983,3 +983,10 @@ gui_shutdown(void)
    elm_genlist_item_class_free(_font_itc);
    elm_genlist_item_class_free(_itc);
 }
+
+void
+gui_fullscreen_set(s_gui *gui,
+                   Eina_Bool fullscreen)
+{
+   elm_win_fullscreen_set(gui->win, fullscreen);
+}
