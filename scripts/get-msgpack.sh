@@ -8,7 +8,6 @@ set -e
 set -u
 
 # We will work in the .deps/ directory.
-rm -rf .deps
 mkdir -p .deps
 cd .deps
 
@@ -16,6 +15,11 @@ RELEASE="2.1.5"
 DIR="msgpack-$RELEASE"
 TARBALL="$DIR.tar.gz"
 URL="https://github.com/msgpack/msgpack-c/releases/download/cpp-2.1.5/$TARBALL"
+
+# Remove existing msgpack directory
+if [ -d "$DIR" ]; then
+   rm -rf "$DIR"
+fi
 
 wget "$URL"
 tar -xf "$TARBALL"

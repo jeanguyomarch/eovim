@@ -23,4 +23,4 @@ matrix:
 before_install:
   - eval "${MATRIX_EVAL}"
 
-script: ./scripts/get-msgpack.sh && mkdir build && cd build && cmake .. && cmake --build .
+script: ./scripts/ci-build.sh

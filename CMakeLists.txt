@@ -148,3 +148,8 @@ install(
    FILES "${CMAKE_SOURCE_DIR}/data/desktop/eovim.desktop"
    DESTINATION "share/applications"
 )
+
+if (WITH_TESTS)
+   enable_testing()
+   add_subdirectory(tests)
+endif ()
