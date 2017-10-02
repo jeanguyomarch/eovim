@@ -10,6 +10,8 @@ Eovim is the Enlightened Neovim. That's just an [EFL][1] GUI client for
 Eovim is still at an alpha stage. However, it should be possible to use it for
 developping daily, as most of the Neovim interfaces have been implemented.
 
+[![Screenshot]((https://phab.enlightenment.org/file/data/jxgenow5sduf4bjlzasd/PHID-FILE-lf7f5hqmdfehkxxize5c/eovim.png)]https://phab.enlightenment.org/w/projects/eovim/)
+
 ## Installation
 
 Eovim requires the following components to be installed on your system before
