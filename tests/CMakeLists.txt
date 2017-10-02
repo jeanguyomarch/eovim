@@ -29,6 +29,6 @@ add_test(
    COMMAND
       "${EXACTNESS}"
       --base-dir "${TEST_DATA_DIR}/recordings"
-      --dest-dir "${TEST_DATA_DIR}/orig"
+      --dest-dir "${TEST_DATA_DIR}"
       --play "${CMAKE_CURRENT_BINARY_DIR}/tests.txt"
 )

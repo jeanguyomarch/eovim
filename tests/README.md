@@ -38,12 +38,12 @@ top source directory and you have built eovim in `build`):
 
 ```bash
 exactness \
-   --dest-dir .deps/test-data/recordings \
-   --base-dir .deps/test-data/orig \
+   --dest-dir .deps/test-data \
+   --base-dir .deps/test-data/recordings \
    --record build/tests/tests.txt
 exactness \
-   --dest-dir .deps/test-data/recordings \
-   --base-dir .deps/test-data/orig \
+   --dest-dir .deps/test-data \
+   --base-dir .deps/test-data/recordings \
    --init build/tests/tests.txt
 ```
 

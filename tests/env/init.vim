@@ -25,7 +25,7 @@ hi User2 ctermbg=215 ctermfg=black guibg=orange guifg=black
 set laststatus=2
 au InsertEnter * hi StatusLine ctermfg=70 guifg=green
 au InsertLeave * hi StatusLine ctermfg=189 guifg=gray
-set statusline=%1*%m%*%r%h\ %2*%f%*\ [%{strlen(&fenc)?&fenc:'none'},%{&ff},%{strlen(&ft)?&ft:'none'}]%=%c,%l/%L
+set statusline=%1*%m%*%r%h\ %2*%F%*\ [%{strlen(&fenc)?&fenc:'none'},%{&ff},%{strlen(&ft)?&ft:'none'}]%=%c,%l/%L
 
 hi TabLineFill guifg=red guibg=gray
 hi TabLine guifg=black guibg=gray
