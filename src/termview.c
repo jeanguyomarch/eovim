@@ -951,6 +951,17 @@ termview_fg_color_set(Evas_Object *obj,
 }
 
 void
+termview_fg_color_get(const Evas_Object *obj,
+                      int *r, int *g, int *b, int *a)
+{
+   const s_termview *const sd = evas_object_smart_data_get(obj);
+   evas_object_textgrid_palette_get(
+      sd->textgrid, EVAS_TEXTGRID_PALETTE_EXTENDED,
+      COL_DEFAULT_FG, r, g, b, a
+   );
+}
+
+void
 termview_cell_to_coords(const Evas_Object *obj,
                         unsigned int cell_x,
                         unsigned int cell_y,
