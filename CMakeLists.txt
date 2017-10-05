@@ -126,6 +126,8 @@ elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
       -Wcast-align
       -Wlogical-op
       -Wunsafe-loop-optimizations
+      -Wdouble-promotion
+      -Wformat=2
    )
 endif ()
 target_compile_definitions(eovim
