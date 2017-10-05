@@ -45,8 +45,6 @@ typedef struct
    Evas_Object *cursor;
    Eina_Hash *palettes;
 
-   Eina_Stringshare *font_name;
-   unsigned int font_size;
    unsigned int cell_w;
    unsigned int cell_h;
    unsigned int rows;
@@ -453,7 +451,6 @@ _smart_del(Evas_Object *obj)
    evas_object_del(sd->textgrid);
    evas_object_del(sd->cursor);
    eina_hash_free(sd->palettes);
-   eina_stringshare_del(sd->font_name);
    evas_object_event_callback_del(sd->textgrid, EVAS_CALLBACK_MOUSE_MOVE,
                                   _textgrid_mouse_move_cb);
    evas_object_event_callback_del(obj, EVAS_CALLBACK_KEY_DOWN,
