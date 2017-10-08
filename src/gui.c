@@ -48,8 +48,6 @@ typedef enum
 static Elm_Genlist_Item_Class *_compl_simple_itc = NULL;
 static Elm_Genlist_Item_Class *_font_itc = NULL;
 
-static Evas_Object *_completion_gl_content_get(void *data, Evas_Object *obj, const char *part);
-
 static inline s_nvim *
 _nvim_get(const Evas_Object *obj)
 {
@@ -883,6 +881,16 @@ _completion_sel_cb(void *data,
 {
    s_gui *const gui = data;
    const Elm_Genlist_Item *const item = event;
+   const s_completion *const compl = elm_object_item_data_get(item);
+
+   /* If we have a completion info, we shall display it */
+   if (compl->info[0] != '\0')
+     {
+        edje_object_part_text_set(gui->completion.obj,
+                                  "eovim.completion.info", compl->info);
+        edje_object_signal_emit(gui->completion.obj,
+                                "eovim,completion,info,show", "eovim");
+     }
 
    /* If the completion.event is set, the item was selected because of a
     * neovim event, not because the user did clic on the item.
@@ -934,11 +942,12 @@ void
 gui_completion_add(s_gui *gui,
                    s_completion *completion)
 {
-   elm_genlist_item_append(
+   Elm_Genlist_Item *const item = elm_genlist_item_append(
       gui->completion.gl, _compl_simple_itc, completion,
       NULL, ELM_GENLIST_ITEM_NONE,
       _completion_sel_cb, gui
    );
+   elm_object_item_data_set(item, completion);
    gui->completion.items.count++;
 }
 
