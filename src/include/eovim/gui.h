@@ -36,8 +36,15 @@ struct gui
    Evas_Object *termview;
 
    struct {
+      Evas_Object *obj;
       Evas_Object *gl;
       Elm_Genlist_Item *sel;
+      struct {
+         unsigned int at_x;
+         unsigned int at_y;
+         unsigned int count;
+         Eina_Bool calculated;
+      } items;
       Eina_Bool event;
    } completion;
 
