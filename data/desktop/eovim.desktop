@@ -4,4 +4,5 @@ Name=Eovim
 Keywords=editor;
 Exec=eovim
 Categories=Development;
+Icon=eovim
 StartupWMClass=eovim

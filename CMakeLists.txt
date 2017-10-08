@@ -150,6 +150,10 @@ install(
    FILES "${CMAKE_SOURCE_DIR}/data/desktop/eovim.desktop"
    DESTINATION "share/applications"
 )
+install(
+   FILES "${CMAKE_SOURCE_DIR}/data/images/eovim.png"
+   DESTINATION "share/icons"
+)
 
 if (WITH_TESTS)
    enable_testing()
