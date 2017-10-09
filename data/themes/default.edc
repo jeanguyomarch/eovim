@@ -45,7 +45,6 @@ collections {
          }
       }
       script {
-         public gl_x1, gl_y1, gl_x2, gl_y2;
          public bg_r, bg_g, bg_b, bg_a;
 
          public message(Msg_Type:type, id, ...) {
