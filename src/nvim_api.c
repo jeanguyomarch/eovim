@@ -114,13 +114,13 @@ nvim_api_request_find(const s_nvim *nvim,
                       uint32_t req_id)
 {
    const s_request *req;
-   Eina_List *it = NULL;
+   Eina_List *it;
 
    EINA_LIST_FOREACH(nvim->requests, it, req)
      {
-        if (req->uid == req_id) { break; }
+        if (req->uid == req_id) { return it; }
      }
-   return it;
+   return NULL;
 }
 
 void
