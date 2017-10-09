@@ -26,23 +26,11 @@
 #include "eovim/types.h"
 #include <Eina.h>
 
-typedef struct config_color s_config_color;
-
-struct config_color
-{
-   uint8_t r;
-   uint8_t g;
-   uint8_t b;
-   uint8_t a;
-};
-
 struct config
 {
    unsigned int version;
    unsigned int font_size;
    Eina_Stringshare *font_name;
-   s_config_color *bg_color;
-   Eina_Bool use_bg_color;
    Eina_Bool mute_bell;
 
    /* Internals */
@@ -51,12 +39,10 @@ struct config
 
 Eina_Bool config_init(void);
 void config_shutdown(void);
-void config_bg_color_set(s_config *config, int r, int g, int b, int a);
 void config_free(s_config *config);
 void config_save(s_config *config);
 void config_font_size_set(s_config *config, unsigned int font_size);
 void config_font_name_set(s_config *config, Eina_Stringshare *font_name);
-void config_use_bg_color_set(s_config *config, Eina_Bool use);
 void config_bell_mute_set(s_config *config, Eina_Bool mute);
 s_config *config_load(const char *filename);
 

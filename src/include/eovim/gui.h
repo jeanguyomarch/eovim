@@ -50,8 +50,6 @@ struct gui
 
    struct {
       Evas_Object *box;
-      Evas_Object *bg_sel;
-      Evas_Object *bg_sel_frame;
       Evas_Object *fonts_gl;
    } config;
 

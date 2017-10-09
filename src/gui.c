@@ -140,93 +140,6 @@ _recalculate_gui_size(s_gui *gui)
 
 
 /*============================================================================*
- *                          Background Color Handling                         *
- *============================================================================*/
-
-static void
-_bg_color_changed_cb(void *data,
-                     Evas_Object *obj,
-                     void *event_info EINA_UNUSED)
-{
-   s_gui *const gui = data;
-   s_config *const config = gui->nvim->config;
-   int r, g, b, a;
-
-   if (config->use_bg_color)
-     {
-        elm_colorselector_color_get(obj, &r, &g, &b, &a);
-        config_bg_color_set(config, r, g, b, a);
-        gui_bg_color_set(gui, r, g, b, a);
-     }
-}
-
-static void
-_bg_sel_changed_cb(void *data,
-                   Evas_Object *obj,
-                   void *event_info EINA_UNUSED)
-{
-   s_gui *const gui = data;
-   const Eina_Bool use_bg = elm_check_state_get(obj);
-   /* FIXME use elm_frame_collapse_go(). Prettier, but does not work */
-   elm_frame_collapse_set(gui->config.bg_sel_frame, !use_bg);
-   config_use_bg_color_set(gui->nvim->config, use_bg);
-
-   if (use_bg)
-     _bg_color_changed_cb(gui, gui->config.bg_sel, NULL);
-   else
-     elm_layout_signal_emit(gui->layout, "eovim,background,unmask", "eovim");
-}
-
-static Evas_Object *
-_config_bg_add(s_gui *gui,
-               Evas_Object *parent)
-{
-   const s_config *const config = gui->nvim->config;
-
-   Evas_Object *const f = _frame_add(parent, "Background Settings");
-   Evas_Object *const box = elm_box_add(f);
-   elm_box_horizontal_set(box, EINA_FALSE);
-   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, 0.0);
-
-   /* check that toggles the color selector */
-   Evas_Object *const check = elm_check_add(parent);
-   evas_object_size_hint_align_set(check, 0.0, 0.0);
-   elm_object_text_set(check, "Enable unified colored background");
-   elm_check_state_set(check, config->use_bg_color);
-   evas_object_smart_callback_add(check, "changed", _bg_sel_changed_cb, gui);
-
-   /* frame that allows the color selector to collapse */
-   Evas_Object *const sel_frame = _frame_add(parent, "Unified Color Selection");
-   elm_frame_autocollapse_set(sel_frame, EINA_FALSE);
-   elm_frame_collapse_set(sel_frame, ! config->use_bg_color);
-
-   /* color selector */
-   Evas_Object *const sel = elm_colorselector_add(parent);
-   evas_object_smart_callback_add(sel, "changed", _bg_color_changed_cb, gui);
-   evas_object_size_hint_weight_set(sel, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(sel, EVAS_HINT_FILL, 0.0);
-   const s_config_color *const col = config->bg_color;
-   elm_colorselector_color_set(sel, col->r, col->g, col->b, col->a);
-
-   elm_box_pack_start(box, check);
-   elm_box_pack_end(box, sel_frame);
-   elm_object_content_set(sel_frame, sel);
-   elm_object_content_set(f, box);
-
-   evas_object_show(box);
-   evas_object_show(sel_frame);
-   evas_object_show(sel);
-   evas_object_show(check);
-
-   gui->config.bg_sel = sel;
-   gui->config.bg_sel_frame = sel_frame;
-
-   return f;
-}
-
-
-/*============================================================================*
  *                            Bell Config Handling                            *
  *============================================================================*/
 
@@ -443,9 +356,6 @@ gui_config_show(s_gui *gui)
 
    Evas_Object *o;
 
-   o = _config_bg_add(gui, box);
-   elm_box_pack_end(box, o);
-
    o = _config_bell_add(gui, box);
    elm_box_pack_end(box, o);
 
@@ -605,13 +515,6 @@ gui_add(s_gui *gui,
    edje_object_part_swallow(gui->completion.obj, "eovim.completion", o);
    evas_object_data_set(o, _nvim_data_key, nvim);
    evas_object_show(o);
-
-   /* Set the background color, is requested in the config */
-   if (config->use_bg_color)
-     {
-        const s_config_color *const c = config->bg_color;
-        gui_bg_color_set(gui, c->r, c->g, c->b, c->a);
-     }
 
    /*
     * We set the resieing step of the window to the size of a cell of the
