@@ -37,8 +37,6 @@ collections {
    group { "eovim/main";
       images {
          image: "preferences.png" COMP;
-         image: "pm_shadow.png" COMP;
-         image: "pm_overlay.png" COMP;
          image: "bg_bevel.png" COMP;
       }
       sounds {
@@ -52,8 +50,8 @@ collections {
 
          public message(Msg_Type:type, id, ...) {
             if (id == 0) { /* THEME_MSG_BG */
-               new part = PART:"eovim.unified_background";
-               custom_state(part, "visible", 0.0);
+               new part = PART:"eovim.background";
+               custom_state(part, "default", 0.0);
                set_int(bg_r, getarg(2));
                set_int(bg_g, getarg(3));
                set_int(bg_b, getarg(4));
@@ -75,97 +73,23 @@ collections {
          /*===================================================================
           * Background
           *=================================================================*/
-         rect { "eovim.unified_background"; nomouse;
-            desc { "default";
-               rel.to: "eovim.background";
-               visible: 0;
-            }
-            desc { "visible";
-               inherit: "default";
-               visible: 1;
-            }
-         }
-         rect { "eovim.background"; nomouse; /* From terminology */
+         rect { "eovim.background"; nomouse;
             desc { "default";
                rel.to: "eovim.main.view";
                color: 128 128 128 255;
-               visible: 0; // XXX For now
-            }
-            desc { "selected";
-               inherit: "default";
-               color: 255 255 255 255;
-            }
-            desc { "invisible";
-               inherit: "default";
-               visible: 0;
             }
          }
-         image { "shadow"; nomouse; /* From terminology */
+         image { "bevel"; nomouse;
             desc { "default";
                fixed: 1 1;
-               rel.to: "eovim.main.view";
-               rel1.offset: -5 -5;
-               rel2.offset: 4 4;
-               image.normal: "pm_shadow.png";
-               image.border: 64 64 64 64;
-               image.border_scale_by: 0.1;
-               color: 255 255 255 128;
+               rel1.to: "eovim.main.view";
+               rel2.to: "eovim.main.view";
+               image.normal: "bg_bevel.png";
+               image.border: 3 3 3 3;
+               image.middle: 0;
                fill.smooth: 0;
             }
-            desc { "selected";
-               inherit: "default";
-               rel1.offset: -40 -40;
-               rel2.offset: 39 39;
-               image.border_scale_by: 1.0;
-               color: 255 255 255 255;
-            }
-            desc { "invisible";
-               inherit: "default";
-               visible: 0;
-            }
          }
-         image { "glow"; nomouse;
-            desc { "default";
-               rel.to: "eovim.main.view";
-               rel1.offset: -4 -4;
-               rel2.offset: 3 3;
-               image {
-                  normal: "cr_glow.png";
-                  border: 9 9 9 9;
-               }
-               color: 51 153 255 0;
-            }
-            desc { "selected";
-               inherit: "default";
-               color: 51 153 255 255;
-            }
-            desc { "invisible";
-               inherit: "default";
-               visible: 0;
-            }
-         }
-         //image { "overlay"; nomouse;
-         //   desc { "default";
-         //      fixed: 1 1;
-         //      rel.to: "eovim.main.view";
-         //      image.normal: "pm_overlay.png";
-         //      fill.smooth: 0;
-         //   }
-         //}
-        // image { "bevel"; nomouse;
-        //    desc { "default";
-        //       fixed: 1 1;
-        //       rel1.to: "eovim.main.view";
-        //       rel2.to: "eovim.main.view";
-        //       image.normal: "bg_bevel.png";
-        //       image.border: 3 3 3 3;
-        //       image.middle: 0;
-        //       fill.smooth: 0;
-        //    }
-        // }
-
-
-
 
          swallow { "eovim.main.view";
             desc { "default";
@@ -319,19 +243,6 @@ collections {
       }
 
       programs {
-         program { signal: "eovim,background,mask"; source: "eovim";
-            action: STATE_SET "invisible";
-            target: "eovim.background";
-            target: "shadow";
-            target: "glow";
-         }
-         program { signal: "eovim,background,unmask"; source: "eovim";
-            action: STATE_SET "default";
-            target: "eovim.background";
-            target: "shadow";
-            target: "glow";
-            target: "eovim.unified_background";
-         }
          program { signal: "eovim,bell,ring"; source: "eovim";
             action: PLAY_SAMPLE "bell" 1.0 ALERT;
          }

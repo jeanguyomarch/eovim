@@ -739,7 +739,6 @@ gui_bg_color_set(s_gui *gui,
    msg->val[2] = b;
    msg->val[3] = a;
 
-   elm_layout_signal_emit(gui->layout, "eovim,background,mask", "eovim");
    edje_object_message_send(gui->edje, EDJE_MESSAGE_INT_SET, THEME_MSG_BG, msg);
 }
 
