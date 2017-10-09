@@ -87,6 +87,7 @@ static const s_kv_keymap _map[] =
    KM("less", "lt"),
    KM("Prior", "PageUp"),
    KM("Next", "PageDown"),
+   KM("Delete", "Del"),
 };
 
 static Eina_Hash *_keymap = NULL;
