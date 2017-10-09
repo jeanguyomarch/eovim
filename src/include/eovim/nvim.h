@@ -62,6 +62,12 @@ typedef struct
    char *config_path;
    char *recover;
    char *nvimrc;
+
+   struct {
+     unsigned int count;
+     Eina_Bool per_file;
+   } hsplit, vsplit, tsplit;
+
    Eina_Bool binary;
    Eina_Bool diff;
    Eina_Bool read_only;

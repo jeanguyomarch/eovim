@@ -57,6 +57,13 @@ static const Ecore_Getopt _options =
       ECORE_GETOPT_STORE_STR('u', "nvimrc", "Override nvim.init with a custom file"),
       ECORE_GETOPT_STORE_TRUE('N', "no-plugins", "Don't load plugin scripts"),
 
+      ECORE_GETOPT_STORE_TRUE('o', NULL, "Open one horizontal window per file"),
+      ECORE_GETOPT_STORE_UINT('\0', "hsplit", "Open N horizontal windows"),
+      ECORE_GETOPT_STORE_TRUE('O', NULL, "Open one vertical window per file"),
+      ECORE_GETOPT_STORE_UINT('\0', "vsplit", "Open N vertical windows"),
+      ECORE_GETOPT_STORE_TRUE('p', NULL, "Open one tab page per file"),
+      ECORE_GETOPT_STORE_UINT('\0', "tabs", "Open N tab pages"),
+
       /* Eovim options */
       ECORE_GETOPT_STORE_STR('\0', "config",
             "Provide an alternate user configuration"),
@@ -147,6 +154,13 @@ elm_main(int argc,
       ECORE_GETOPT_VALUE_STR(opts.recover),
       ECORE_GETOPT_VALUE_STR(opts.nvimrc),
       ECORE_GETOPT_VALUE_BOOL(opts.no_plugins),
+
+      ECORE_GETOPT_VALUE_BOOL(opts.hsplit.per_file),
+      ECORE_GETOPT_VALUE_UINT(opts.hsplit.count),
+      ECORE_GETOPT_VALUE_BOOL(opts.vsplit.per_file),
+      ECORE_GETOPT_VALUE_UINT(opts.vsplit.count),
+      ECORE_GETOPT_VALUE_BOOL(opts.tsplit.per_file),
+      ECORE_GETOPT_VALUE_UINT(opts.tsplit.count),
 
       /* Eovim options */
       ECORE_GETOPT_VALUE_STR(opts.config_path),

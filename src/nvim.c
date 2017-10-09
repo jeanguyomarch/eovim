@@ -448,6 +448,12 @@ nvim_new(const s_nvim_options *opts,
    if (opts->recover) ok &= eina_strbuf_append_printf(cmdline, " -r \"%s\"", opts->recover);
    if (opts->nvimrc) ok &= eina_strbuf_append_printf(cmdline, " -u \"%s\"", opts->nvimrc);
    if (opts->no_plugins) ok &= eina_strbuf_append(cmdline, " --noplugin");
+   if (opts->hsplit.per_file) ok &= eina_strbuf_append(cmdline, " -o");
+   if (opts->vsplit.per_file) ok &= eina_strbuf_append(cmdline, " -O");
+   if (opts->tsplit.per_file) ok &= eina_strbuf_append(cmdline, " -p");
+   if (opts->hsplit.count) ok &= eina_strbuf_append_printf(cmdline, " -o%u", opts->hsplit.count);
+   if (opts->vsplit.count) ok &= eina_strbuf_append_printf(cmdline, " -O%u", opts->vsplit.count);
+   if (opts->tsplit.count) ok &= eina_strbuf_append_printf(cmdline, " -p%u", opts->tsplit.count);
 
    /* XXX I remove this for now. */
    /* End of neovim options */
