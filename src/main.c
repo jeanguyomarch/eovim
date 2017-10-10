@@ -29,6 +29,7 @@
 #include "eovim/termview.h"
 #include "eovim/main.h"
 #include "eovim/log.h"
+#include "eovim/prefs.h"
 #include "eovim/version.h"
 #include <Ecore_Getopt.h>
 
@@ -93,6 +94,7 @@ static const s_module _modules[] =
    MODULE(keymap),
    MODULE(nvim_api),
    MODULE(nvim_event),
+   MODULE(prefs),
    MODULE(gui),
    MODULE(termview),
    MODULE(nvim),

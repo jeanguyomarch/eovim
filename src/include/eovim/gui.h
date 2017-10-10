@@ -26,6 +26,7 @@
 #include <Elementary.h>
 
 #include "eovim/termview.h"
+#include "eovim/prefs.h"
 #include "eovim/types.h"
 
 struct gui
@@ -48,10 +49,7 @@ struct gui
       Eina_Bool event;
    } completion;
 
-   struct {
-      Evas_Object *box;
-      Evas_Object *fonts_gl;
-   } config;
+   s_prefs prefs;
 
    s_nvim *nvim;
 
@@ -90,5 +88,7 @@ void gui_completion_selected_set(s_gui *gui, int index);
 
 void gui_bell_ring(s_gui *gui);
 void gui_fullscreen_set(s_gui *gui, Eina_Bool fullscreen);
+
+void gui_size_recalculate(s_gui *gui);
 
 #endif /* ! __EOVIM_GUI_H__ */

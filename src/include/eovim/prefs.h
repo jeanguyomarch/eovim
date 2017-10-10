@@ -20,48 +20,20 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __EOVIM_TYPES_H__
-#define __EOVIM_TYPES_H__
+#ifndef __EOVIM_PREFS_H__
+#define __EOVIM_PREFS_H__
 
-#include <Eina.h>
-#include <msgpack.h>
-#include <stdint.h>
+#include "eovim/types.h"
+#include <Evas.h>
 
-typedef int64_t t_int;
-typedef struct version s_version;
-typedef struct request s_request;
-typedef struct nvim s_nvim;
-typedef struct config s_config;
-typedef struct mode s_mode;
-typedef struct position s_position;
-typedef struct gui s_gui;
-typedef struct prefs s_prefs;
-typedef struct completion s_completion;
-typedef Eina_Bool (*f_event_cb)(s_nvim *nvim, const msgpack_object_array *args);
-
-typedef enum
+struct prefs
 {
-   CURSOR_SHAPE_BLOCK,
-   CURSOR_SHAPE_HORIZONTAL,
-   CURSOR_SHAPE_VERTICAL,
-} e_cursor_shape;
-
-struct completion
-{
-   Eina_Stringshare *word;
-   Eina_Stringshare *kind;
-   Eina_Stringshare *menu;
-   Eina_Stringshare *info;
+   Evas_Object *box;
 };
 
-struct version
-{
-   unsigned int major;
-   unsigned int minor;
-   unsigned int patch;
-};
+void prefs_hide(s_gui *gui);
+void prefs_show(s_gui *gui);
+Eina_Bool prefs_init(void);
+void prefs_shutdown(void);
 
-Eina_Bool types_init(void);
-void types_shutdown(void);
-
-#endif /* ! __EOVIM_TYPES_H__ */
+#endif /* ! __EOVIM_PREFS_H__ */

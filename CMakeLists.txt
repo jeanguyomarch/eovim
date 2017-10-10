@@ -58,6 +58,7 @@ add_executable(eovim
    "${SRC_DIR}/mode.c"
    "${SRC_DIR}/keymap.c"
    "${SRC_DIR}/gui.c"
+   "${SRC_DIR}/prefs.c"
    "${SRC_DIR}/termview.c"
    "${SRC_DIR}/nvim_event.c"
    "${SRC_DIR}/nvim_api.c"
