@@ -273,7 +273,7 @@ nvim_event_mode_info_set(s_nvim *nvim,
         Eina_Stringshare *const name = eina_stringshare_add_length(
            _GET_OBJ(KW_NAME)->via.str.ptr, _GET_OBJ(KW_NAME)->via.str.size
         );
-        s_mode *mode = nvim_named_mode_get(nvim, name);
+        s_mode *mode = (s_mode *)nvim_named_mode_get(nvim, name);
         if (! mode)
           {
              const msgpack_object_str *const sname = &(_GET_OBJ(KW_SHORT_NAME)->via.str);
@@ -290,7 +290,25 @@ nvim_event_mode_info_set(s_nvim *nvim,
         else Set = (unsigned int)o->via.i64;                                  \
    }
 
-        /* TODO cursor_shape */
+        if ((o = _GET_OBJ(KW_CURSOR_SHAPE)))
+          {
+            if (EINA_UNLIKELY(o->type != MSGPACK_OBJECT_STR))
+              CRI("Expected a string type. Got 0x%x", o->type);
+            else
+              {
+                 Eina_Stringshare *const shr = eina_stringshare_add_length(
+                    o->via.str.ptr, o->via.str.size
+                 );
+                 if (EINA_UNLIKELY(! shr))
+                   CRI("Failed to create stringshare");
+                 else
+                   {
+                      mode->cursor_shape = mode_cursor_shape_convert(shr);
+                      eina_stringshare_del(shr);
+                   }
+              }
+          }
+
         _GET_INT(KW_BLINKWAIT, mode->blinkwait);
         _GET_INT(KW_BLINKON, mode->blinkon);
         _GET_INT(KW_BLINKOFF, mode->blinkoff);
@@ -357,7 +375,8 @@ nvim_event_mode_change(s_nvim *nvim,
    GET_ARG(params, 1, t_int, &index);
    GET_ARG(params, 0, stringshare, &name);
 
-   nvim_mode_set(nvim, name, (unsigned int)index);
+   gui_mode_update(&nvim->gui, name);
+   eina_stringshare_del(name);
 
    return EINA_TRUE;
 }

@@ -562,7 +562,6 @@ nvim_free(s_nvim *nvim)
         msgpack_sbuffer_destroy(&nvim->sbuffer);
         msgpack_unpacker_destroy(&nvim->unpacker);
         eina_hash_free(nvim->modes);
-        if (nvim->mode.name) { eina_stringshare_del(nvim->mode.name); }
         config_free(nvim->config);
         eina_ustrbuf_free(nvim->decode);
         free(nvim);
@@ -570,17 +569,7 @@ nvim_free(s_nvim *nvim)
      }
 }
 
-void
-nvim_mode_set(s_nvim *nvim,
-              Eina_Stringshare *name,
-              unsigned int index)
-{
-   if (nvim->mode.name) { eina_stringshare_del(nvim->mode.name); }
-   nvim->mode.name = name;
-   nvim->mode.index = index;
-}
-
-s_mode *
+const s_mode *
 nvim_named_mode_get(const s_nvim *nvim,
                     Eina_Stringshare *name)
 {

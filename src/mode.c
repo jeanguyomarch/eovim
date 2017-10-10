@@ -22,6 +22,13 @@
 
 #include "eovim/mode.h"
 
+static Eina_Stringshare *_shapes[] =
+{
+   [CURSOR_SHAPE_BLOCK] = "block",
+   [CURSOR_SHAPE_HORIZONTAL] = "horizontal",
+   [CURSOR_SHAPE_VERTICAL] = "vertical",
+};
+
 s_mode *
 mode_new(Eina_Stringshare *name,
          const char *short_name,
@@ -46,4 +53,48 @@ mode_free(s_mode *mode)
 {
    eina_stringshare_del(mode->name);
    free(mode);
+}
+
+Eina_Bool
+mode_init(void)
+{
+   int i = 0;
+
+   /* Create stringshares from the static strings. This allows much much
+    * faster string comparison later on */
+   for (; i < (int)EINA_C_ARRAY_LENGTH(_shapes); i++)
+     {
+       _shapes[i] = eina_stringshare_add(_shapes[i]);
+       if (EINA_UNLIKELY(! _shapes[i]))
+         {
+            CRI("Failed to create stringshare");
+            goto fail;
+         }
+     }
+   return EINA_TRUE;
+
+fail:
+   for (--i; i >= 0; --i)
+     eina_stringshare_del(_shapes[i]);
+   return EINA_FALSE;
+}
+
+void
+mode_shutdown(void)
+{
+   for (unsigned int i = 0; i < EINA_C_ARRAY_LENGTH(_shapes); i++)
+     eina_stringshare_del(_shapes[i]);
+}
+
+e_cursor_shape
+mode_cursor_shape_convert(Eina_Stringshare *shape_name)
+{
+   /* Try to match every possible shape. On match, return the index in the
+    * table, which is the e_cursor_shape value. */
+   for (unsigned int i = 0; i < EINA_C_ARRAY_LENGTH(_shapes); i++)
+     if (shape_name == _shapes[i]) { return i; }
+
+   /* Nothing found?! Fallback to block */
+   ERR("Failed to find a cursor shape for '%s'", shape_name);
+   return CURSOR_SHAPE_BLOCK;
 }

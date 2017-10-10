@@ -39,11 +39,6 @@ struct nvim
    Eina_List *requests;
    Eina_Hash *modes;
 
-   struct {
-      Eina_Stringshare *name;
-      unsigned int index;
-   } mode;
-
    msgpack_unpacker unpacker;
    msgpack_sbuffer sbuffer;
    msgpack_packer packer;
@@ -86,10 +81,10 @@ void nvim_free(s_nvim *nvim);
 uint32_t nvim_next_uid_get(s_nvim *nvim);
 Eina_Bool nvim_api_response_dispatch(s_nvim *nvim, const s_request *req, const msgpack_object_array *args);
 Eina_Bool nvim_mode_add(s_nvim *nvim, s_mode *mode);
-s_mode *nvim_named_mode_get(const s_nvim *nvim, Eina_Stringshare *name);
-void nvim_mode_set(s_nvim *nvim, Eina_Stringshare *name, unsigned int index);
+const s_mode *nvim_named_mode_get(const s_nvim *nvim, Eina_Stringshare *name);
 void nvim_mouse_enabled_set(s_nvim *nvim, Eina_Bool enable);
 Eina_Bool nvim_mouse_enabled_get(const s_nvim *nvim);
 void nvim_options_defaults_set(s_nvim_options *opts);
+void gui_mode_update(s_gui *gui, Eina_Stringshare *name);
 
 #endif /* ! __EOVIM_NVIM_H__ */

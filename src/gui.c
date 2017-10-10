@@ -23,6 +23,7 @@
 #include "eovim/types.h"
 #include "eovim/gui.h"
 #include "eovim/nvim.h"
+#include "eovim/mode.h"
 #include "eovim/main.h"
 #include "eovim/log.h"
 #include "eovim/nvim_api.h"
@@ -735,4 +736,14 @@ gui_fullscreen_set(s_gui *gui,
                    Eina_Bool fullscreen)
 {
    elm_win_fullscreen_set(gui->win, fullscreen);
+}
+
+void
+gui_mode_update(s_gui *gui,
+                Eina_Stringshare *name)
+{
+   const s_mode *const mode = nvim_named_mode_get(gui->nvim, name);
+   INF("Mode is now '%s', %x, %u %u %u %u %u %u",
+       mode->name, mode->cursor_shape, mode->cell_percentage, mode->blinkon, mode->blinkoff,
+       mode->blinkwait, mode->hl_id, mode->id_lm);
 }

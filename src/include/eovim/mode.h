@@ -42,5 +42,8 @@ struct mode
 
 s_mode *mode_new(Eina_Stringshare *name, const char *short_name, unsigned int short_size);
 void mode_free(s_mode *mode);
+e_cursor_shape mode_cursor_shape_convert(Eina_Stringshare *shape_name);
+Eina_Bool mode_init(void);
+void mode_shutdown(void);
 
 #endif /* ! __EOVIM_MODE_H__ */

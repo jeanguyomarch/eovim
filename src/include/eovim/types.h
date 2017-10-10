@@ -41,9 +41,9 @@ typedef Eina_Bool (*f_event_cb)(s_nvim *nvim, const msgpack_object_array *args);
 
 typedef enum
 {
-   CURSOR_SHAPE_BLOCK,
-   CURSOR_SHAPE_HORIZONTAL,
-   CURSOR_SHAPE_VERTICAL,
+   CURSOR_SHAPE_BLOCK           = 0,
+   CURSOR_SHAPE_HORIZONTAL      = 1,
+   CURSOR_SHAPE_VERTICAL        = 2,
 } e_cursor_shape;
 
 struct completion
