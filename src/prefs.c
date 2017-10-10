@@ -37,6 +37,17 @@ typedef struct
 static const double _font_min = 4.0;
 static const double _font_max = 72.0;
 static Elm_Genlist_Item_Class *_font_itc = NULL;
+static const char *const _nvim_data_key = "nvim";
+
+/* This example test comples from the EFL (terminology). It allows to easily
+ * spot the differences between similar characters */
+static const char *const _text_example = "oislOIS.015!|,";
+
+static inline s_nvim *
+_nvim_get(const Evas_Object *obj)
+{
+   return evas_object_data_get(obj, _nvim_data_key);
+}
 
 static Evas_Object *
 _frame_add(Evas_Object *parent,
@@ -172,6 +183,24 @@ _font_text_get(void *data,
    return strndup(font->fancy, (size_t)eina_stringshare_strlen(font->fancy));
 }
 
+static Evas_Object *
+_font_content_get(void *data,
+                  Evas_Object *obj,
+                  const char *part)
+{
+   const s_font *const font = data;
+   if (strcmp(part, "elm.swallow.end") != 0) { return NULL; }
+
+   const s_nvim *const nvim = _nvim_get(obj);
+   char buf[1024];
+   Evas_Object *const label = elm_label_add(obj);
+
+   snprintf(buf, sizeof(buf), "<font='%s' font_size=%u align=right>%s<tab>",
+            font->name, nvim->config->font_size, _text_example);
+   elm_object_text_set(label, buf);
+   return label;
+}
+
 static void
 _font_sel_cb(void *data,
              Evas_Object *obj EINA_UNUSED,
@@ -205,6 +234,7 @@ _config_font_name_add(s_gui *gui,
    Evas_Object *const gl = elm_genlist_add(f);
    evas_object_size_hint_weight_set(gl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(gl, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_data_set(gl, _nvim_data_key, gui->nvim);
    elm_object_content_set(f, gl);
    evas_object_show(gl);
 
@@ -312,6 +342,7 @@ prefs_init(void)
      }
    _font_itc->item_style = "default";
    _font_itc->func.text_get = _font_text_get;
+   _font_itc->func.content_get = _font_content_get;
    _font_itc->func.del = _font_item_del;
 
    return EINA_TRUE;
