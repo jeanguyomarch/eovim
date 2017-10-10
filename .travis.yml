@@ -7,17 +7,16 @@ matrix:
         apt:
           sources:
             - sourceline: 'ppa:niko2040/e19'
-            - ubuntu-toolchain-r-test
           packages:
             - libefl-dev
-            - gcc-7
       env:
-        - MATRIX_EVAL="CC=gcc-7"
+        - MATRIX_EVAL=""
 
-    - os: osx
-      osx_image: xcode8
-      env:
-        - MATRIX_EVAL="brew install efl msgpack"
+# Disable for now. Travis is too instable.
+#    - os: osx
+#      osx_image: xcode8
+#      env:
+#        - MATRIX_EVAL="brew install efl"
 
 
 before_install:
