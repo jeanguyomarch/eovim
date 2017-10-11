@@ -24,6 +24,7 @@
 #include "eovim/log.h"
 #include "eovim/main.h"
 #include "eovim/keymap.h"
+#include "eovim/mode.h"
 #include "eovim/nvim_api.h"
 #include "eovim/nvim.h"
 
@@ -36,7 +37,10 @@
 static Evas_Smart *_smart = NULL;
 static Evas_Smart_Class _parent_sc = EVAS_SMART_CLASS_INIT_NULL;
 
-typedef struct
+typedef struct termview s_termview;
+typedef void (*f_cursor_calc)(s_termview *sd, Evas_Coord x, Evas_Coord y);
+
+struct termview
 {
    Evas_Object_Smart_Clipped_Data __clipped_data; /* Required by Evas */
 
@@ -71,9 +75,57 @@ typedef struct
    /* Writing position */
    unsigned int x; /**< Cursor X */
    unsigned int y; /**< Cursor Y */
-} s_termview;
+   const s_mode *mode;
+   f_cursor_calc cursor_calc;
+};
 
 #include "termcolors.x"
+
+
+static void
+_cursor_calc_block(s_termview *sd,
+                   Evas_Coord x, Evas_Coord y)
+{
+   /* Place the cursor at (x,y) and set its size to a cell */
+   evas_object_move(sd->cursor,
+                    x + (int)(sd->x * sd->cell_w),
+                    y + (int)(sd->y * sd->cell_h));
+   evas_object_resize(sd->cursor,
+                      (int)sd->cell_w,
+                      (int)sd->cell_h);
+}
+
+static void
+_cursor_calc_vertical(s_termview *sd,
+                      Evas_Coord x, Evas_Coord y)
+{
+   /* Place the cursor at (x,y) and set its width to mode->cell_percentage
+    * of a cell's width */
+   evas_object_move(sd->cursor,
+                    x + (int)(sd->x * sd->cell_w),
+                    y + (int)(sd->y * sd->cell_h));
+
+   unsigned int w = (sd->cell_w * sd->mode->cell_percentage) / 100u;
+   if (w == 0) w = 1; /* We don't want an invisible cursor */
+   evas_object_resize(sd->cursor, (int)w, (int)sd->cell_h);
+}
+
+static void
+_cursor_calc_horizontal(s_termview *sd,
+                        Evas_Coord x, Evas_Coord y)
+{
+   /* Place the cursor at the bottom of (x,y) and set its height to
+    * mode->cell_percentage of a cell's height */
+
+   unsigned int h = (sd->cell_h * sd->mode->cell_percentage) / 100u;
+   if (h == 0) h = 1; /* We don't want an invisible cursor */
+
+   evas_object_move(sd->cursor,
+                    x + (int)(sd->x * sd->cell_w),
+                    y + (int)((sd->y * sd->cell_h) + (sd->cell_h - h)));
+   evas_object_resize(sd->cursor, (int)sd->cell_w, (int)h);
+}
+
 
 static void
 _coords_to_cell(const s_termview *sd,
@@ -418,6 +470,7 @@ _smart_add(Evas_Object *obj)
 
    /* Cursor setup */
    sd->cursor = o = edje_object_add(evas);
+   sd->cursor_calc = _cursor_calc_block; /* Cursor will be a block by default */
    edje_object_file_set(o, main_edje_file_get(), "eovim/cursor");
    evas_object_pass_events_set(o, EINA_TRUE);
    evas_object_propagate_events_set(o, EINA_FALSE);
@@ -495,12 +548,7 @@ _smart_calculate(Evas_Object *obj)
                       (int)(sd->rows * sd->cell_h));
 
    /* Place the cursor */
-   evas_object_move(sd->cursor,
-                    ox + (int)(sd->x * sd->cell_w),
-                    oy + (int)(sd->y * sd->cell_h));
-   evas_object_resize(sd->cursor,
-                      (int)sd->cell_w,
-                      (int)sd->cell_h);
+   sd->cursor_calc(sd, ox, oy);
 }
 
 Eina_Bool
@@ -730,12 +778,10 @@ termview_cursor_goto(Evas_Object *obj,
 
    Evas_Coord x, y;
    evas_object_geometry_get(sd->textgrid, &x, &y, NULL, NULL);
-   evas_object_move(sd->cursor,
-                    x + (int)(to_x * sd->cell_w),
-                    y + (int)(to_y * sd->cell_h));
 
    sd->x = to_x;
    sd->y = to_y;
+   sd->cursor_calc(sd, x, y);
 }
 
 
@@ -975,4 +1021,21 @@ termview_cell_to_coords(const Evas_Object *obj,
 
    if (px) *px = (int)(cell_x * sd->cell_w) + wx;
    if (py) *py = (int)(cell_y * sd->cell_h) + wy;
+}
+
+void
+termview_cursor_mode_set(Evas_Object *obj,
+                         const s_mode *mode)
+{
+   /* Set sd->cursor_calc to the appropriate function that will calculate
+    * the resizing and positionning of the cursor. We also keep track of
+    * the mode. */
+   s_termview *const sd = evas_object_smart_data_get(obj);
+   const f_cursor_calc funcs[] = {
+      [CURSOR_SHAPE_BLOCK] = _cursor_calc_block,
+      [CURSOR_SHAPE_HORIZONTAL] = _cursor_calc_horizontal,
+      [CURSOR_SHAPE_VERTICAL] = _cursor_calc_vertical,
+   };
+   sd->mode = mode;
+   sd->cursor_calc = funcs[mode->cursor_shape];
 }

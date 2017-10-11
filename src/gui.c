@@ -743,7 +743,5 @@ gui_mode_update(s_gui *gui,
                 Eina_Stringshare *name)
 {
    const s_mode *const mode = nvim_named_mode_get(gui->nvim, name);
-   INF("Mode is now '%s', %x, %u %u %u %u %u %u",
-       mode->name, mode->cursor_shape, mode->cell_percentage, mode->blinkon, mode->blinkoff,
-       mode->blinkwait, mode->hl_id, mode->id_lm);
+   termview_cursor_mode_set(gui->termview, mode);
 }
