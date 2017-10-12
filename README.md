@@ -19,7 +19,8 @@ Eovim requires the following components to be installed on your system before
 you can start hacking:
 
 - [EFL][1]: this framework of libraries is packaged in most of the GNU/Linux
-  distributions and on macOS.
+  distributions and on macOS. Do not forget to install the efl-devel package
+  which provides Eina among others.
 - [msgpack-c][3]: this serialization library is not widely packaged, but is
   mandatory to communicate with Neovim. You are advised to run the script
   `scripts/get-msgpack.sh` to install msgpack. This will retrieve and compile
