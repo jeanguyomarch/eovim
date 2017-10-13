@@ -34,6 +34,11 @@
 #define COL_DEFAULT_FG 1
 #define COL_REVERSE_FG 2
 
+enum
+{
+   THEME_MSG_BLINK_SET = 0,
+};
+
 static Evas_Smart *_smart = NULL;
 static Evas_Smart_Class _parent_sc = EVAS_SMART_CLASS_INIT_NULL;
 
@@ -1036,6 +1041,28 @@ termview_cursor_mode_set(Evas_Object *obj,
       [CURSOR_SHAPE_HORIZONTAL] = _cursor_calc_horizontal,
       [CURSOR_SHAPE_VERTICAL] = _cursor_calc_vertical,
    };
+
+   /* Prepare the parameters to push to embryo */
+   Edje_Message_Float_Set *msg;
+   msg = alloca(sizeof(*msg) + (sizeof(double) * 3));
+   msg->count = 3;
+   msg->val[0] = (double)mode->blinkwait / 1000.0;
+   msg->val[1] = (double)mode->blinkon / 1000.0;
+   msg->val[2] = (double)mode->blinkoff / 1000.0;
+
+   /* If the cursor was blinking, we stop the blinking */
+   if (sd->mode && sd->mode->blinkon != 0)
+     edje_object_signal_emit(sd->cursor, "eovim,blink,stop", "eovim");
+
+   /* If we requested the cursor to blink, make it blink */
+   if (mode->blinkon != 0)
+     {
+        edje_object_message_send(sd->cursor, EDJE_MESSAGE_FLOAT_SET,
+                                 THEME_MSG_BLINK_SET, msg);
+        edje_object_signal_emit(sd->cursor, "eovim,blink,start", "eovim");
+     }
+
+   /* Register the new mode and update the cursor calculation function */
    sd->mode = mode;
    sd->cursor_calc = funcs[mode->cursor_shape];
 }

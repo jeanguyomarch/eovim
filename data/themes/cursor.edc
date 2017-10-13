@@ -4,10 +4,89 @@
  * https://www.enlightenment.org/about-terminology
  */
 group { "eovim/cursor";
+   script {
+      public g_blink_on, g_blink_off, g_blink_wait;
+      public g_timer, g_anim;
+
+      public message(Msg_Type:type, id, ...) {
+         if (id == 0) { /* blink set */
+            set_float(g_blink_wait, getfarg(2));
+            set_float(g_blink_on, getfarg(3));
+            set_float(g_blink_off, getfarg(4));
+         }
+      }
+
+      /* Blink start is the embryo program that triggers the blinking chain. */
+      public blink_start() {
+         /* We will start the animation after g_blink_wait secs */
+         new Float:start_in = get_float(g_blink_wait);
+
+         /* Get the current state of one of the cursor part (they are all in
+          * sync, so it does not matter which one. If its state is "focused",
+          * then the cursor in "on", and we must start with the blink_off
+          * animation.  Otherwise, the cursor is "off", we start with the
+          * blink_on animation */
+         new state[32];
+         new Float:val;
+         get_state(PART:"glow", state, 32, val);
+         new timer_id;
+         if (strcmp(state, "focused") == 0) {
+             timer_id = timer(start_in, "blink_off", 0);
+         } else {
+             timer_id = timer(start_in, "blink_on", 0);
+         }
+         /* Keep the timer around so we can stop it later */
+         set_int(g_timer, timer_id);
+      }
+
+      public blink_stop() {
+         /* Stop pending timers and animations. */
+         new anim_id = get_int(g_anim);
+         new timer_id = get_int(g_timer);
+         cancel_anim(anim_id);
+         cancel_timer(timer_id);
+
+         /* Show the cursor by setting its parts to "focused" (ON) */
+         set_state(PART:"glow",  "focused", 0.0);
+         set_state(PART:"outline", "focused", 0.0);
+      }
+
+      /*======================================================================*/
+      /* Blink ON                                                             */
+      public blink_on_anim(val, Float:pos) {
+         set_tween_state(PART:"glow", pos, "default", 0.0, "focused", 0.0);
+         set_tween_state(PART:"outline", pos, "default", 0.0, "focused", 0.0);
+      }
+      public blink_on() {
+         new anim_id = anim(0.2, "blink_on_anim", 0);
+         set_int(g_anim, anim_id);
+
+         new Float:start_in = get_float(g_blink_off);
+         new timer_id = timer(start_in, "blink_off", 0);
+         set_int(g_timer, timer_id);
+      }
+      /*======================================================================*/
+
+
+      /*======================================================================*/
+      /* Blink OFF                                                            */
+      public blink_off_anim(val, Float:pos) {
+         set_tween_state(PART:"glow", pos, "focused", 0.0, "default", 0.0);
+         set_tween_state(PART:"outline", pos, "focused", 0.0, "default", 0.0);
+      }
+      public blink_off() {
+         new anim_id = anim(0.4, "blink_off_anim", 0);
+         set_int(g_anim, anim_id);
+
+         new Float:start_in = get_float(g_blink_on);
+         new timer_id = timer(start_in, "blink_on", 0);
+         set_int(g_timer, timer_id);
+      }
+      /*======================================================================*/
+   }
    images {
       image: "cr_key.png" COMP;
       image: "cr_out.png" COMP;
-      image: "cr_pulse.png" COMP;
       image: "cr_glow.png" COMP;
    }
    parts {
@@ -39,36 +118,7 @@ group { "eovim/cursor";
             rel2.offset: 6 14;
          }
       }
-      part { name: "pulse";
-         mouse_events: 0;
-         description { state: "default" 0.0;
-            rel1 {
-               to: "outline";
-               offset: -4 -4;
-            }
-            rel2 {
-               to: "outline";
-               offset: 3 3;
-            }
-            image {
-               normal: "cr_pulse.png";
-               border: 4 4 4 4;
-            }
-            color: 51 153 255 0;
-         }
-         description { state: "on" 0.0;
-            inherit: "default" 0.0;
-            color: 51 153 255 255;
-         }
-         description { state: "out" 0.0;
-            inherit: "default" 0.0;
-            color: 51 153 255 0;
-            rel1.offset: -8 -8;
-            rel2.offset: 7 7;
-         }
-      }
-      part { name: "glow";
-         mouse_events: 0;
+      part { name: "glow"; nomouse;
          description { state: "default" 0.0;
             rel1.offset: -4 -4;
             rel2.offset: 3 3;
@@ -99,53 +149,29 @@ group { "eovim/cursor";
       }
       programs {
          program {
-            signal: "focus,in,noblink"; source: "eovim";
-            action: STATE_SET "focused" 0.0;
-            target: "glow";
-            target: "outline";
-         }
-         program { name: "focus_in";
             signal: "focus,in"; source: "eovim";
             action: STATE_SET "focused" 0.0;
             target: "glow";
             target: "outline";
-            after: "focus2";
-            after: "pulse";
          }
-         program { name: "focus2";
-            in: 0.5 0.0;
-            action: STATE_SET "default" 0.0;
-            transition: DECELERATE 0.2;
-            target: "glow";
-            target: "outline";
-            after: "focus3";
+
+
+         program { signal: "eovim,blink,stop"; source: "eovim";
+            script {
+               blink_stop();
+            }
          }
-         program { name: "focus3";
-            in: 0.5 0.0;
-            action: STATE_SET "focused" 0.0;
-            target: "glow";
-            target: "outline";
-            after: "focus2";
-            after: "pulse";
+         program { signal: "eovim,blink,start"; source: "eovim";
+            script {
+               blink_start();
+            }
          }
-         program { name: "pulse";
-            action: STATE_SET "on" 0.0;
-            target: "pulse";
-            after: "pulse2";
-         }
-         program { name: "pulse2";
-            action: STATE_SET "out" 0.0;
-            transition: DECELERATE 0.4;
-            target: "pulse";
-         }
+
          program {
             signal: "focus,out"; source: "eovim";
-            action: ACTION_STOP;
-            target: "focus_in";
-            target: "focus2";
-            target: "focus3";
-            target: "pulse";
-            target: "pulse2";
+            script {
+               blink_stop();
+            }
             after: "focus_out2";
          }
          program { name: "focus_out2";
@@ -172,4 +198,3 @@ group { "eovim/cursor";
       }
    }
 }
-
