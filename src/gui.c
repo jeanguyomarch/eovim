@@ -649,7 +649,7 @@ gui_completion_selected_set(s_gui *gui,
 
 void
 gui_completion_show(s_gui *gui,
-                    unsigned int selected,
+                    int selected,
                     unsigned int x,
                     unsigned int y)
 {
@@ -665,8 +665,12 @@ gui_completion_show(s_gui *gui,
    edje_object_signal_emit(obj, "eovim,completion,show", "eovim");
 
    /* Select the appropriate item */
-   Elm_Genlist_Item *const sel = _gl_nth_get(gui->completion.gl, selected);
-   elm_genlist_item_selected_set(sel, EINA_TRUE);
+   if (selected >= 0)
+     {
+        Elm_Genlist_Item *const sel = _gl_nth_get(gui->completion.gl,
+                                                  (unsigned int)selected);
+        elm_genlist_item_selected_set(sel, EINA_TRUE);
+     }
 }
 
 void

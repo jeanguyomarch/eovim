@@ -80,7 +80,7 @@ void gui_config_show(s_gui *gui);
 void gui_config_hide(s_gui *gui);
 void gui_die(s_gui *gui, const char *fmt, ...);
 
-void gui_completion_show(s_gui *gui, unsigned int selected, unsigned int x, unsigned int y);
+void gui_completion_show(s_gui *gui, int selected, unsigned int x, unsigned int y);
 void gui_completion_hide(s_gui *gui);
 void gui_completion_clear(s_gui *gui);
 void gui_completion_add(s_gui *gui, s_completion *completion);

@@ -694,7 +694,7 @@ nvim_event_popupmenu_show(s_nvim *nvim,
         gui_completion_add(&nvim->gui, compl);
      }
 
-   gui_completion_show(&nvim->gui, (unsigned int)selected,
+   gui_completion_show(&nvim->gui, (int)selected,
                        (unsigned int)col, (unsigned int)row);
 
    return EINA_TRUE;
