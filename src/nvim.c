@@ -190,7 +190,7 @@ _handle_notification(s_nvim *nvim,
              continue; /* Try next element */
           }
         const msgpack_object_str *const cmd_obj = &(cmd_name_obj->via.str);
-        Eina_Stringshare *command = eina_stringshare_add_length(
+        Eina_Stringshare *const command = eina_stringshare_add_length(
            cmd_obj->ptr, cmd_obj->size
         );
         if (EINA_UNLIKELY(! command))
@@ -199,6 +199,7 @@ _handle_notification(s_nvim *nvim,
              continue; /* Try next element */
           }
         nvim_api_event_dispatch(nvim, command, cmd);
+        eina_stringshare_del(command);
      }
 
    return EINA_TRUE;
