@@ -27,12 +27,18 @@
 #include <Eina.h>
 #include <msgpack.h>
 
+typedef void (*f_nvim_api_cb)(s_nvim *nvim, void *data, const msgpack_object *result);
+
 Eina_Bool nvim_api_ui_attach(s_nvim *nvim, unsigned int width, unsigned int height);
 Eina_Bool nvim_api_ui_try_resize(s_nvim *nvim, unsigned int width, unsigned height);
 Eina_Bool nvim_api_input(s_nvim *nvim, const char *input, unsigned int input_size);
 
+Eina_Bool nvim_api_eval(s_nvim *nvim, const char *input, unsigned int input_size,
+                        f_nvim_api_cb func, void *func_data);
+
 Eina_List *nvim_api_request_find(const s_nvim *nvim, uint32_t req_id);
 void nvim_api_request_free(s_nvim *nvim, Eina_List *req_item);
+void nvim_api_request_call(s_nvim *nvim, const Eina_List *req_item, const msgpack_object *result);
 Eina_Bool nvim_api_event_dispatch(s_nvim *nvim, Eina_Stringshare *command, const msgpack_object_array *args);
 
 Eina_Bool nvim_api_init(void);

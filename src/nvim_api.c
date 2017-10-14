@@ -28,10 +28,10 @@
 
 struct request
 {
-   /* The name field is pointless, but there is a bug in eina_chained_mempool,
-    * and if the structure's size is less than a poitner's size, terrible
-    * things happen */
-   const char *name;
+   struct {
+      f_nvim_api_cb func;
+      void *data;
+   } cb;
    uint32_t uid;
 };
 
@@ -40,19 +40,19 @@ static Eina_Mempool *_mempool = NULL;
 /* Events */
 static Eina_Hash *_callbacks = NULL;
 
+
 static s_request *
 _request_new(s_nvim *nvim,
              const char *rpc_name,
              size_t rpc_name_len)
 {
-   s_request *const req = eina_mempool_malloc(_mempool, sizeof(s_request));
+   s_request *const req = eina_mempool_calloc(_mempool, sizeof(s_request));
    if (EINA_UNLIKELY(! req))
      {
         CRI("Failed to allocate memory for a request object");
         return NULL;
      }
 
-   req->name = rpc_name;
    req->uid = nvim_next_uid_get(nvim);
    DBG("Preparing request '%s' with id %"PRIu32, rpc_name, req->uid);
 
@@ -132,6 +132,14 @@ nvim_api_request_free(s_nvim *nvim,
    eina_mempool_free(_mempool, req);
 }
 
+void nvim_api_request_call(s_nvim *nvim,
+                           const Eina_List *req_item,
+                           const msgpack_object *result)
+{
+   const s_request *const req = eina_list_data_get(req_item);
+   if (req->cb.func) req->cb.func(nvim, req->cb.data, result);
+}
+
 Eina_Bool
 nvim_api_ui_attach(s_nvim *nvim,
                    unsigned int width, unsigned int height)
@@ -182,6 +190,33 @@ nvim_api_ui_try_resize(s_nvim *nvim,
 
    return _request_send(nvim, req);
 }
+
+Eina_Bool
+nvim_api_eval(s_nvim *nvim,
+              const char *input,
+              unsigned int input_size,
+              f_nvim_api_cb func,
+              void *func_data)
+{
+   const char api[] = "nvim_eval";
+   s_request *const req = _request_new(nvim, api, sizeof(api) - 1);
+   if (EINA_UNLIKELY(! req))
+     {
+        CRI("Failed to create request");
+        return EINA_FALSE;
+     }
+   DBG("Evaluating VimL: %s", input);
+   req->cb.func = func;
+   req->cb.data = func_data;
+
+   msgpack_packer *const pk = &nvim->packer;
+   msgpack_pack_array(pk, 1);
+   msgpack_pack_str(pk, input_size);
+   msgpack_pack_str_body(pk, input, input_size);
+
+   return _request_send(nvim, req);
+}
+
 
 Eina_Bool
 nvim_api_input(s_nvim *nvim,
