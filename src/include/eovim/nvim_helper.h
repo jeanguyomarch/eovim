@@ -31,6 +31,7 @@ typedef struct
       uint8_t r;
       uint8_t g;
       uint8_t b;
+      Eina_Bool used;
    } bg, fg;
 } s_hl_group;
 

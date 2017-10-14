@@ -60,22 +60,38 @@ _hl_group_color_get(s_nvim *nvim,
    const msgpack_object_str *const fg = &(fg_obj->via.str);
    const msgpack_object_str *const bg = &(bg_obj->via.str);
 
-   /* Check that they both are of the expected size */
+   /* We expect the fg and bg to be of a certain size if they are provided */
    const unsigned int expected_size = sizeof("#123456") - 1;
-   if (EINA_UNLIKELY((fg->size != expected_size) ||
-                     (bg->size != expected_size)))
+
+   s_hl_group hl_group;
+   memset(&hl_group, 0, sizeof(hl_group));
+
+   if (fg->size != 0) /* Foreground */
      {
-        ERR("Elements should both have a size of %u", expected_size);
-        return;
+        if (EINA_UNLIKELY(fg->size != expected_size))
+          ERR("Fg element is of size %u. %u was expected", fg->size, expected_size);
+        else
+          {
+             /* Parse foreground: "#......" (e.g. #ff2893) */
+             sscanf(fg->ptr, "#%02hhx%02hhx%02hhx",
+                    &hl_group.fg.r, &hl_group.fg.g, &hl_group.fg.b);
+             hl_group.fg.used = EINA_TRUE;
+          }
+     }
+   if (bg->size != 0) /* Background */
+     {
+        if (EINA_UNLIKELY(bg->size != expected_size))
+          ERR("Bg element is of size %u. %u was expected", bg->size, expected_size);
+        else
+          {
+             /* Parse background: "#......" (e.g. #ff2893) */
+             sscanf(bg->ptr, "#%02hhx%02hhx%02hhx",
+                    &hl_group.bg.r, &hl_group.bg.g, &hl_group.bg.b);
+             hl_group.bg.used = EINA_TRUE;
+          }
      }
 
-   /* Parse each string of type "#......" (e.g. #ff2893) */
-   s_hl_group hl_group;
-   sscanf(fg->ptr, "#%02hhx%02hhx%02hhx",
-          &hl_group.fg.r, &hl_group.fg.g, &hl_group.fg.b);
-   sscanf(bg->ptr, "#%02hhx%02hhx%02hhx",
-          &hl_group.bg.r, &hl_group.bg.g, &hl_group.bg.b);
-
+   /* Send the hl group to the callback function */
    const f_highlight_group_decode func = (const f_highlight_group_decode)(data);
    func(nvim, &hl_group);
 }

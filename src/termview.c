@@ -1039,6 +1039,8 @@ static void
 _cursor_color_get(s_nvim *nvim,
                   const s_hl_group *hl_group)
 {
+   if (! hl_group->bg.used) { return; }
+
    /* Collect the fg and bg colors, and pass them to the edje theme */
    Edje_Message_Int_Set *msg;
    msg = alloca(sizeof(*msg) + (sizeof(int) * 3));
