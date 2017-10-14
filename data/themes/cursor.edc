@@ -13,6 +13,17 @@ group { "eovim/cursor";
             set_float(g_blink_wait, getfarg(2));
             set_float(g_blink_on, getfarg(3));
             set_float(g_blink_off, getfarg(4));
+         } else if (id == 1) { /* color set */
+            new r = getarg(2);
+            new g = getarg(3);
+            new b = getarg(4);
+
+            /* Set all the color classes used by the cursor */
+            set_color_class("cursor_off", r, g, b, 0);
+            set_color_class("cursor_on", r, g, b, 255);
+            set_color_class("cursor_dimmed", r, g, b, 40);
+            set_color_class("cursor_dimmed2", r, g, b, 80);
+            set_color_class("cursor_full", r, g, b, 255);
          }
       }
 
@@ -105,15 +116,14 @@ group { "eovim/cursor";
                normal: "cr_key.png";
                border: 4 4 4 4;
             }
-            color: 51 153 255 0;
+            color_class: "cursor_off";
          }
          description { state: "on" 0.0;
             inherit: "default" 0.0;
-            color: 51 153 255 255;
+            color_class: "cursor_on";
          }
          description { state: "out" 0.0;
             inherit: "default" 0.0;
-            color:  51 153 255 0;
             rel1.offset: -7 -15;
             rel2.offset: 6 14;
          }
@@ -126,11 +136,11 @@ group { "eovim/cursor";
                normal: "cr_glow.png";
                border: 9 9 9 9;
             }
-            color: 51 153 255 40;
+            color_class: "cursor_dimmed";
          }
          description { state: "focused" 0.0;
             inherit: "default" 0.0;
-            color: 51 153 255 255;
+            color_class: "cursor_on";
          }
       }
       part { name: "outline";
@@ -140,11 +150,11 @@ group { "eovim/cursor";
                normal: "cr_out.png";
                border: 3 3 3 3;
             }
-            color: 51 153 255 80;
+            color_class: "cursor_dimmed2";
          }
          description { state: "focused" 0.0;
             inherit: "default" 0.0;
-            color: 255 255 255 255;
+            color_class: "cursor_full";
          }
       }
       programs {

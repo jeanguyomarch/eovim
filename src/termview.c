@@ -25,6 +25,7 @@
 #include "eovim/main.h"
 #include "eovim/keymap.h"
 #include "eovim/mode.h"
+#include "eovim/nvim_helper.h"
 #include "eovim/nvim_api.h"
 #include "eovim/nvim.h"
 
@@ -37,6 +38,7 @@
 enum
 {
    THEME_MSG_BLINK_SET = 0,
+   THEME_MSG_COLOR_SET = 1,
 };
 
 static Evas_Smart *_smart = NULL;
@@ -1028,6 +1030,28 @@ termview_cell_to_coords(const Evas_Object *obj,
    if (py) *py = (int)(cell_y * sd->cell_h) + wy;
 }
 
+
+static void
+_cursor_color_get(s_nvim *nvim,
+                  const s_hl_group *hl_group)
+{
+   /* Collect the fg and bg colors, and pass them to the edje theme */
+   Edje_Message_Int_Set *msg;
+   msg = alloca(sizeof(*msg) + (sizeof(int) * 3));
+   msg->count = 3;
+   msg->val[0] = hl_group->bg.r;
+   msg->val[1] = hl_group->bg.g;
+   msg->val[2] = hl_group->bg.b;
+
+   /*
+    * XXX cursor fg (characet's color is not handled yet
+    */
+
+   s_termview *const sd = evas_object_smart_data_get(nvim->gui.termview);
+   edje_object_message_send(sd->cursor, EDJE_MESSAGE_INT_SET,
+                            THEME_MSG_COLOR_SET, msg);
+}
+
 void
 termview_cursor_mode_set(Evas_Object *obj,
                          const s_mode *mode)
@@ -1065,4 +1089,8 @@ termview_cursor_mode_set(Evas_Object *obj,
    /* Register the new mode and update the cursor calculation function */
    sd->mode = mode;
    sd->cursor_calc = funcs[mode->cursor_shape];
+
+   /* Send a request to neovim so we can get the color of the damn cursor.
+    * It is not made easy!!!! */
+   nvim_helper_highlight_group_decode(sd->nvim, mode->hl_id, _cursor_color_get);
 }

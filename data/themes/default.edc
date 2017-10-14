@@ -33,6 +33,24 @@ externals {
    external: "elm";
 }
 
+color_classes {
+   color_class { name: "cursor_off";
+      color: 51 153 255 0;
+   }
+   color_class { name: "cursor_on";
+      color: 51 153 255 255;
+   }
+   color_class { name: "cursor_dimmed";
+      color: 51 153 255 40;
+   }
+   color_class { name: "cursor_dimmed2";
+      color: 51 153 255 80;
+   }
+   color_class { name: "cursor_full";
+      color: 255 255 255 255;
+   }
+}
+
 collections {
    group { "eovim/main";
       images {
