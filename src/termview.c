@@ -31,9 +31,13 @@
 
 #include <Edje.h>
 
-#define COL_DEFAULT_BG 0
-#define COL_DEFAULT_FG 1
-#define COL_REVERSE_FG 2
+enum
+{
+   COL_DEFAULT_BG,
+   COL_DEFAULT_FG,
+   COL_REVERSE_FG,
+   COL_GENERATOR_START /* Should be the last element */
+};
 
 enum
 {
@@ -500,8 +504,8 @@ _smart_add(Evas_Object *obj)
    /* Set a default foreground color */
    termview_fg_color_set(obj, 255, 215, 175, 255);
 
-   /* Palette item #0 is the default BG */
-   sd->palette_id_generator = 3; /* BG + FG + REV_FG */
+   /* Set the index at which the extended palette will start */
+   sd->palette_id_generator = COL_GENERATOR_START;
 }
 
 static void
@@ -1043,10 +1047,6 @@ _cursor_color_get(s_nvim *nvim,
    msg->val[1] = hl_group->bg.g;
    msg->val[2] = hl_group->bg.b;
 
-   /*
-    * XXX cursor fg (characet's color is not handled yet
-    */
-
    s_termview *const sd = evas_object_smart_data_get(nvim->gui.termview);
    edje_object_message_send(sd->cursor, EDJE_MESSAGE_INT_SET,
                             THEME_MSG_COLOR_SET, msg);
@@ -1086,7 +1086,7 @@ termview_cursor_mode_set(Evas_Object *obj,
         edje_object_signal_emit(sd->cursor, "eovim,blink,start", "eovim");
      }
 
-   /* Register the new mode and update the cursor calculation function */
+   /* Register the new mode and update the cursor calculation function. */
    sd->mode = mode;
    sd->cursor_calc = funcs[mode->cursor_shape];
 
