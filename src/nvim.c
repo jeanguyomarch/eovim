@@ -34,7 +34,7 @@ enum
    HANDLER_DEL,
    HANDLER_DATA,
    HANDLER_ERROR,
-   __HANDLERS_LAST /* Sentinel, don't use */
+   __HANDLERS_LAST /* Sentinel */
 };
 
 static Ecore_Event_Handler *_event_handlers[__HANDLERS_LAST];
@@ -73,9 +73,6 @@ _handle_request_response(s_nvim *nvim,
      }
    DBG("Received response to request %"PRIu32, req_id);
 
-   /* Now that we have found the request, we can remove it */
-   nvim_api_request_free(nvim, req_item);
-
    /* If 3rd arg is an array, this is an error message. */
    const msgpack_object_type err_type = args->ptr[2].type;
    if (err_type == MSGPACK_OBJECT_ARRAY)
@@ -84,12 +81,12 @@ _handle_request_response(s_nvim *nvim,
         if (EINA_UNLIKELY(err_args->size != 2))
           {
              ERR("Error response is supposed to have two arguments");
-             goto fail;
+             goto fail_req;
           }
         if (EINA_UNLIKELY(err_args->ptr[1].type != MSGPACK_OBJECT_STR))
           {
              ERR("Error response is supposed to contain a string");
-             goto fail;
+             goto fail_req;
           }
         const msgpack_object_str *const e = &(err_args->ptr[1].via.str);
         Eina_Stringshare *const err = eina_stringshare_add_length(e->ptr,
@@ -97,20 +94,29 @@ _handle_request_response(s_nvim *nvim,
         if (EINA_UNLIKELY(! err))
           {
              CRI("Failed to create stringshare");
-             goto fail;
+             goto fail_req;
           }
 
         CRI("Neovim reported an error: %s", err);
         eina_stringshare_del(err);
+        goto fail_req;
      }
    else if (err_type != MSGPACK_OBJECT_NIL)
      {
         ERR("Error argument is of handled type 0x%x", err_type);
-        goto fail;
+        goto fail_req;
      }
 
-   /* We won't handle the 4th argment, which contain the returned parameters */
+   /* 4th argment, which contain the returned parameters */
+   const msgpack_object *const result = &(args->ptr[3]);
+   nvim_api_request_call(nvim, req_item, result);
+
+   /* Now that we have found the request, we can remove it */
+   nvim_api_request_free(nvim, req_item);
    return EINA_TRUE;
+
+fail_req:
+   nvim_api_request_free(nvim, req_item);
 fail:
    return EINA_FALSE;
 }
