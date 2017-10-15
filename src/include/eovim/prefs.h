@@ -25,9 +25,11 @@
 
 #include "eovim/types.h"
 #include <Evas.h>
+#include <Elementary.h>
 
 struct prefs
 {
+   Evas_Object *nav;
    Evas_Object *box;
 };
 
