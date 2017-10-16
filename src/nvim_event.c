@@ -204,14 +204,10 @@ nvim_event_cursor_goto(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
-nvim_event_mode_info_set(s_nvim *nvim,
-                         const msgpack_object_array *args)
+static Eina_Bool
+_mode_info_set(s_nvim *nvim,
+               const msgpack_object_array *params)
 {
-   CHECK_BASE_ARGS_COUNT(args, ==, 1);
-   ARRAY_OF_ARGS_EXTRACT(args, params);
-   CHECK_ARGS_COUNT(params, ==, 2);
-
    /* First arg: boolean */
    Eina_Bool cursor_style_enabled;
    GET_ARG(params, 0, bool, &cursor_style_enabled);
@@ -322,6 +318,24 @@ nvim_event_mode_info_set(s_nvim *nvim,
 
    return EINA_TRUE;
 }
+
+Eina_Bool
+nvim_event_mode_info_set(s_nvim *nvim,
+                         const msgpack_object_array *args)
+{
+   Eina_Bool ret = EINA_TRUE;
+   for (unsigned int i = 1; i < args->size; i++)
+     {
+        const msgpack_object *const obj = &(args->ptr[i]);
+        CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
+        const msgpack_object_array *const params = &(obj->via.array);
+        CHECK_ARGS_COUNT(params, ==, 2);
+
+        ret &= _mode_info_set(nvim, params);
+     }
+   return ret;
+}
+
 Eina_Bool
 nvim_event_update_menu(s_nvim *nvim EINA_UNUSED,
                        const msgpack_object_array *args EINA_UNUSED)
