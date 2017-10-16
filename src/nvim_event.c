@@ -404,13 +404,24 @@ Eina_Bool
 nvim_event_scroll(s_nvim *nvim,
                   const msgpack_object_array *args)
 {
-   CHECK_BASE_ARGS_COUNT(args, ==, 1);
-   ARRAY_OF_ARGS_EXTRACT(args, params);
-   CHECK_ARGS_COUNT(params, ==, 1);
+   /*
+    * It appears that in some cases (when the sh*tty command popup opens,
+    * because a message is open in another castle), the scroll command changes,
+    * and we get ["scroll", [N], [N]] instead of ["scroll", [N]].  I'm not sure
+    * if this is supposed to happen, but that's what happens!  So we should be
+    * ready to handle X arguments to "scroll" instead of just one
+    */
+   for (unsigned int i = 1; i < args->size; i++) /* 1 to exclude "scroll" */
+     {
+        const msgpack_object *const obj = &(args->ptr[i]);
+        CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
+        const msgpack_object_array *const arr = &(obj->via.array);
+        CHECK_ARGS_COUNT(arr, ==, 1);
 
-   t_int scroll;
-   GET_ARG(params, 0, t_int, &scroll);
-   gui_scroll(&nvim->gui, (int)scroll);
+        t_int scroll;
+        GET_ARG(arr, 0, t_int, &scroll);
+        gui_scroll(&nvim->gui, (int)scroll);
+     }
 
    return EINA_TRUE;
 }
