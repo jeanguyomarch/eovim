@@ -652,8 +652,9 @@ termview_resize(Evas_Object *obj,
                 unsigned int rows,
                 Eina_Bool request)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   if (EINA_UNLIKELY((cols == 0) || (rows == 0))) { return; }
 
+   s_termview *const sd = evas_object_smart_data_get(obj);
    evas_object_textgrid_size_set(sd->textgrid, (int)cols, (int)rows);
    sd->cols = cols;
    sd->rows = rows;
