@@ -26,7 +26,7 @@ you can start hacking:
   mandatory to communicate with Neovim. You are advised to run the script
   `scripts/get-msgpack.sh` to install msgpack. This will retrieve and compile
   a static version of msgpack that `eovim` can work with.
-- [Neovim][2] version 0.2.1 or greater (earlier versions have not been tested),
+- [Neovim][2] version 0.2.0 or greater (earlier versions have not been tested),
 - [CMake][5].
 
 After making sure you have installed the dependencies aforementioned, run the
