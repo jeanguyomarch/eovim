@@ -35,7 +35,7 @@ following installation procedure:
 ```bash
 ./scripts/get-msgpack.sh # Optional, but advised.
 mkdir -p build && cd build
-cmake -G "Unix Makefiles" -DCMAKE_TYPE_BUILD=Release ..
+cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 cmake --build .
 cmake --build . --target install # Possibly as root (i.e. via sudo)
 ```
