@@ -30,9 +30,13 @@
 #include <Ecore.h>
 #include <msgpack.h>
 
+#define NVIM_VERSION_MAJOR(Nvim) ((Nvim)->version.major)
+#define NVIM_VERSION_MINOR(Nvim) ((Nvim)->version.minor)
+
 struct nvim
 {
    s_gui gui;
+   s_version version; /**< The neovim's version */
    s_config *config;
 
    Ecore_Exe *exe;

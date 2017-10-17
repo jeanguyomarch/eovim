@@ -89,4 +89,62 @@ nvim_helper_highlight_group_decode(s_nvim *nvim,
    nvim_api_command_output(nvim, vim_cmd, (unsigned int)bytes,
                            _hl_group_color_get, func);
 }
+
+static void
+_version_decode(s_nvim *nvim,
+                void *data,
+                const msgpack_object *result)
+{
+   /* Make sure we got a string object from Neovim */
+   if (EINA_UNLIKELY(result->type != MSGPACK_OBJECT_STR))
+     {
+        ERR("A string is expected. Got type 0%x", result->type);
+        return;
+     }
+   const msgpack_object_str *const str = &(result->via.str);
+
+   s_version version;
+   memset(&version, 0, sizeof(version));
+
+   /* Yes, this is evil, but I really don't want to crash later because the
+    * string is not NUL-terminated */
+   ((char *)(str->ptr))[str->size - 1] = '\0';
+
+   /* A neovim version starts with 'NVIM vX.Y.Z[-patch]' I want to find where
+    * 'NVIM v' is, so I can attack X.Y.Z[-patch] */
+   const char start[] = "NVIM v";
+   const char *const ptr = strstr(str->ptr, start);
+   const char *const v = ptr + sizeof(start) - 1;
+
+   int bytes;
+   const int ret =
+      sscanf(v, "%u.%u.%u%n",
+             &version.major, &version.minor, &version.patch, &bytes);
+   if (EINA_UNLIKELY(ret != 3))
+     {
+        ERR("Failed to successfully parse version. Results may be unexpected.");
+        /* We went full retard, but we can keep going */
+     }
+   else
+     {
+        /* Parsing successful. Yay! Find out the extra version if present.
+         * It is if the next character to be read afer maj.min.patch is '-'. */
+        if (v[bytes] == '-')
+          sscanf(&v[bytes + 1], "%32s", version.extra);
+     }
+
+   /* Send the hl group to the callback function */
+   const f_version_decode func = (const f_version_decode)(data);
+   func(nvim, &version);
+}
+
+void
+nvim_helper_version_decode(s_nvim *nvim,
+                           f_version_decode func)
+{
+   EINA_SAFETY_ON_NULL_RETURN(func);
+
+   const char vim_cmd[] = ":silent! version";
+   nvim_api_command_output(nvim, vim_cmd, sizeof(vim_cmd) - 1,
+                           _version_decode, func);
 }

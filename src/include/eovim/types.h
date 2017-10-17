@@ -59,6 +59,7 @@ struct version
    unsigned int major;
    unsigned int minor;
    unsigned int patch;
+   char extra[32];
 };
 
 Eina_Bool types_init(void);

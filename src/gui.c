@@ -287,9 +287,9 @@ void
 gui_die(s_gui *gui,
         const char *fmt, ...)
 {
-   /* Kill the termview */
+   /* Hide the termview */
    Evas_Object *const view = elm_layout_content_unset(gui->layout, "eovim.main.view");
-   evas_object_del(view);
+   evas_object_hide(view);
 
    /* Collect the message */
    char text[512];

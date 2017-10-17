@@ -25,6 +25,7 @@
 #include "eovim/nvim.h"
 #include "eovim/config.h"
 #include "eovim/nvim_api.h"
+#include "eovim/nvim_helper.h"
 #include "eovim/log.h"
 #include "eovim/mode.h"
 
@@ -360,6 +361,26 @@ _nvim_received_error_cb(void *data EINA_UNUSED,
    return ECORE_CALLBACK_PASS_ON;
 }
 
+static void
+_version_decode_cb(s_nvim *nvim,
+                   const s_version *version)
+{
+   char vstr[64];
+
+   memcpy(&nvim->version, version, sizeof(s_version));
+   snprintf(vstr, sizeof(vstr), "%u.%u.%u%c%s",
+            version->major, version->minor, version->patch,
+            version->extra[0] == '\0' ? '\0' : '-',
+            version->extra);
+
+   INF("Running Neovim version %s", vstr);
+   if ((NVIM_VERSION_MAJOR(nvim) == 0) && (NVIM_VERSION_MINOR(nvim) < 2))
+     {
+        gui_die(&nvim->gui,
+                "You are running neovim %s, which is unsupported. "
+                "Please consider upgrading Neovim.", vstr);
+     }
+}
 
 /*============================================================================*
  *                                 Public API                                 *
@@ -533,6 +554,7 @@ nvim_new(const s_nvim_options *opts,
    DBG("Running %s", eina_strbuf_string_get(cmdline));
    eina_strbuf_free(cmdline);
    nvim_api_ui_attach(nvim, 80, 24);
+   nvim_helper_version_decode(nvim, _version_decode_cb);
 
    /* Create the GUI window */
    if (EINA_UNLIKELY(! gui_add(&nvim->gui, nvim)))
