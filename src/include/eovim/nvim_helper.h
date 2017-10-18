@@ -42,6 +42,12 @@ void
 nvim_helper_highlight_group_decode(s_nvim *nvim,
                                    unsigned int group,
                                    f_highlight_group_decode func);
+
+void
+nvim_helper_highlight_group_decode_noop(s_nvim *nvim,
+                                        unsigned int group,
+                                        f_highlight_group_decode func);
+
 void
 nvim_helper_version_decode(s_nvim *nvim,
                            f_version_decode func);

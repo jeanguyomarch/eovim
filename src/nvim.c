@@ -361,6 +361,26 @@ _nvim_received_error_cb(void *data EINA_UNUSED,
    return ECORE_CALLBACK_PASS_ON;
 }
 
+
+static void
+_virtual_interface_init(s_nvim *nvim)
+{
+   nvim->hl_group_decode = nvim_helper_highlight_group_decode_noop;
+}
+
+static void
+_virtual_interface_setup(s_nvim *nvim)
+{
+   /* Setting up the highliht group decoder virtual interface */
+   if (NVIM_VERSION_EQ(nvim, 0, 2, 0))
+     {
+        ERR("You are running Neovim 0.2.0, which has a bug that prevents the "
+            "cursor color to be deduced.");
+     }
+   else
+     nvim->hl_group_decode = nvim_helper_highlight_group_decode;
+}
+
 static void
 _version_decode_cb(s_nvim *nvim,
                    const s_version *version)
@@ -380,6 +400,10 @@ _version_decode_cb(s_nvim *nvim,
                 "You are running neovim %s, which is unsupported. "
                 "Please consider upgrading Neovim.", vstr);
      }
+
+   /* Now that we know Neovim's version, setup the virtual interface, that will
+    * prevent compatibilty issues */
+   _virtual_interface_setup(nvim);
 }
 
 /*============================================================================*
@@ -537,6 +561,9 @@ nvim_new(const s_nvim_options *opts,
         CRI("Failed to create Eina_Hash");
         goto del_config;
      }
+
+   /* Initialize the virtual interface to safe values (non-NULL pointers) */
+   _virtual_interface_init(nvim);
 
    /* Create the neovim process */
    nvim->exe = ecore_exe_pipe_run(

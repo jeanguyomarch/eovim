@@ -24,6 +24,7 @@
 #define __EOVIM_NVIM_H__
 
 #include "eovim/types.h"
+#include "eovim/nvim_helper.h"
 #include "eovim/gui.h"
 
 #include <Eina.h>
@@ -32,6 +33,12 @@
 
 #define NVIM_VERSION_MAJOR(Nvim) ((Nvim)->version.major)
 #define NVIM_VERSION_MINOR(Nvim) ((Nvim)->version.minor)
+#define NVIM_VERSION_PATCH(Nvim) ((Nvim)->version.patch)
+
+#define NVIM_VERSION_EQ(Nvim, Major, Minor, Patch) \
+   (NVIM_VERSION_MAJOR(Nvim) == (Major) && \
+    NVIM_VERSION_MINOR(Nvim) == (Minor) && \
+    NVIM_VERSION_PATCH(Nvim) == (Patch))
 
 struct nvim
 {
@@ -47,6 +54,8 @@ struct nvim
    msgpack_sbuffer sbuffer;
    msgpack_packer packer;
    uint32_t request_id;
+
+   void (*hl_group_decode)(s_nvim *, unsigned int, f_highlight_group_decode);
 
    Eina_UStrbuf *decode;
 

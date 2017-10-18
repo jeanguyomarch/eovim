@@ -72,6 +72,15 @@ _hl_group_color_get(s_nvim *nvim,
    func(nvim, &hl_group);
 }
 
+
+void
+nvim_helper_highlight_group_decode_noop(s_nvim *nvim EINA_UNUSED,
+                                        unsigned int group EINA_UNUSED,
+                                        f_highlight_group_decode func EINA_UNUSED)
+{
+   /* Not supported by Neovim, so nothing to do */
+}
+
 void
 nvim_helper_highlight_group_decode(s_nvim *nvim,
                                    unsigned int group,

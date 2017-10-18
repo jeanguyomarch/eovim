@@ -1095,5 +1095,5 @@ termview_cursor_mode_set(Evas_Object *obj,
 
    /* Send a request to neovim so we can get the color of the damn cursor.
     * It is not made easy!!!! */
-   nvim_helper_highlight_group_decode(sd->nvim, mode->hl_id, _cursor_color_get);
+   sd->nvim->hl_group_decode(sd->nvim, mode->hl_id, _cursor_color_get);
 }
