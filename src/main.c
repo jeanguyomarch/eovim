@@ -21,7 +21,6 @@
  */
 
 #include "eovim/keymap.h"
-#include "eovim/types.h"
 #include "eovim/config.h"
 #include "eovim/mode.h"
 #include "eovim/nvim.h"

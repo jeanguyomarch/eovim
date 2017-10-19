@@ -62,7 +62,4 @@ struct version
    char extra[32];
 };
 
-Eina_Bool types_init(void);
-void types_shutdown(void);
-
 #endif /* ! __EOVIM_TYPES_H__ */
