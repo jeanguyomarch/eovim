@@ -24,6 +24,7 @@
 #include "eovim/log.h"
 #include "eovim/main.h"
 #include "eovim/keymap.h"
+#include "eovim/config.h"
 #include "eovim/mode.h"
 #include "eovim/nvim_helper.h"
 #include "eovim/nvim_api.h"
@@ -419,8 +420,10 @@ _termview_key_down_cb(void *data,
    /* If a key is availabe pass it to neovim and update the ui */
    if (EINA_LIKELY(send_size > 0))
      {
+        const s_config *const config = sd->nvim->config;
         nvim_api_input(sd->nvim, send, send_size);
-        edje_object_signal_emit(sd->cursor, "key,down", "eovim");
+        if (config->key_react)
+           edje_object_signal_emit(sd->cursor, "key,down", "eovim");
      }
    else
      DBG("Unhandled key '%s'", ev->key);

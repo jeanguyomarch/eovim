@@ -26,7 +26,7 @@
 #include <Ecore_File.h>
 #include <Efreet.h>
 
-#define CONFIG_VERSION 1
+#define CONFIG_VERSION 2
 
 static Eet_Data_Descriptor *_edd = NULL;
 static const char _key[] = "eovim/config";
@@ -50,6 +50,7 @@ config_init(void)
    EDD_BASIC_ADD(font_size, EET_T_UINT);
    EDD_BASIC_ADD(font_name, EET_T_STRING);
    EDD_BASIC_ADD(mute_bell, EET_T_UCHAR);
+   EDD_BASIC_ADD(key_react, EET_T_UCHAR);
 
    return EINA_TRUE;
 }
@@ -81,6 +82,13 @@ config_bell_mute_set(s_config *config,
    config->mute_bell = !!mute;
 }
 
+void
+config_key_react_set(s_config *config,
+                     Eina_Bool react)
+{
+   config->key_react = !!react;
+}
+
 static s_config *
 _config_new(void)
 {
@@ -95,6 +103,7 @@ _config_new(void)
    config->font_name = eina_stringshare_add("Mono");
    config->font_size = 12;
    config->mute_bell = EINA_FALSE;
+   config->key_react = EINA_TRUE;
 
    return config;
 }
@@ -156,6 +165,22 @@ config_load(const char *file)
           }
         cfg->font_name = eina_stringshare_add(cfg->font_name);
         cfg->path = path;
+
+        /* Previous configurations compatibility. If we load versions that
+         * are earlier than the current version, set the default parameters
+         * to be compatible with our new version.
+         */
+        switch (cfg->version)
+          {
+           case 0: /* Fall through */
+           case 1:
+              cfg->key_react = EINA_TRUE;
+              /* Fall through */
+           default:
+              break;
+          }
+        /* Bump the version */
+        cfg->version = CONFIG_VERSION;
      }
    else
      {

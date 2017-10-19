@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Font preview in the settings.
 - Handling of the `guicursor` setting.
 - Neovim's version detection.
+- Configuration option to disable key flickering in the theme.
 
 ### Changed
 

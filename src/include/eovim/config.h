@@ -32,6 +32,7 @@ struct config
    unsigned int font_size;
    Eina_Stringshare *font_name;
    Eina_Bool mute_bell;
+   Eina_Bool key_react;
 
    /* Internals */
    char *path;
@@ -44,6 +45,7 @@ void config_save(s_config *config);
 void config_font_size_set(s_config *config, unsigned int font_size);
 void config_font_name_set(s_config *config, Eina_Stringshare *font_name);
 void config_bell_mute_set(s_config *config, Eina_Bool mute);
+void config_key_react_set(s_config *config, Eina_Bool react);
 s_config *config_load(const char *filename);
 
 #endif /* ! __EOVIM_CONFIG_H__ */

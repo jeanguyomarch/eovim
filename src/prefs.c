@@ -65,6 +65,40 @@ _frame_add(Evas_Object *parent,
    return f;
 }
 
+/*============================================================================*
+ *                          Cursor Reaction Handling                          *
+ *============================================================================*/
+
+static void
+_key_react_changed_cb(void *data,
+                      Evas_Object *obj,
+                      void *event_info EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   const Eina_Bool react = elm_check_state_get(obj);
+   config_key_react_set(gui->nvim->config, react);
+}
+
+static Evas_Object *
+_config_key_react_add(s_gui *gui,
+                      Evas_Object *parent)
+{
+   const s_config *const config = gui->nvim->config;
+
+   /* Frame container */
+   Evas_Object *const f = _frame_add(parent, "Cursor Settings");
+
+   /* Checkbox */
+   Evas_Object *const chk = elm_check_add(f);
+   evas_object_size_hint_align_set(chk, 0.0, 0.0);
+   elm_object_text_set(chk, "React to key presses");
+   elm_check_state_set(chk, config->key_react);
+   evas_object_smart_callback_add(chk, "changed", _key_react_changed_cb, gui);
+   evas_object_show(chk);
+
+   elm_object_content_set(f, chk);
+   return f;
+}
 
 /*============================================================================*
  *                            Bell Config Handling                            *
@@ -333,7 +367,10 @@ _theme_prefs_new(s_gui *gui)
 {
    Evas_Object *const box = _prefs_box_new(gui->prefs.nav);
    Evas_Object *const bell = _config_bell_add(gui, box);
+   Evas_Object *const react = _config_key_react_add(gui, box);
+
    elm_box_pack_end(box, bell);
+   elm_box_pack_end(box, react);
    return box;
 }
 
