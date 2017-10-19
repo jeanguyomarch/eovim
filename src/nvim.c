@@ -25,6 +25,7 @@
 #include "eovim/nvim.h"
 #include "eovim/config.h"
 #include "eovim/nvim_api.h"
+#include "eovim/nvim_event.h"
 #include "eovim/nvim_helper.h"
 #include "eovim/log.h"
 #include "eovim/mode.h"
@@ -205,7 +206,7 @@ _handle_notification(s_nvim *nvim,
              CRI("Failed to create stringshare from command object");
              continue; /* Try next element */
           }
-        nvim_api_event_dispatch(nvim, command, cmd);
+        nvim_event_dispatch(nvim, command, cmd);
         eina_stringshare_del(command);
      }
 
