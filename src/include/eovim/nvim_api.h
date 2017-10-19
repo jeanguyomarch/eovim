@@ -45,6 +45,7 @@ nvim_api_command_output(s_nvim *nvim,
 Eina_List *nvim_api_request_find(const s_nvim *nvim, uint32_t req_id);
 void nvim_api_request_free(s_nvim *nvim, Eina_List *req_item);
 void nvim_api_request_call(s_nvim *nvim, const Eina_List *req_item, const msgpack_object *result);
+Eina_Bool nvim_api_var_integer_set(s_nvim *nvim, const char *name, int value);
 
 Eina_Bool nvim_api_init(void);
 void nvim_api_shutdown(void);

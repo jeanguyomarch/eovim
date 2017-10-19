@@ -583,6 +583,7 @@ nvim_new(const s_nvim_options *opts,
    eina_strbuf_free(cmdline);
    nvim_api_ui_attach(nvim, 80, 24);
    nvim_helper_version_decode(nvim, _version_decode_cb);
+   nvim_api_var_integer_set(nvim, "eovim_running", 1);
 
    /* Create the GUI window */
    if (EINA_UNLIKELY(! gui_add(&nvim->gui, nvim)))
