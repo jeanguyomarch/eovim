@@ -244,14 +244,6 @@ gui_add(s_gui *gui,
    evas_object_data_set(o, _nvim_data_key, nvim);
    evas_object_show(o);
 
-   /*
-    * We set the resieing step of the window to the size of a cell of the
-    * textgrid that is embedded within the termview.
-    */
-   unsigned int cell_w, cell_h;
-   termview_cell_size_get(gui->termview, &cell_w, &cell_h);
-   elm_win_size_step_set(gui->win, (int)cell_w, (int)cell_h);
-
    elm_layout_content_set(gui->layout, "eovim.main.view", gui->termview);
 
    evas_object_show(gui->termview);
@@ -335,6 +327,12 @@ gui_resize(s_gui *gui,
    termview_cell_size_get(gui->termview, &cell_w, &cell_h);
    evas_object_resize(gui->win, (int)(cols * cell_w),
                       (int)(rows * cell_h));
+
+   /*
+    * We set the resieing step of the window to the size of a cell of the
+    * textgrid that is embedded within the termview.
+    */
+   elm_win_size_step_set(gui->win, (int)cell_w, (int)cell_h);
 }
 
 void
