@@ -71,6 +71,8 @@ typedef struct
    char *recover;
    char *nvimrc;
 
+   s_geometry geometry;
+
    struct {
      unsigned int count;
      Eina_Bool per_file;

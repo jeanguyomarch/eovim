@@ -37,6 +37,7 @@ typedef struct position s_position;
 typedef struct gui s_gui;
 typedef struct prefs s_prefs;
 typedef struct completion s_completion;
+typedef struct geometry s_geometry;
 typedef Eina_Bool (*f_event_cb)(s_nvim *nvim, const msgpack_object_array *args);
 
 typedef enum
@@ -52,6 +53,12 @@ struct completion
    Eina_Stringshare *kind;
    Eina_Stringshare *menu;
    Eina_Stringshare *info;
+};
+
+struct geometry
+{
+   unsigned int w;
+   unsigned int h;
 };
 
 struct version

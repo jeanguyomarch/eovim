@@ -38,6 +38,28 @@ int _eovim_log_domain = -1;
 static Eina_Bool _in_tree = EINA_FALSE;
 static Eina_Strbuf *_edje_file = NULL;
 
+static Eina_Bool
+_parse_geometry_cb(const Ecore_Getopt *parser EINA_UNUSED,
+                   const Ecore_Getopt_Desc *desc EINA_UNUSED,
+                   const char *str,
+                   void *data EINA_UNUSED,
+                   Ecore_Getopt_Value *storage)
+{
+   s_geometry *const geo = (s_geometry *)storage->ptrp;
+   const int nb = sscanf(str, "%ux%u", &geo->w, &geo->h);
+   if (nb != 2)
+     {
+        ERR("Failed to parse geometry. <UINT>x<UINT> is expected (e.g. 80x24)");
+        return EINA_FALSE;
+     }
+   else if ((geo->w == 0) || (geo->h == 0))
+     {
+        ERR("Geometry cannot have a dimension of 0");
+        return EINA_FALSE;
+     }
+   return EINA_TRUE;
+}
+
 static const Ecore_Getopt _options =
 {
    "eovim",
@@ -57,6 +79,9 @@ static const Ecore_Getopt _options =
       ECORE_GETOPT_STORE_STR('r', "recover", "Recover crashed session"),
       ECORE_GETOPT_STORE_STR('u', "nvimrc", "Override nvim.init with a custom file"),
       ECORE_GETOPT_STORE_TRUE('N', "no-plugins", "Don't load plugin scripts"),
+      ECORE_GETOPT_CALLBACK_ARGS('g', "geometry",
+         "Initial dimensions (in cells) of the window (e.g. 80x24)",
+         "GEOMETRY", _parse_geometry_cb, NULL),
 
       ECORE_GETOPT_STORE_TRUE('o', NULL, "Open one horizontal window per file"),
       ECORE_GETOPT_STORE_UINT('\0', "hsplit", "Open N horizontal windows"),
@@ -67,7 +92,7 @@ static const Ecore_Getopt _options =
 
       /* Eovim options */
       ECORE_GETOPT_STORE_STR('\0', "config",
-            "Provide an alternate user configuration"),
+         "Provide an alternate user configuration"),
       ECORE_GETOPT_STORE_TRUE('F', "fullscreen", "Run Eovim in full screen"),
       ECORE_GETOPT_STORE_TRUE('T', "termcolors", "Use 256 terminal colors"),
       ECORE_GETOPT_STORE_STR('t', "theme", "Name of the theme to be used"),
@@ -157,6 +182,7 @@ elm_main(int argc,
       ECORE_GETOPT_VALUE_STR(opts.recover),
       ECORE_GETOPT_VALUE_STR(opts.nvimrc),
       ECORE_GETOPT_VALUE_BOOL(opts.no_plugins),
+      ECORE_GETOPT_VALUE_PTR_CAST(opts.geometry),
 
       ECORE_GETOPT_VALUE_BOOL(opts.hsplit.per_file),
       ECORE_GETOPT_VALUE_UINT(opts.hsplit.count),

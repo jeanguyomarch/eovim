@@ -573,7 +573,7 @@ nvim_new(const s_nvim_options *opts,
       ECORE_EXE_TERM_WITH_PARENT,
       nvim
    );
-   if (! nvim->exe)
+   if (EINA_UNLIKELY(! nvim->exe))
      {
         CRI("Failed to execute nvim instance");
         goto del_hash;
@@ -581,7 +581,7 @@ nvim_new(const s_nvim_options *opts,
    _nvim_instance = nvim;
    DBG("Running %s", eina_strbuf_string_get(cmdline));
    eina_strbuf_free(cmdline);
-   nvim_api_ui_attach(nvim, 80, 24);
+   nvim_api_ui_attach(nvim, opts->geometry.w, opts->geometry.h);
    nvim_helper_version_decode(nvim, _version_decode_cb);
    nvim_api_var_integer_set(nvim, "eovim_running", 1);
 
@@ -661,4 +661,8 @@ nvim_options_defaults_set(s_nvim_options *opts)
 
    /* Set everything to EINA_FALSE/NULL */
    memset(opts, 0, sizeof(s_nvim_options));
+
+   /* Default geometry */
+   opts->geometry.w = 120;
+   opts->geometry.h = 40;
 }

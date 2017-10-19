@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Neovim's version detection.
 - Configuration option to disable key flickering in the theme.
 - Eovim defines `g:eovim_running` to 1, and makes it available to Neovim.
+- The `-g` option allows to set the initial size of the eovim window.
 
 ### Changed
 
