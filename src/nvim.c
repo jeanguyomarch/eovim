@@ -528,8 +528,7 @@ nvim_new(const s_nvim_options *opts,
         CRI("Failed to create nvim structure");
         goto del_strbuf;
      }
-
-   nvim->true_colors = ! opts->termcolors;
+   nvim->opts = opts;
 
    /* We will enable mouse handling by default. We do not receive the
     * information from neovim unless we change mode. This is annoying. */

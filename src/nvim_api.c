@@ -160,8 +160,8 @@ nvim_api_ui_attach(s_nvim *nvim,
    msgpack_pack_str(pk, 3); /* 'rgb' key */
    msgpack_pack_str_body(pk, "rgb", 3);
    /* 'rgb' value */
-   if (nvim->true_colors) msgpack_pack_true(pk);
-   else msgpack_pack_false(pk);
+   if (nvim->opts->termcolors) msgpack_pack_false(pk);
+   else  msgpack_pack_true(pk);
    msgpack_pack_str(pk, 13); /* 'ext_popupmenu' key */
    msgpack_pack_str_body(pk, "ext_popupmenu", 13);
    msgpack_pack_true(pk); /* 'ext_popupmenu' value */

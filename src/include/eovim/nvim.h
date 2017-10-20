@@ -40,31 +40,6 @@
     NVIM_VERSION_MINOR(Nvim) == (Minor) && \
     NVIM_VERSION_PATCH(Nvim) == (Patch))
 
-struct nvim
-{
-   s_gui gui;
-   s_version version; /**< The neovim's version */
-   s_config *config;
-
-   Ecore_Exe *exe;
-   Eina_List *requests;
-   Eina_Hash *modes;
-
-   msgpack_unpacker unpacker;
-   msgpack_sbuffer sbuffer;
-   msgpack_packer packer;
-   uint32_t request_id;
-
-   void (*hl_group_decode)(s_nvim *, unsigned int, f_highlight_group_decode);
-
-   Eina_UStrbuf *decode;
-
-   /** True when 24-bits colors are expected, False to use the 256 terminal
-    * colors */
-   Eina_Bool true_colors;
-   Eina_Bool mouse_enabled;
-};
-
 typedef struct
 {
    char *config_path;
@@ -87,6 +62,29 @@ typedef struct
    Eina_Bool termcolors;
    Eina_Bool fullscreen;
 } s_nvim_options;
+
+
+struct nvim
+{
+   s_gui gui;
+   s_version version; /**< The neovim's version */
+   s_config *config;
+   const s_nvim_options *opts;
+
+   Ecore_Exe *exe;
+   Eina_List *requests;
+   Eina_Hash *modes;
+
+   msgpack_unpacker unpacker;
+   msgpack_sbuffer sbuffer;
+   msgpack_packer packer;
+   uint32_t request_id;
+
+   void (*hl_group_decode)(s_nvim *, unsigned int, f_highlight_group_decode);
+
+   Eina_UStrbuf *decode;
+   Eina_Bool mouse_enabled;
+};
 
 
 Eina_Bool nvim_init(void);

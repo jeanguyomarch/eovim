@@ -874,8 +874,9 @@ _make_palette_from_color(s_termview *sd,
      }
    else
      {
-        const s_termview_color col = termview_color_decompose((uint32_t)color,
-                                                              sd->nvim->true_colors);
+        const Eina_Bool true_colors = ! sd->nvim->opts->termcolors;
+        const s_termview_color col =
+           termview_color_decompose((uint32_t)color, true_colors);
         return _make_palette(sd, col);
      }
 }
