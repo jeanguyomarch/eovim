@@ -249,6 +249,7 @@ gui_add(s_gui *gui,
    evas_object_show(gui->termview);
    evas_object_show(gui->layout);
    evas_object_show(gui->win);
+   gui_resize(gui, nvim->opts->geometry.w, nvim->opts->geometry.h);
 
    return EINA_TRUE;
 
@@ -308,12 +309,14 @@ gui_resize(s_gui *gui,
            unsigned int cols,
            unsigned int rows)
 {
-   unsigned int cell_w, cell_h, old_cols, old_rows;
+   unsigned int cell_w, cell_h;
+   termview_cell_size_get(gui->termview, &cell_w, &cell_h);
 
-   termview_size_get(gui->termview, &old_cols, &old_rows);
-
-   /* Don't resize if not needed */
-   if ((old_cols == cols) && (old_rows == rows)) { return; }
+   /*
+    * We set the resieing step of the window to the size of a cell of the
+    * textgrid that is embedded within the termview.
+    */
+   elm_win_size_step_set(gui->win, (int)cell_w, (int)cell_h);
 
    /*
     * To resize the gui, we first resize the textgrid with the new amount
@@ -322,17 +325,18 @@ gui_resize(s_gui *gui,
     *
     * XXX: This won't work with the tabline!
     */
-   termview_resize(gui->termview, cols, rows, EINA_TRUE);
+   const int w = (int)(cols * cell_w);
+   const int h = (int)(rows * cell_h);
+   evas_object_resize(gui->win, w, h);
+   evas_object_resize(gui->termview, w, h);
+}
 
-   termview_cell_size_get(gui->termview, &cell_w, &cell_h);
-   evas_object_resize(gui->win, (int)(cols * cell_w),
-                      (int)(rows * cell_h));
-
-   /*
-    * We set the resieing step of the window to the size of a cell of the
-    * textgrid that is embedded within the termview.
-    */
-   elm_win_size_step_set(gui->win, (int)cell_w, (int)cell_h);
+void
+gui_resized_confirm(s_gui *gui,
+                    unsigned int cols,
+                    unsigned int rows)
+{
+   termview_resized_confirm(gui->termview, cols, rows);
 }
 
 void

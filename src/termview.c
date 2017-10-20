@@ -68,6 +68,16 @@ struct termview
 
    unsigned int palette_id_generator;
 
+   /* The rows and columns that neovim uses to display its text. It is
+    * important to keep them around, as this allows to arbitrate positions
+    * upon resizing. For example, if I spawn neovim with a size 80x24, then
+    * neovim will start to send me data for a 80x24 screen. Normal. But if
+    * I resize while it is sending me this information (happens!), then
+    * what neovim sends me is plain wrong, as the interface was updated.
+    * That's were these two have a role to play! */
+   unsigned int nvim_rows;
+   unsigned int nvim_cols;
+
    struct {
       uint8_t fg;
       uint8_t bg;
@@ -93,6 +103,13 @@ struct termview
 
 #include "termcolors.x"
 
+static inline Eina_Bool
+_unfinished_resizing_is(const s_termview *sd)
+{
+   /* If neovim cols/rows are different from the termview cols/rows, we are
+    * resizing the UI, and we must avoid processing old neovim data */
+   return ((sd->nvim_rows != sd->rows) && (sd->nvim_cols != sd->cols));
+}
 
 static void
 _cursor_calc_block(s_termview *sd,
@@ -196,7 +213,7 @@ _mouse_event(s_termview *sd, const char *event,
 }
 
 static void
-_textgrid_mouse_move_cb(void *data,
+_termview_mouse_move_cb(void *data,
                         Evas *e EINA_UNUSED,
                         Evas_Object *obj EINA_UNUSED,
                         void *event)
@@ -214,7 +231,7 @@ _textgrid_mouse_move_cb(void *data,
 }
 
 static void
-_textgrid_mouse_up_cb(void *data,
+_termview_mouse_up_cb(void *data,
                       Evas *e EINA_UNUSED,
                       Evas_Object *obj EINA_UNUSED,
                       void *event)
@@ -229,7 +246,7 @@ _textgrid_mouse_up_cb(void *data,
 }
 
 static void
-_textgrid_mouse_down_cb(void *data,
+_termview_mouse_down_cb(void *data,
                         Evas *e EINA_UNUSED,
                         Evas_Object *obj EINA_UNUSED,
                         void *event)
@@ -244,7 +261,7 @@ _textgrid_mouse_down_cb(void *data,
 }
 
 static void
-_textgrid_mouse_wheel_cb(void *data,
+_termview_mouse_wheel_cb(void *data,
                          Evas *e EINA_UNUSED,
                          Evas_Object *obj EINA_UNUSED,
                          void *event)
@@ -466,6 +483,10 @@ _smart_add(Evas_Object *obj)
    evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_DOWN, _termview_key_down_cb, sd);
    evas_object_event_callback_add(obj, EVAS_CALLBACK_FOCUS_IN, _termview_focus_in_cb, sd);
    evas_object_event_callback_add(obj, EVAS_CALLBACK_FOCUS_OUT, _termview_focus_out_cb, sd);
+   evas_object_event_callback_add(obj, EVAS_CALLBACK_MOUSE_MOVE, _termview_mouse_move_cb, sd);
+   evas_object_event_callback_add(obj, EVAS_CALLBACK_MOUSE_DOWN, _termview_mouse_down_cb, sd);
+   evas_object_event_callback_add(obj, EVAS_CALLBACK_MOUSE_UP, _termview_mouse_up_cb, sd);
+   evas_object_event_callback_add(obj, EVAS_CALLBACK_MOUSE_WHEEL, _termview_mouse_wheel_cb, sd);
 
    Evas *const evas = evas_object_evas_get(obj);
    Evas_Object *o;
@@ -475,10 +496,6 @@ _smart_add(Evas_Object *obj)
    evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_smart_member_add(o, obj);
-   evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_MOVE, _textgrid_mouse_move_cb, sd);
-   evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_DOWN, _textgrid_mouse_down_cb, sd);
-   evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_UP, _textgrid_mouse_up_cb, sd);
-   evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_WHEEL, _textgrid_mouse_wheel_cb, sd);
    evas_object_textgrid_cell_size_get(o, (int*)&sd->cell_w, (int*)&sd->cell_h);
    evas_object_show(o);
 
@@ -518,10 +535,6 @@ _smart_del(Evas_Object *obj)
    evas_object_del(sd->textgrid);
    evas_object_del(sd->cursor);
    eina_hash_free(sd->palettes);
-   evas_object_event_callback_del(sd->textgrid, EVAS_CALLBACK_MOUSE_MOVE,
-                                  _textgrid_mouse_move_cb);
-   evas_object_event_callback_del(obj, EVAS_CALLBACK_KEY_DOWN,
-                                  _termview_key_down_cb);
 }
 
 static void
@@ -530,14 +543,19 @@ _smart_resize(Evas_Object *obj,
               Evas_Coord h)
 {
    s_termview *const sd = evas_object_smart_data_get(obj);
-   evas_object_resize(sd->textgrid, w, h);
-   evas_object_smart_changed(obj);
 
    const unsigned int cols = (unsigned int)w / sd->cell_w;
    const unsigned int rows = (unsigned int)h / sd->cell_h;
 
-   if (EINA_LIKELY((cols > 0) && (rows > 0)))
-     termview_resize(obj, cols, rows, EINA_FALSE);
+   /* Don't resize if not needed */
+   if ((cols == sd->cols) && (rows == sd->rows)) { return; }
+
+   evas_object_textgrid_size_set(sd->textgrid, (int)cols, (int)rows);
+   sd->cols = cols;
+   sd->rows = rows;
+
+   termview_resize(obj, cols, rows);
+   evas_object_smart_changed(obj);
 }
 
 static void
@@ -552,8 +570,8 @@ static void
 _smart_calculate(Evas_Object *obj)
 {
    s_termview *const sd = evas_object_smart_data_get(obj);
-   Evas_Coord ox, oy, ow, oh;
-   evas_object_geometry_get(obj, &ox, &oy, &ow, &oh);
+   Evas_Coord ox, oy;
+   evas_object_geometry_get(obj, &ox, &oy, NULL, NULL);
 
    /* Place the textgrid */
    evas_object_move(sd->textgrid, ox, oy);
@@ -652,15 +670,12 @@ termview_size_get(const Evas_Object *obj,
 void
 termview_resize(Evas_Object *obj,
                 unsigned int cols,
-                unsigned int rows,
-                Eina_Bool request)
+                unsigned int rows)
 {
    if (EINA_UNLIKELY((cols == 0) || (rows == 0))) { return; }
 
    s_termview *const sd = evas_object_smart_data_get(obj);
-   evas_object_textgrid_size_set(sd->textgrid, (int)cols, (int)rows);
-   sd->cols = cols;
-   sd->rows = rows;
+
 
    /* When we resize the termview, we have reset the scrolling region to the
     * whole termview. */
@@ -671,17 +686,18 @@ termview_resize(Evas_Object *obj,
       .h = (int)rows - 1,
    };
    termview_scroll_region_set(obj, &region);
+   nvim_api_ui_try_resize(sd->nvim, cols, rows);
+}
 
-   /*
-    * If request is TRUE, it means that the resizing request comes from neovim
-    * itself. It would make no sense to tell back neovim we want to resize the
-    * ui to the value it gave us.
-    * When this value is FALSE, it is a request from the window manager (the
-    * user manually resized a window). In this case, we tell neovim its display
-    * space has changed
-    */
-   if (! request)
-     nvim_api_ui_try_resize(sd->nvim, cols, rows);
+void
+termview_resized_confirm(Evas_Object *obj,
+                         unsigned int cols,
+                         unsigned int rows)
+{
+   /* Update the neovim columns and rows */
+   s_termview *const sd = evas_object_smart_data_get(obj);
+   sd->nvim_rows = rows;
+   sd->nvim_cols = cols;
 }
 
 void
@@ -735,6 +751,8 @@ termview_put(Evas_Object *obj,
 {
    s_termview *const sd = evas_object_smart_data_get(obj);
 
+   if (EINA_UNLIKELY(_unfinished_resizing_is(sd))) { return; }
+
    Evas_Textgrid_Cell *const cells = evas_object_textgrid_cellrow_get(
       sd->textgrid, (int)sd->y
    );
@@ -780,6 +798,9 @@ termview_cursor_goto(Evas_Object *obj,
                      unsigned int to_y)
 {
    s_termview *const sd = evas_object_smart_data_get(obj);
+
+   if (EINA_UNLIKELY(_unfinished_resizing_is(sd))) { return; }
+
    if (EINA_UNLIKELY(to_y > sd->rows))
      {
         ERR("Attempt to move cursor outside of known height.");

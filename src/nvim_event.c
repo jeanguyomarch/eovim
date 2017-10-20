@@ -167,10 +167,10 @@ nvim_event_resize(s_nvim *nvim,
    CHECK_ARGS_COUNT(params, ==, 2);
 
    t_int rows, columns;
-   GET_ARG(params, 0, t_int, &rows);
-   GET_ARG(params, 1, t_int, &columns);
+   GET_ARG(params, 0, t_int, &columns);
+   GET_ARG(params, 1, t_int, &rows);
 
-   gui_resize(&nvim->gui, (unsigned int)rows, (unsigned int)columns);
+   gui_resized_confirm(&nvim->gui, (unsigned int)columns, (unsigned int)rows);
    return EINA_TRUE;
 }
 
