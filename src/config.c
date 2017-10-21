@@ -26,7 +26,7 @@
 #include <Ecore_File.h>
 #include <Efreet.h>
 
-#define CONFIG_VERSION 2
+#define CONFIG_VERSION 3
 
 static Eet_Data_Descriptor *_edd = NULL;
 static const char _key[] = "eovim/config";
@@ -51,6 +51,8 @@ config_init(void)
    EDD_BASIC_ADD(font_name, EET_T_STRING);
    EDD_BASIC_ADD(mute_bell, EET_T_UCHAR);
    EDD_BASIC_ADD(key_react, EET_T_UCHAR);
+   EDD_BASIC_ADD(ext_popup, EET_T_UCHAR);
+   EDD_BASIC_ADD(true_colors, EET_T_UCHAR);
 
    return EINA_TRUE;
 }
@@ -89,6 +91,20 @@ config_key_react_set(s_config *config,
    config->key_react = !!react;
 }
 
+void
+config_ext_popup_set(s_config *config,
+                     Eina_Bool pop)
+{
+   config->ext_popup = !!pop;
+}
+
+void
+config_true_colors_set(s_config *config,
+                       Eina_Bool true_colors)
+{
+   config->true_colors = !!true_colors;
+}
+
 static s_config *
 _config_new(void)
 {
@@ -104,6 +120,8 @@ _config_new(void)
    config->font_size = 12;
    config->mute_bell = EINA_FALSE;
    config->key_react = EINA_TRUE;
+   config->true_colors = EINA_TRUE;
+   config->ext_popup = EINA_TRUE;
 
    return config;
 }
@@ -175,6 +193,10 @@ config_load(const char *file)
            case 0: /* Fall through */
            case 1:
               cfg->key_react = EINA_TRUE;
+              /* Fall through */
+           case 2:
+              cfg->true_colors = EINA_TRUE;
+              cfg->ext_popup = EINA_TRUE;
               /* Fall through */
            default:
               break;

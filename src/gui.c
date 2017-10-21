@@ -381,9 +381,8 @@ gui_update_fg(s_gui *gui,
 {
    if (color >= 0)
      {
-        const Eina_Bool true_colors = ! gui->nvim->opts->termcolors;
         const s_termview_color col =
-           termview_color_decompose((uint32_t)color, true_colors);
+           termview_color_decompose((uint32_t)color, gui->nvim->true_colors);
         termview_fg_color_set(gui->termview, col.r, col.g, col.b, col.a);
      }
 }
@@ -394,9 +393,8 @@ gui_update_bg(s_gui *gui,
 {
    if (color >= 0)
      {
-        const Eina_Bool true_colors = ! gui->nvim->opts->termcolors;
         const s_termview_color col =
-           termview_color_decompose((uint32_t)color, true_colors);
+           termview_color_decompose((uint32_t)color, gui->nvim->true_colors);
         gui_bg_color_set(gui, col.r, col.g, col.b, col.a);
      }
 }

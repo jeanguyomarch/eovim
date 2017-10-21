@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration option to disable key flickering in the theme.
 - Eovim defines `g:eovim_running` to 1, and makes it available to Neovim.
 - The `-g` option allows to set the initial size of the eovim window.
+- Preference option to enable/disable the completion externalization.
+- Preference option to enable/disable the true colors mode.
 
 ### Changed
 
@@ -27,10 +29,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - The _delete_ key is now correctly passed to neovim.
 - Invalid scrolling in some cases.
+- Resizing issues.
 
 ### Removed
 
 - The unified background settings.
+- The `--termcolors` (`-T`) option has been removed in favor of a configuration option.
 
 
 ## 0.1.0 - 2017-10-02

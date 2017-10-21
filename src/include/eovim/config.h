@@ -33,6 +33,8 @@ struct config
    Eina_Stringshare *font_name;
    Eina_Bool mute_bell;
    Eina_Bool key_react;
+   Eina_Bool ext_popup;
+   Eina_Bool true_colors;
 
    /* Internals */
    char *path;
@@ -46,6 +48,8 @@ void config_font_size_set(s_config *config, unsigned int font_size);
 void config_font_name_set(s_config *config, Eina_Stringshare *font_name);
 void config_bell_mute_set(s_config *config, Eina_Bool mute);
 void config_key_react_set(s_config *config, Eina_Bool react);
+void config_ext_popup_set(s_config *config, Eina_Bool pop);
+void config_true_colors_set(s_config *config, Eina_Bool true_colors);
 s_config *config_load(const char *filename);
 
 #endif /* ! __EOVIM_CONFIG_H__ */

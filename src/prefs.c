@@ -23,6 +23,7 @@
 #include "eovim/prefs.h"
 #include "eovim/config.h"
 #include "eovim/nvim.h"
+#include "eovim/nvim_api.h"
 #include "eovim/log.h"
 #include "eovim/gui.h"
 #include "contrib/contrib.h"
@@ -374,6 +375,85 @@ _theme_prefs_new(s_gui *gui)
    return box;
 }
 
+/*============================================================================*
+ *                           Neovim Preferences Page                          *
+ *============================================================================*/
+
+static Evas_Object *
+_nvim_prefs_check_add(Evas_Object *table,
+                      const char *text,
+                      int row)
+{
+   Evas_Object *const chk = elm_check_add(table);
+   elm_object_style_set(chk, "toggle");
+   elm_table_pack(table, chk, 1, row, 1, 1);
+   evas_object_show(chk);
+
+   Evas_Object *const label = elm_label_add(table);
+   evas_object_size_hint_align_set(label, 1.0, EVAS_HINT_FILL);
+   elm_object_text_set(label, text);
+   elm_table_pack(table, label, 0, row, 1, 1);
+   evas_object_show(label);
+
+   return chk;
+}
+
+static void
+_true_colors_changed_cb(void *data,
+                        Evas_Object *obj,
+                        void *info EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   const Eina_Bool cols = elm_check_state_get(obj);
+   config_true_colors_set(gui->nvim->config, cols);
+}
+
+static void
+_ext_popup_changed_cb(void *data,
+                      Evas_Object *obj,
+                      void *info EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   const Eina_Bool ext = elm_check_state_get(obj);
+   config_ext_popup_set(gui->nvim->config, ext);
+}
+
+static Evas_Object *
+_nvim_prefs_new(s_gui *gui)
+{
+   const s_config *const config = gui->nvim->config;
+   int row = 0;
+
+   /* Frame container */
+   Evas_Object *const f = _frame_add(gui->prefs.nav, "Neovim Plug Settings");
+   Evas_Object *const table = elm_table_add(f);
+   elm_table_align_set(table, 0.5, 0.0);
+   evas_object_show(table);
+
+   /* True colors switch */
+   Evas_Object *const cols = _nvim_prefs_check_add(table, "Use True Colors", row++);
+   evas_object_smart_callback_add(cols, "changed", _true_colors_changed_cb, gui);
+   elm_check_state_set(cols, config->true_colors);
+   evas_object_show(cols);
+
+   /* Completion popup switch */
+   Evas_Object *const compl = _nvim_prefs_check_add(table, "Externalize Completion Popup", row++);
+   evas_object_smart_callback_add(compl, "changed", _ext_popup_changed_cb, gui);
+   elm_check_state_set(compl, config->ext_popup);
+   evas_object_show(compl);
+
+   /* Message */
+   Evas_Object *const info = elm_label_add(table);
+   elm_object_text_set(info, "<br><warning><big>"
+                       "You must restart Eovim to take into account your "
+                       "modifications on this page.</big/</warning>");
+   elm_table_pack(table, info, 0, row, 2, 1);
+   evas_object_show(info);
+
+   elm_object_content_set(f, table);
+   return f;
+}
+
 static Elm_Object_Item *
 _push_nav_item(s_gui *gui, Evas_Object *contents)
 {
@@ -410,6 +490,7 @@ prefs_show(s_gui *gui)
    /* Create the pages */
    Elm_Object_Item *const p1 = _push_nav_item(gui, _theme_prefs_new(gui));
    Elm_Object_Item *const p2 = _push_nav_item(gui, _font_prefs_new(gui));
+   Elm_Object_Item *const p3 = _push_nav_item(gui, _nvim_prefs_new(gui));
 
    /* Associate one item data in the segment control to each page */
    Elm_Object_Item *it, *it_init;
@@ -417,6 +498,8 @@ prefs_show(s_gui *gui)
    elm_object_item_data_set(it_init, p1);
    it = elm_segment_control_item_add(sec, NULL, "Font");
    elm_object_item_data_set(it, p2);
+   it = elm_segment_control_item_add(sec, NULL, "Neovim");
+   elm_object_item_data_set(it, p3);
 
    /* We select theme by default */
    elm_segment_control_item_selected_set(it_init, EINA_TRUE);

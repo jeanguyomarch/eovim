@@ -59,7 +59,6 @@ typedef struct
    Eina_Bool restricted;
    Eina_Bool no_swap;
    Eina_Bool no_plugins;
-   Eina_Bool termcolors;
    Eina_Bool fullscreen;
 } s_nvim_options;
 
@@ -84,6 +83,7 @@ struct nvim
 
    Eina_UStrbuf *decode;
    Eina_Bool mouse_enabled;
+   Eina_Bool true_colors;
 };
 
 

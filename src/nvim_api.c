@@ -21,6 +21,7 @@
  */
 
 #include "eovim/types.h"
+#include "eovim/config.h"
 #include "eovim/log.h"
 #include "eovim/nvim_api.h"
 #include "eovim/nvim_event.h"
@@ -140,7 +141,8 @@ void nvim_api_request_call(s_nvim *nvim,
 
 Eina_Bool
 nvim_api_ui_attach(s_nvim *nvim,
-                   unsigned int width, unsigned int height)
+                   unsigned int width,
+                   unsigned int height)
 {
    const char api[] = "nvim_ui_attach";
    s_request *const req = _request_new(nvim, api, sizeof(api) - 1);
@@ -150,21 +152,36 @@ nvim_api_ui_attach(s_nvim *nvim,
         return EINA_FALSE;
      }
 
+   const s_config *const cfg = nvim->config;
+
    msgpack_packer *const pk = &nvim->packer;
    msgpack_pack_array(pk, 3);
    msgpack_pack_int64(pk, width);
    msgpack_pack_int64(pk, height);
 
-   /* Pack the options */
+   /* Pack the options. There are 2: rgb & ext_popupmenu. */
    msgpack_pack_map(pk, 2);
-   msgpack_pack_str(pk, 3); /* 'rgb' key */
-   msgpack_pack_str_body(pk, "rgb", 3);
-   /* 'rgb' value */
-   if (nvim->opts->termcolors) msgpack_pack_false(pk);
-   else  msgpack_pack_true(pk);
-   msgpack_pack_str(pk, 13); /* 'ext_popupmenu' key */
-   msgpack_pack_str_body(pk, "ext_popupmenu", 13);
-   msgpack_pack_true(pk); /* 'ext_popupmenu' value */
+
+   /* Pack the RGB option (boolean) */
+     {
+        const char key[] = "rgb";
+        const size_t len = sizeof(key) - 1;
+        msgpack_pack_str(pk, len);
+        msgpack_pack_str_body(pk, key, len);
+        if (cfg->true_colors) msgpack_pack_true(pk);
+        else msgpack_pack_false(pk);
+        nvim->true_colors = cfg->true_colors;
+     }
+
+   /* Pack the External popupmemnu */
+     {
+        const char key[] = "ext_popupmenu";
+        const size_t len = sizeof(key) - 1;
+        msgpack_pack_str(pk, len);
+        msgpack_pack_str_body(pk, key, len);
+        if (cfg->ext_popup) msgpack_pack_true(pk);
+        else msgpack_pack_false(pk);
+     }
 
    return _request_send(nvim, req);
 }
