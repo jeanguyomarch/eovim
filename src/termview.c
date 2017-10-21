@@ -407,7 +407,8 @@ _termview_key_down_cb(void *data,
 
    if (nvim_compose)
      {
-        const char *const key = keymap ? keymap->name : ev->key;
+        const char *const key = keymap ? keymap->name : ev->string;
+        if (! key) { return; }
         /* If we can compose, create an aggregate string we will send to
          * neovim. */
         send_size = (unsigned int)snprintf(buf, sizeof(buf), "<%c-%s>",
