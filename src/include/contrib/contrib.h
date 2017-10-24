@@ -7,9 +7,12 @@
 #ifndef __CONTRIB_CONTRIB_H__
 #define __CONTRIB_CONTRIB_H__
 
+#include <Eina.h>
+
 int
 contrib_parse_font_name(const char *full_name,
                         const char **name, const char **pretty_name);
 
+Eina_Bool contrib_key_is_modifier(const char *key);
 
 #endif /* ! __CONTRIB_CONTRIB_H__ */

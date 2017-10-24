@@ -23,7 +23,7 @@ configure_file(
 find_package(Eina REQUIRED)
 find_package(Eet REQUIRED)
 find_package(Evas REQUIRED)
-find_package(Ecore REQUIRED COMPONENTS File)
+find_package(Ecore REQUIRED COMPONENTS File Input)
 find_package(Edje REQUIRED)
 find_package(Efreet REQUIRED)
 find_package(Elementary REQUIRED)
@@ -78,6 +78,7 @@ target_include_directories(eovim
    ${EDJE_INCLUDE_DIRS}
    ${ECORE_INCLUDE_DIRS}
    ${ECORE_FILE_INCLUDE_DIRS}
+   ${ECORE_INPUT_INCLUDE_DIRS}
    ${EFREET_INCLUDE_DIRS}
    ${ELEMENTARY_INCLUDE_DIRS}
    ${MSGPACK_INCLUDE_DIRS}
@@ -94,6 +95,7 @@ target_link_libraries(eovim
    ${EDJE_LIBRARIES}
    ${ECORE_LIBRARIES}
    ${ECORE_FILE_LIBRARIES}
+   ${ECORE_INPUT_LIBRARIES}
    ${EFREET_LIBRARIES}
    ${ELEMENTARY_LIBRARIES}
    ${MSGPACK_LIBRARIES}

@@ -20,6 +20,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include "contrib/contrib.h"
 #include "eovim/termview.h"
 #include "eovim/log.h"
 #include "eovim/main.h"
@@ -31,6 +32,7 @@
 #include "eovim/nvim.h"
 
 #include <Edje.h>
+#include <Ecore_Input.h>
 
 enum
 {
@@ -99,9 +101,103 @@ struct termview
    unsigned int y; /**< Cursor Y */
    const s_mode *mode;
    f_cursor_calc cursor_calc;
+
+   Eina_List *seq_compose;
 };
 
 #include "termcolors.x"
+
+
+static void
+_keys_send(s_termview *sd,
+           const char *keys,
+           unsigned int size)
+{
+   const s_config *const config = sd->nvim->config;
+   nvim_api_input(sd->nvim, keys, size);
+   if (config->key_react)
+     edje_object_signal_emit(sd->cursor, "key,down", "eovim");
+}
+
+
+static inline Eina_Bool
+_composing_is(const s_termview *sd)
+{
+   /* Composition is pending if the seq_compose list is not empty */
+   return (sd->seq_compose == NULL) ? EINA_FALSE : EINA_TRUE;
+}
+
+static inline void
+_composition_reset(s_termview *sd)
+{
+   /* Discard all elements within the list */
+   char *str;
+   EINA_LIST_FREE(sd->seq_compose, str)
+      eina_stringshare_del(str);
+}
+
+static inline void
+_composition_add(s_termview *sd, const char *key)
+{
+   /* Add the key as a stringshare in the seq list. Hence, starting the
+    * composition */
+   Eina_Stringshare *const shr = eina_stringshare_add(key);
+   sd->seq_compose = eina_list_append(sd->seq_compose, shr);
+}
+
+/*
+ * This function returns EINA_TRUE when the key was handled within this
+ * functional unit. When it returns EINA_FALSE, the caller should handle the
+ * key itself.
+ */
+static Eina_Bool
+_compose(s_termview *sd, const char *key)
+{
+  if (_composing_is(sd))
+    {
+       char *res = NULL;
+
+       /* When composition is enabled, we want to skip modifiers, and only feed
+        * non-modified keys to the composition engine */
+       if (contrib_key_is_modifier(key))
+         return EINA_TRUE;
+
+       /* Add the current key to the composition list, and compute */
+       _composition_add(sd, key);
+       const Ecore_Compose_State state = ecore_compose_get(sd->seq_compose, &res);
+       if (state == ECORE_COMPOSE_DONE)
+         {
+            /* We composed! Write the composed key! */
+            _composition_reset(sd);
+            if (EINA_LIKELY(NULL != res))
+              {
+                 _keys_send(sd, res, (unsigned int)strlen(res));
+                 free(res);
+                 return EINA_TRUE;
+              }
+         }
+       else if (state == ECORE_COMPOSE_NONE)
+         {
+            /* The composition yield nothing. Reset */
+            _composition_reset(sd);
+         }
+    }
+  else /* Not composing yet */
+    {
+       /* Add the key to the composition engine */
+       _composition_add(sd, key);
+       const Ecore_Compose_State state = ecore_compose_get(sd->seq_compose, NULL);
+       if (state != ECORE_COMPOSE_MIDDLE)
+         {
+            /* Nope, this does not allow composition */
+            _composition_reset(sd);
+         }
+       else { return EINA_TRUE; } /* Composing.... */
+    }
+
+  /* Delegate the key to the caller */
+  return EINA_FALSE;
+}
 
 static inline Eina_Bool
 _unfinished_resizing_is(const s_termview *sd)
@@ -362,6 +458,11 @@ _termview_key_down_cb(void *data,
    char buf[32];
    const char *send;
 
+   /* Try the composition. When this function returns EINA_TRUE, it already
+    * worked out, nothing more to do. */
+   if (_compose(sd, ev->key))
+     return;
+
    /* Skip the AltGr key. */
    if (!strcmp(ev->key, "ISO_Level3_Shift") ||
        !strcmp(ev->key, "AltGr"))
@@ -437,12 +538,7 @@ _termview_key_down_cb(void *data,
 
    /* If a key is availabe pass it to neovim and update the ui */
    if (EINA_LIKELY(send_size > 0))
-     {
-        const s_config *const config = sd->nvim->config;
-        nvim_api_input(sd->nvim, send, send_size);
-        if (config->key_react)
-           edje_object_signal_emit(sd->cursor, "key,down", "eovim");
-     }
+     _keys_send(sd, send, send_size);
    else
      DBG("Unhandled key '%s'", ev->key);
 }
