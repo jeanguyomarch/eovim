@@ -131,7 +131,7 @@ static inline void
 _composition_reset(s_termview *sd)
 {
    /* Discard all elements within the list */
-   char *str;
+   Eina_Stringshare *str;
    EINA_LIST_FREE(sd->seq_compose, str)
       eina_stringshare_del(str);
 }
