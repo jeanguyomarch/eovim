@@ -632,6 +632,7 @@ _smart_del(Evas_Object *obj)
    evas_object_del(sd->textgrid);
    evas_object_del(sd->cursor);
    eina_hash_free(sd->palettes);
+   _composition_reset(sd);
 }
 
 static void
