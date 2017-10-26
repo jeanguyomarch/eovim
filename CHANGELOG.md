@@ -5,6 +5,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+
+## [0.1.1] - 2017-10-26
+
 ### Added
 
 - Round0 implementation of the completion popup.
@@ -19,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - The `-g` option allows to set the initial size of the eovim window.
 - Preference option to enable/disable the completion externalization.
 - Preference option to enable/disable the true colors mode.
+- Composition with dead keys.
 
 ### Changed
 
@@ -46,4 +50,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Initial theme (default).
 
 
-[Unreleased]: https://github.com/jeanguyomarch/eovim/compare/v0.1.0...master
+[Unreleased]: https://github.com/jeanguyomarch/eovim/compare/v0.1.1...master
+[0.1.1]: https://github.com/jeanguyomarch/eovim/compare/v0.1.0...v0.1.1
