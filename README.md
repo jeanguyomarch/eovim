@@ -35,10 +35,13 @@ following installation procedure:
 ```bash
 ./scripts/get-msgpack.sh # Optional, but advised.
 mkdir -p build && cd build
-cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 cmake --build .
 cmake --build . --target install # Possibly as root (i.e. via sudo)
 ```
+
+If we want to run `eovim` without installing it, please refer to the
+**Hacking** section.
 
 # Usage
 
