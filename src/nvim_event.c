@@ -63,9 +63,25 @@ typedef enum
    KW_MODES_END = KW_MODE_NORMAL,
 } e_kw;
 
-/* Events table */
-static Eina_Hash *_callbacks = NULL;
+typedef struct
+{
+   Eina_Stringshare *name; /**< Name of the method */
+   Eina_Hash *callbacks; /**< Table of callbacks associated with the method */
+} s_method;
 
+typedef enum
+{
+   E_METHOD_REDRAW, /**< The "redraw" method */
+
+   __E_METHOD_LAST
+} e_method;
+
+/* Array of callbacks for each method. It is NOT a hash table as we will support
+ * (for now) very little number of methods (around two). It is much faster to
+ * search sequentially among arrays of few cells than a map of two. */
+static s_method _methods[__E_METHOD_LAST];
+
+/* Cache of stringshared keywords */
 static Eina_Stringshare *_keywords[__KW_LAST];
 #define KW(Name) _keywords[Name]
 
@@ -764,60 +780,164 @@ nvim_event_tabline_update(s_nvim *nvim EINA_UNUSED,
 
 Eina_Bool
 nvim_event_dispatch(s_nvim *nvim,
+                    Eina_Stringshare *method_name,
                     Eina_Stringshare *command,
                     const msgpack_object_array *args)
 {
-   const f_event_cb cb = eina_hash_find(_callbacks, command);
-   if (EINA_UNLIKELY(! cb))
+   /* Go sequentially through the list of methods we know about, so we can
+    * find out the callbacks table for that method, to try to find what matches
+    * 'command'. */
+   for (unsigned int i = 0; i < EINA_C_ARRAY_LENGTH(_methods); i++)
      {
-        CRI("Failed to get callback for command '%s'", command);
-        return EINA_FALSE;
+        const s_method *const method = &(_methods[i]);
+        if (method->name == method_name) /* Fond the method */
+          {
+             /* Grab the callback for the command. If we could find none,
+              * that's an error. Otherwise we call it. In both cases, the
+              * execution of the function will be terminated. */
+             const f_event_cb cb = eina_hash_find(method->callbacks, command);
+             if (EINA_UNLIKELY(! cb))
+               {
+                  CRI("Failed to get callback for command '%s' of method '%s'",
+                      command, method_name);
+                  return EINA_FALSE;
+               }
+             else
+               return cb(nvim, args);
+          }
      }
-   return cb(nvim, args);
+
+   /* At this point, we didn't find the method. */
+   CRI("Unknown method '%s'", method_name);
+   return EINA_FALSE;
 }
 
+
+typedef struct
+{
+   const char *const name; /**< Name of the event */
+   const unsigned int size; /**< Size of @p name */
+   const f_event_cb func; /**< Callback function */
+} s_method_ctor;
+
+#define CB_CTOR(Name, Func) \
+   { .name = (Name), .size = sizeof(Name) - 1, .func = (Func) }
+
+static Eina_Hash *
+_method_callbacs_table_build(const s_method_ctor *ctors,
+                             unsigned int ctors_count)
+{
+   /* Generate a hash table that will contain the callbacks to be called for
+    * each event sent by neovim. */
+   Eina_Hash *const cb = eina_hash_stringshared_new(NULL);
+   if (EINA_UNLIKELY(! cb))
+     {
+        CRI("Failed to create hash table to hold callbacks");
+        goto fail;
+     }
+
+   /*
+    * Add the events in the hash table. It is the data descriptor that is
+    * templated and not this function, as this will yield more compact code.
+    */
+   for (unsigned int i = 0; i < ctors_count; i++)
+     {
+        Eina_Stringshare *const cmd = eina_stringshare_add_length(
+           ctors[i].name, ctors[i].size
+        );
+        if (EINA_UNLIKELY(! cmd))
+          {
+             CRI("Failed to create stringshare from '%s', size %u",
+                 ctors[i].name, ctors[i].size);
+             goto hash_fail;
+          }
+        if (! eina_hash_add(cb, cmd, ctors[i].func))
+          {
+             CRI("Failed to register callback %p for command '%s'",
+                 ctors[i].func, cmd);
+             eina_stringshare_del(cmd);
+             goto hash_fail;
+          }
+     }
+
+   return cb;
+hash_fail:
+   eina_hash_free(cb);
+fail:
+   return NULL;
+}
+
+static void
+_method_free(s_method *method)
+{
+   /* This function is always used on statically-allocated containers.
+    * As such, free() should not be called on 'method' */
+   eina_stringshare_del(method->name);
+   eina_hash_free(method->callbacks);
+}
+
+static Eina_Bool
+_method_redraw_init(s_method *method)
+{
+   const s_method_ctor ctors[] = {
+      CB_CTOR("resize", nvim_event_resize),
+      CB_CTOR("clear", nvim_event_clear),
+      CB_CTOR("eol_clear", nvim_event_eol_clear),
+      CB_CTOR("cursor_goto", nvim_event_cursor_goto),
+      CB_CTOR("mode_info_set", nvim_event_mode_info_set),
+      CB_CTOR("update_menu", nvim_event_update_menu),
+      CB_CTOR("busy_start", nvim_event_busy_start),
+      CB_CTOR("busy_stop", nvim_event_busy_stop),
+      CB_CTOR("mouse_on", nvim_event_mouse_on),
+      CB_CTOR("mouse_off", nvim_event_mouse_off),
+      CB_CTOR("mode_change", nvim_event_mode_change),
+      CB_CTOR("set_scroll_region", nvim_event_set_scroll_region),
+      CB_CTOR("scroll", nvim_event_scroll),
+      CB_CTOR("highlight_set", nvim_event_highlight_set),
+      CB_CTOR("put", nvim_event_put),
+      CB_CTOR("bell", nvim_event_bell),
+      CB_CTOR("visual_bell", nvim_event_visual_bell),
+      CB_CTOR("update_fg", nvim_event_update_fg),
+      CB_CTOR("update_bg", nvim_event_update_bg),
+      CB_CTOR("update_sp", nvim_event_update_sp),
+      CB_CTOR("suspend", nvim_event_suspend),
+      CB_CTOR("set_title", nvim_event_set_title),
+      CB_CTOR("set_icon", nvim_event_set_icon),
+      CB_CTOR("popupmenu_show", nvim_event_popupmenu_show),
+      CB_CTOR("popupmenu_hide", nvim_event_popupmenu_hide),
+      CB_CTOR("popupmenu_select", nvim_event_popupmenu_select),
+      CB_CTOR("tabline_update", nvim_event_tabline_update),
+   };
+
+   /* Register the name of the method as a stringshare */
+   const char name[] = "redraw";
+   method->name = eina_stringshare_add_length(name, sizeof(name) - 1);
+   if (EINA_UNLIKELY(! method->name))
+     {
+        CRI("Failed to create stringshare from string '%s'", name);
+        goto fail;
+     }
+
+   /* Build the callbacks table of the method */
+   method->callbacks =
+      _method_callbacs_table_build(ctors, EINA_C_ARRAY_LENGTH(ctors));
+   if (EINA_UNLIKELY(! method->callbacks))
+     {
+        CRI("Failed to create table of callbacks");
+        goto free_name;
+     }
+
+   return EINA_TRUE;
+free_name:
+   eina_stringshare_del(method->name);
+fail:
+   return EINA_FALSE;
+}
 
 
 Eina_Bool
 nvim_event_init(void)
 {
-   struct {
-      const char *const name;
-      const unsigned int size;
-      const f_event_cb func;
-   } const ctor[] = {
-#define CB(Name, Func) { .name = Name, .size = sizeof(Name) - 1, .func = Func }
-
-      CB("resize", nvim_event_resize),
-      CB("clear", nvim_event_clear),
-      CB("eol_clear", nvim_event_eol_clear),
-      CB("cursor_goto", nvim_event_cursor_goto),
-      CB("mode_info_set", nvim_event_mode_info_set),
-      CB("update_menu", nvim_event_update_menu),
-      CB("busy_start", nvim_event_busy_start),
-      CB("busy_stop", nvim_event_busy_stop),
-      CB("mouse_on", nvim_event_mouse_on),
-      CB("mouse_off", nvim_event_mouse_off),
-      CB("mode_change", nvim_event_mode_change),
-      CB("set_scroll_region", nvim_event_set_scroll_region),
-      CB("scroll", nvim_event_scroll),
-      CB("highlight_set", nvim_event_highlight_set),
-      CB("put", nvim_event_put),
-      CB("bell", nvim_event_bell),
-      CB("visual_bell", nvim_event_visual_bell),
-      CB("update_fg", nvim_event_update_fg),
-      CB("update_bg", nvim_event_update_bg),
-      CB("update_sp", nvim_event_update_sp),
-      CB("suspend", nvim_event_suspend),
-      CB("set_title", nvim_event_set_title),
-      CB("set_icon", nvim_event_set_icon),
-      CB("popupmenu_show", nvim_event_popupmenu_show),
-      CB("popupmenu_hide", nvim_event_popupmenu_hide),
-      CB("popupmenu_select", nvim_event_popupmenu_select),
-      CB("tabline_update", nvim_event_tabline_update),
-#undef CB
-   };
-
    const char *const keywords[] = {
       [KW_FOREGROUND] = "foreground",
       [KW_BACKGROUND] = "background",
@@ -850,42 +970,14 @@ nvim_event_init(void)
           }
      }
 
-   /* Generate a hash table that will contain the callbacks to be called for
-    * each event sent by neovim. */
-   _callbacks = eina_hash_stringshared_new(NULL);
-   if (EINA_UNLIKELY(! _callbacks))
+   /* Initialize the "redraw" method */
+   if (EINA_UNLIKELY(! _method_redraw_init(&_methods[E_METHOD_REDRAW])))
      {
-        CRI("Failed to create hash table to hold callbacks");
+        CRI("Failed to setup the redraw method");
         goto fail;
-     }
-
-   /*
-    * Add the events in the hash table. It is the data descriptor that is
-    * templated and not this function, as this will yield more compact code.
-    */
-   for (unsigned int j = 0; j < EINA_C_ARRAY_LENGTH(ctor); j++)
-     {
-        Eina_Stringshare *const cmd = eina_stringshare_add_length(
-           ctor[j].name, ctor[j].size
-        );
-        if (EINA_UNLIKELY(! cmd))
-          {
-             CRI("Failed to create stringshare from '%s', size %u",
-                 ctor[j].name, ctor[j].size);
-             goto hash_fail;
-          }
-        if (! eina_hash_add(_callbacks, cmd, ctor[j].func))
-          {
-             CRI("Failed to register callback %p for command '%s'",
-                 ctor[j].func, cmd);
-             eina_stringshare_del(cmd);
-             goto hash_fail;
-          }
      }
    return EINA_TRUE;
 
-hash_fail:
-   eina_hash_free(_callbacks);
 fail:
    for (i--; i >= 0; i--)
      eina_stringshare_del(_keywords[i]);
@@ -896,8 +988,7 @@ void
 nvim_event_shutdown(void)
 {
    for (unsigned int i = 0; i < __KW_LAST; i++)
-     {
-        eina_stringshare_del(_keywords[i]);
-     }
-   eina_hash_free(_callbacks);
+     eina_stringshare_del(_keywords[i]);
+   for (unsigned int i = 0; i < EINA_C_ARRAY_LENGTH(_methods); i++)
+     _method_free(&(_methods[i]));
 }

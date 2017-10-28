@@ -161,7 +161,6 @@ _handle_notification(s_nvim *nvim,
         goto fail;
      }
    DBG("Received notification '%s'", method);
-   eina_stringshare_del(method); /* No need of it anymore... */
 
    /*
     * 3rd argument must be an array of objects
@@ -169,7 +168,7 @@ _handle_notification(s_nvim *nvim,
    if (EINA_UNLIKELY(args->ptr[2].type != MSGPACK_OBJECT_ARRAY))
      {
         ERR("Third argument in notification is expected to be an array");
-        goto fail;
+        goto del_method;
      }
    const msgpack_object_array *const args_arr = &(args->ptr[2].via.array);
    /*
@@ -198,11 +197,15 @@ _handle_notification(s_nvim *nvim,
              CRI("Failed to create stringshare from command object");
              continue; /* Try next element */
           }
-        nvim_event_dispatch(nvim, command, cmd);
+        nvim_event_dispatch(nvim, method, command, cmd);
         eina_stringshare_del(command);
      }
 
+   eina_stringshare_del(method);
    return EINA_TRUE;
+
+del_method:
+   eina_stringshare_del(method);
 fail:
    return EINA_FALSE;
 }
