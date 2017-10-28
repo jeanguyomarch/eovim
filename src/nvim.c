@@ -124,17 +124,23 @@ fail:
 }
 
 static Eina_Stringshare *
-_object_to_stringshare(const msgpack_object *obj)
+_stringshare_extract(const msgpack_object *obj)
 {
-   if (EINA_UNLIKELY(obj->type != MSGPACK_OBJECT_STR))
-     {
-        ERR("Object does not contain a string. Type is 0x%x", obj->type);
-        return NULL;
-     }
-   else
+   if (obj->type == MSGPACK_OBJECT_STR)
      {
         const msgpack_object_str *const str = &(obj->via.str);
         return eina_stringshare_add_length(str->ptr, str->size);
+     }
+   else if (obj->type == MSGPACK_OBJECT_BIN)
+     {
+        const msgpack_object_bin *const bin = &(obj->via.bin);
+        return eina_stringshare_add_length(bin->ptr, bin->size);
+     }
+   else
+     {
+        ERR("Second argument in notification is expected to be a string "
+            "(or BIN string), but it is of type 0x%x", obj->type);
+        return NULL;
      }
 }
 
@@ -143,17 +149,12 @@ _handle_notification(s_nvim *nvim,
                      const msgpack_object_array *args)
 {
    /*
-    * 2nd argument must be a string.
+    * 2nd argument must be a string (or bin string).
     * It contains the METHOD to be called for the notification.
     * We decore the string as a stringshare, to feed it to our table of
     * methods.
     */
-   if (EINA_UNLIKELY(args->ptr[1].type != MSGPACK_OBJECT_STR))
-     {
-        ERR("Second argument in notification is expected to be a string");
-        goto fail;
-     }
-   Eina_Stringshare *const method = _object_to_stringshare(&args->ptr[1]);
+   Eina_Stringshare *const method = _stringshare_extract(&(args->ptr[1]));
    if (EINA_UNLIKELY(! method))
      {
         CRI("Failed to create stringshare from Neovim method");
@@ -188,19 +189,10 @@ _handle_notification(s_nvim *nvim,
         const msgpack_object_array *const cmd = &(arg->via.array);
         if (EINA_UNLIKELY(cmd->size < 1))
           {
-             CRI("Expected at least one argument. Got %"PRIu32, cmd->size);
+             CRI("Expected at least one argument. Got zero.");
              continue; /* Try next element */
           }
-        const msgpack_object *const cmd_name_obj = &(cmd->ptr[0]);
-        if (EINA_UNLIKELY(cmd_name_obj->type != MSGPACK_OBJECT_STR))
-          {
-             CRI("Expected command to be of type string. Got 0x%x", arg->type);
-             continue; /* Try next element */
-          }
-        const msgpack_object_str *const cmd_obj = &(cmd_name_obj->via.str);
-        Eina_Stringshare *const command = eina_stringshare_add_length(
-           cmd_obj->ptr, cmd_obj->size
-        );
+        Eina_Stringshare *const command = _stringshare_extract(&(cmd->ptr[0]));
         if (EINA_UNLIKELY(! command))
           {
              CRI("Failed to create stringshare from command object");
