@@ -877,8 +877,9 @@ _method_free(s_method *method)
 }
 
 static Eina_Bool
-_method_redraw_init(s_method *method)
+_method_redraw_init(e_method method_id)
 {
+   s_method *const method = &(_methods[method_id]);
    const s_method_ctor ctors[] = {
       CB_CTOR("resize", nvim_event_resize),
       CB_CTOR("clear", nvim_event_clear),
@@ -971,11 +972,12 @@ nvim_event_init(void)
      }
 
    /* Initialize the "redraw" method */
-   if (EINA_UNLIKELY(! _method_redraw_init(&_methods[E_METHOD_REDRAW])))
+   if (EINA_UNLIKELY(! _method_redraw_init(E_METHOD_REDRAW)))
      {
         CRI("Failed to setup the redraw method");
         goto fail;
      }
+
    return EINA_TRUE;
 
 fail:
