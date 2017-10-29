@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Backspace is now always passed as `<BS>` to Eovim.
+
 
 ## [0.1.1] - 2017-10-26
 

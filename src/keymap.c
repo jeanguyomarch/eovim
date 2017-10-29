@@ -84,6 +84,7 @@ static const s_kv_keymap _map[] =
    KM_IDENT("F37"),
    KM_IDENT("Home"),
    KM_IDENT("End"),
+   KM("BackSpace", "BS"),
    KM("less", "lt"),
    KM("Prior", "PageUp"),
    KM("Next", "PageDown"),
