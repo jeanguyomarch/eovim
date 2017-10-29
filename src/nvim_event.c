@@ -72,6 +72,7 @@ typedef struct
 typedef enum
 {
    E_METHOD_REDRAW, /**< The "redraw" method */
+   E_METHOD_EOVIM, /**< The "eovim" method */
 
    __E_METHOD_LAST
 } e_method;
@@ -823,6 +824,38 @@ typedef struct
 #define CB_CTOR(Name, Func) \
    { .name = (Name), .size = sizeof(Name) - 1, .func = (Func) }
 
+static Eina_Bool
+_command_add(Eina_Hash *table,
+             const char *name,
+             unsigned int name_len,
+             f_event_cb func)
+{
+   /* Create the key to be inserted in the table */
+   Eina_Stringshare *const cmd = eina_stringshare_add_length(
+      name, name_len
+   );
+   if (EINA_UNLIKELY(! cmd))
+     {
+        CRI("Failed to create stringshare from '%s', size %u",
+            name, name_len);
+        goto fail;
+     }
+
+   /* Add the value 'func' to the key 'cmd' in the table */
+   if (EINA_UNLIKELY(! eina_hash_add(table, cmd, func)))
+     {
+        CRI("Failed to register callback %p for command '%s'",
+            func, cmd);
+        goto add_fail;
+     }
+
+   return EINA_TRUE;
+add_fail:
+   eina_stringshare_del(cmd);
+fail:
+   return EINA_FALSE;
+}
+
 static Eina_Hash *
 _method_callbacs_table_build(const s_method_ctor *ctors,
                              unsigned int ctors_count)
@@ -836,32 +869,20 @@ _method_callbacs_table_build(const s_method_ctor *ctors,
         goto fail;
      }
 
-   /*
-    * Add the events in the hash table. It is the data descriptor that is
-    * templated and not this function, as this will yield more compact code.
-    */
+   /* Add the events in the callbacks table. */
    for (unsigned int i = 0; i < ctors_count; i++)
      {
-        Eina_Stringshare *const cmd = eina_stringshare_add_length(
-           ctors[i].name, ctors[i].size
-        );
-        if (EINA_UNLIKELY(! cmd))
+        const Eina_Bool ok =
+           _command_add(cb, ctors[i].name, ctors[i].size, ctors[i].func);
+        if (EINA_UNLIKELY(! ok))
           {
-             CRI("Failed to create stringshare from '%s', size %u",
-                 ctors[i].name, ctors[i].size);
-             goto hash_fail;
-          }
-        if (! eina_hash_add(cb, cmd, ctors[i].func))
-          {
-             CRI("Failed to register callback %p for command '%s'",
-                 ctors[i].func, cmd);
-             eina_stringshare_del(cmd);
-             goto hash_fail;
+             CRI("Failed to register command '%s'", ctors[i].name);
+             goto hash_free;
           }
      }
 
    return cb;
-hash_fail:
+hash_free:
    eina_hash_free(cb);
 fail:
    return NULL;
@@ -872,8 +893,8 @@ _method_free(s_method *method)
 {
    /* This function is always used on statically-allocated containers.
     * As such, free() should not be called on 'method' */
-   eina_stringshare_del(method->name);
-   eina_hash_free(method->callbacks);
+   if (method->name) eina_stringshare_del(method->name);
+   if (method->callbacks) eina_hash_free(method->callbacks);
 }
 
 static Eina_Bool
@@ -935,6 +956,47 @@ fail:
    return EINA_FALSE;
 }
 
+static Eina_Bool
+_method_eovim_init(e_method method_id)
+{
+   s_method *const method = &(_methods[method_id]);
+
+   /* Register the name of the method as a stringshare */
+   const char name[] = "eovim";
+   method->name = eina_stringshare_add_length(name, sizeof(name) - 1);
+   if (EINA_UNLIKELY(! method->name))
+     {
+        CRI("Failed to create stringshare from string '%s'", name);
+        goto fail;
+     }
+
+   /* Create an empty the callbacks table of the method */
+   method->callbacks = eina_hash_stringshared_new(NULL);
+   if (EINA_UNLIKELY(! method->callbacks))
+     {
+        CRI("Failed to create table of callbacks");
+        goto free_name;
+     }
+
+   return EINA_TRUE;
+free_name:
+   eina_stringshare_del(method->name);
+fail:
+   return EINA_FALSE;
+}
+
+Eina_Bool
+nvim_event_plugin_register(const char *command,
+                           f_event_cb callback)
+{
+   /* Add the callback for the given command to the eovim method */
+   Eina_Hash *const table = _methods[E_METHOD_EOVIM].callbacks;
+   const Eina_Bool ok =
+      _command_add(table, command, (unsigned int)strlen(command), callback);
+   if (EINA_UNLIKELY(! ok))
+     CRI("Failed to register plugin event '%s'", command);
+   return ok;
+}
 
 Eina_Bool
 nvim_event_init(void)
@@ -975,11 +1037,21 @@ nvim_event_init(void)
    if (EINA_UNLIKELY(! _method_redraw_init(E_METHOD_REDRAW)))
      {
         CRI("Failed to setup the redraw method");
-        goto fail;
+        goto del_methods;
+     }
+
+   /* Initialize the "eovim" method */
+   if (EINA_UNLIKELY(! _method_eovim_init(E_METHOD_EOVIM)))
+     {
+        CRI("Failed to setup the eovim method");
+        goto del_methods;
      }
 
    return EINA_TRUE;
 
+del_methods:
+   for (unsigned int j = 0; j < EINA_C_ARRAY_LENGTH(_methods); j++)
+     _method_free(&(_methods[j]));
 fail:
    for (i--; i >= 0; i--)
      eina_stringshare_del(_keywords[i]);

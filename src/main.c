@@ -28,6 +28,7 @@
 #include "eovim/nvim_event.h"
 #include "eovim/termview.h"
 #include "eovim/main.h"
+#include "eovim/plugin.h"
 #include "eovim/log.h"
 #include "eovim/prefs.h"
 #include "eovim/version.h"
@@ -119,6 +120,7 @@ static const s_module _modules[] =
    MODULE(mode),
    MODULE(nvim_api),
    MODULE(nvim_event),
+   MODULE(plugin),
    MODULE(prefs),
    MODULE(gui),
    MODULE(termview),

@@ -54,6 +54,7 @@ Eina_Bool nvim_event_popupmenu_hide(s_nvim *nvim, const msgpack_object_array *ar
 Eina_Bool nvim_event_popupmenu_select(s_nvim *nvim, const msgpack_object_array *args);
 Eina_Bool nvim_event_tabline_update(s_nvim *nvim, const msgpack_object_array *args);
 
+Eina_Bool nvim_event_plugin_register(const char *command, f_event_cb callback);
 Eina_Bool nvim_event_dispatch(s_nvim *nvim, Eina_Stringshare *method_name,
                               Eina_Stringshare *command, const msgpack_object_array *args);
 Eina_Bool nvim_event_init(void);
