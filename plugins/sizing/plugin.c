@@ -34,4 +34,4 @@ EOVIM_PLUGIN_SYMBOL(eovim_sizing_eval);
 EINA_MODULE_LICENSE("MIT");
 EINA_MODULE_AUTHOR("Jean Guyomarc'h");
 EINA_MODULE_VERSION(EOVIM_VERSION);
-EINA_MODULE_DESCRIPTION("Sizing plugin to modifies the dimensions of Eovim from Neovim")
+EINA_MODULE_DESCRIPTION("Sizing plugin to modify the dimensions of Eovim")

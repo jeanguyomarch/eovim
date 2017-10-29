@@ -38,6 +38,7 @@ int _eovim_log_domain = -1;
 
 static Eina_Bool _in_tree = EINA_FALSE;
 static Eina_Strbuf *_edje_file = NULL;
+static Eina_Inlist *_plugins = NULL;
 
 static Eina_Bool
 _parse_geometry_cb(const Ecore_Getopt *parser EINA_UNUSED,
@@ -135,7 +136,7 @@ _edje_file_init(const char *theme)
    EINA_SAFETY_ON_NULL_RETURN_VAL(theme, EINA_FALSE);
 
    const char *const dir = main_in_tree_is()
-      ? BUILD_DATA_DIR 
+      ? BUILD_DATA_DIR
       : elm_app_data_dir_get();
 
    _edje_file = eina_strbuf_new();
@@ -158,6 +159,12 @@ const char *
 main_edje_file_get(void)
 {
    return eina_strbuf_string_get(_edje_file);
+}
+
+Eina_Inlist *
+main_plugins_get(void)
+{
+   return _plugins;
 }
 
 EAPI_MAIN int elm_main(int argc, char **argv);
@@ -224,6 +231,15 @@ elm_main(int argc,
         goto log_unregister;
      }
 
+#ifdef HAVE_PLUGINS
+   /* If plugin-is are supported, we enable the plugins as long as the
+    * --no-plugins option is NOT passed to eovim */
+   plugin_enabled_set(! opts.no_plugins);
+#else
+   /* Plugins are not supported, disable them */
+   plugin_enabled_set(EINA_FALSE);
+#endif
+
    /*
     * App settings
     */
@@ -256,27 +272,35 @@ elm_main(int argc,
              goto modules_shutdown;
           }
      }
-   /*
-    * Create the GUI client
-    */
+
+   /*=========================================================================
+    * Load the plugins
+    *========================================================================*/
+   _plugins = plugin_list_new();
+
+   /*=========================================================================
+    * Create the Neovim handler
+    *========================================================================*/
    s_nvim *const nvim = nvim_new(&opts, nvim_prog,
                                  (unsigned int)(argc - args),
                                  (const char *const *)(&argv[args]));
    if (EINA_UNLIKELY(! nvim))
      {
         CRI("Failed to create a NeoVim instance");
-        goto modules_shutdown;
+        goto plugins_shutdown;
      }
 
-   /*
-    * Run the main loop
-    */
+   /*=========================================================================
+    * Start the main loop
+    *========================================================================*/
    elm_run();
 
    nvim_free(nvim);
 
    /* Everything seemed to have run fine :) */
    return_code = EXIT_SUCCESS;
+plugins_shutdown:
+   plugin_list_free(_plugins);
 modules_shutdown:
    for (--mod_it; mod_it >= _modules; mod_it--)
      mod_it->shutdown();

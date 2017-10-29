@@ -24,6 +24,8 @@
 #include "eovim/config.h"
 #include "eovim/nvim.h"
 #include "eovim/nvim_api.h"
+#include "eovim/plugin.h"
+#include "eovim/main.h"
 #include "eovim/log.h"
 #include "eovim/gui.h"
 #include "contrib/contrib.h"
@@ -38,6 +40,7 @@ typedef struct
 static const double _font_min = 4.0;
 static const double _font_max = 72.0;
 static Elm_Genlist_Item_Class *_font_itc = NULL;
+static Elm_Genlist_Item_Class *_plug_itc = NULL;
 static const char *const _nvim_data_key = "nvim";
 
 /* This example test comples from the EFL (terminology). It allows to easily
@@ -323,6 +326,69 @@ fail:
    return NULL;
 }
 
+/*============================================================================*
+ *                            Plugins List Handling                           *
+ *============================================================================*/
+
+static char *
+_plug_text_get(void *data,
+               Evas_Object *obj EINA_UNUSED,
+               const char *part EINA_UNUSED)
+{
+   const s_plugin *const plug = data;
+   return strdup(plug->name);
+}
+
+static Evas_Object *
+_plug_content_get(void *data,
+                  Evas_Object *obj,
+                  const char *part)
+{
+   const s_plugin *const plug = data;
+   if (strcmp(part, "elm.swallow.end") != 0) { return NULL; }
+
+   Evas_Object *const ic = elm_icon_add(obj);
+   elm_image_resizable_set(ic, EINA_FALSE, EINA_FALSE);
+
+   /* Compose the path to the image that is used to indicate the status of
+    * the plugin (loaded or not)
+    */
+   const char *const dir = (main_in_tree_is())
+      ? SOURCE_DATA_DIR
+      : elm_app_data_dir_get();
+   const char *const file = (plug->loaded)
+      ? "led_light.png"
+      : "led_dark.png";
+   Eina_Strbuf *const buf = eina_strbuf_new();
+   if (EINA_UNLIKELY(! buf))
+     {
+        CRI("Failed to create string buffer");
+        evas_object_del(ic);
+        return NULL;
+     }
+   eina_strbuf_append_printf(buf, "%s/images/%s", dir, file);
+   elm_image_file_set(ic, eina_strbuf_string_get(buf), NULL);
+   eina_strbuf_free(buf);
+
+   return ic;
+}
+
+static void
+_plug_toggle(void *data EINA_UNUSED,
+             Evas_Object *obj,
+             void *info)
+{
+   Elm_Genlist_Item *const item = info;
+   s_plugin *const plug = elm_object_item_data_get(item);
+
+   /* If the plugin was loaded, unload it. If the plugin was not loaded, load
+    * it. After these operations refresh the genlist to observe the visual
+    * change */
+   if (plug->loaded) plugin_unload(plug);
+   else plugin_load(plug);
+   elm_genlist_realized_items_update(obj);
+}
+
 
 static void
 _page_change_cb(void *data EINA_UNUSED,
@@ -454,6 +520,39 @@ _nvim_prefs_new(s_gui *gui)
    return f;
 }
 
+static Evas_Object *
+_plugins_prefs_new(s_gui *gui)
+{
+   s_prefs *const prefs = &(gui->prefs);
+   Evas_Object *const box = _prefs_box_new(prefs->nav);
+   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+   /* Frame container */
+   Evas_Object *const f = _frame_add(box, "Plug-Ins List");
+   evas_object_size_hint_weight_set(f, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(f, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+   /* Genlist that contains the plugins */
+   Evas_Object *const list = elm_genlist_add(f);
+   evas_object_size_hint_weight_set(list, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(list, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_smart_callback_add(list, "clicked,double", _plug_toggle, NULL);
+
+   /* Load the genlist with the list of plugins */
+   const Eina_Inlist *const plugs = main_plugins_get();
+   s_plugin *plug;
+   EINA_INLIST_FOREACH(plugs, plug)
+     {
+        elm_genlist_item_append(
+           list, _plug_itc, plug, NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
+     }
+
+   elm_object_content_set(f, list);
+   elm_box_pack_end(box, f);
+   return box;
+}
+
 static Elm_Object_Item *
 _push_nav_item(s_gui *gui, Evas_Object *contents)
 {
@@ -474,6 +573,7 @@ prefs_show(s_gui *gui)
 
    /* Add a segment control that keeps track of all the pages */
    Evas_Object *const sec = elm_segment_control_add(box);
+   evas_object_size_hint_weight_set(sec, EVAS_HINT_EXPAND, 0.0);
    evas_object_size_hint_align_set(sec, 0.0, EVAS_HINT_FILL);
    evas_object_smart_callback_add(sec, "changed", _page_change_cb, gui);
    evas_object_show(sec);
@@ -491,6 +591,7 @@ prefs_show(s_gui *gui)
    Elm_Object_Item *const p1 = _push_nav_item(gui, _theme_prefs_new(gui));
    Elm_Object_Item *const p2 = _push_nav_item(gui, _font_prefs_new(gui));
    Elm_Object_Item *const p3 = _push_nav_item(gui, _nvim_prefs_new(gui));
+   Elm_Object_Item *const p4 = _push_nav_item(gui, _plugins_prefs_new(gui));
 
    /* Associate one item data in the segment control to each page */
    Elm_Object_Item *it, *it_init;
@@ -500,6 +601,8 @@ prefs_show(s_gui *gui)
    elm_object_item_data_set(it, p2);
    it = elm_segment_control_item_add(sec, NULL, "Neovim");
    elm_object_item_data_set(it, p3);
+   it = elm_segment_control_item_add(sec, NULL, "Plug-Ins");
+   elm_object_item_data_set(it, p4);
 
    /* We select theme by default */
    elm_segment_control_item_selected_set(it_init, EINA_TRUE);
@@ -534,11 +637,27 @@ prefs_init(void)
    _font_itc->func.content_get = _font_content_get;
    _font_itc->func.del = _font_item_del;
 
+   /* Plugins list item class */
+   _plug_itc = elm_genlist_item_class_new();
+   if (EINA_UNLIKELY(! _plug_itc))
+     {
+        CRI("Failed to create genlist item class");
+        goto font_del;
+     }
+   _plug_itc->item_style = "default";
+   _plug_itc->func.text_get = _plug_text_get;
+   _plug_itc->func.content_get = _plug_content_get;
+
    return EINA_TRUE;
+
+font_del:
+   elm_genlist_item_class_free(_font_itc);
+   return EINA_FALSE;
 }
 
 void
 prefs_shutdown(void)
 {
+   elm_genlist_item_class_free(_plug_itc);
    elm_genlist_item_class_free(_font_itc);
 }

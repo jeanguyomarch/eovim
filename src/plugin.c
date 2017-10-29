@@ -26,17 +26,6 @@
 #include "eovim/main.h"
 #include <Elementary.h>
 
-#ifdef HAVE_PLUGINS
-
-struct plugin
-{
-   EINA_INLIST;
-
-   Eina_Stringshare *name;
-   Eina_Module *module;
-   f_event_cb callback;
-};
-
 typedef enum
 {
    E_LOAD_PATH_IN_TREE,
@@ -46,6 +35,10 @@ typedef enum
 } e_load_path;
 
 static char *_load_paths[__E_LOAD_PATH_LAST];
+static Eina_Bool _enable_plugins = EINA_TRUE;
+
+#define PLUGIN_ENABLED_OR_RETURN(...) \
+   do { if (! _enable_plugins) { return __VA_ARGS__; } } while (0)
 
 static char *
 _paths_join(const char *dir,
@@ -94,6 +87,20 @@ _list_plugins_cb(const char *name,
         goto fail_free;
      }
 
+   /* Go through the plugins already registered, to check if we can add this
+    * plugin or if it has to be rejected */
+     {
+        s_plugin *plug_it;
+        EINA_INLIST_FOREACH(*list, plug_it)
+          {
+             if (plug_it->name == plug_name)
+               {
+                  WRN("Plugin '%s' is already registered", plug_name);
+                  goto fail_del;
+               }
+          }
+     }
+
    /* Create a new container for the plugin and add it to the list */
    s_plugin *const plug = calloc(1, sizeof(s_plugin));
    if (EINA_UNLIKELY(! plug))
@@ -116,8 +123,9 @@ _list_plugins_cb(const char *name,
    free(path);
    return;
 fail_free:
-   eina_stringshare_del(plug_name);
    free(plug);
+fail_del:
+   eina_stringshare_del(plug_name);
 fail:
    free(path);
 }
@@ -130,12 +138,6 @@ plugin_list_new(void)
      if (_load_paths[i] != NULL)
        eina_file_dir_list(_load_paths[i], EINA_FALSE, _list_plugins_cb, &list);
    return list;
-}
-
-s_plugin *
-plugin_get(Eina_Inlist *item)
-{
-   return EINA_INLIST_CONTAINER_GET(item, s_plugin);
 }
 
 void
@@ -154,6 +156,11 @@ plugin_list_free(Eina_Inlist *list)
 Eina_Bool
 plugin_load(s_plugin *plugin)
 {
+   /* Don't load plugins if plugins are disabled at run-time */
+   PLUGIN_ENABLED_OR_RETURN(EINA_FALSE);
+
+   if (plugin->loaded) { return EINA_TRUE; }
+
    /* Load the shared object */
    Eina_Bool ok = eina_module_load(plugin->module);
    if (EINA_UNLIKELY(! ok))
@@ -164,26 +171,43 @@ plugin_load(s_plugin *plugin)
 
    /* Retrieve eovim's entry point. Careful, it will be a pointer to a function
     * pointer, and as such must be dereferenced prior using it as a callback. */
-   const char symbol[] = "__eovim_plugin_symbol";
+   const char *const symbol = "__eovim_plugin_symbol";
    f_event_cb *const fptr = eina_module_symbol_get(plugin->module, symbol);
    if (EINA_UNLIKELY((!fptr) && (!(*fptr))))
      {
         CRI("Failed to load symbol '%s' from plugin '%s'", symbol, plugin->name);
-        eina_module_unload(plugin->module);
-        return EINA_FALSE;
+        goto unload;
      }
    plugin->callback = *fptr;
+
    /* Register it within Eovim's callbacks table */
-   return nvim_event_plugin_register(plugin->name, plugin->callback);
+   ok = nvim_event_plugin_register(plugin->name, plugin->callback);
+   if (EINA_UNLIKELY(! ok))
+     {
+        CRI("Failed to register plugin '%s'", plugin->name);
+        goto unload;
+     }
+   plugin->loaded = EINA_TRUE;
+
+   return EINA_TRUE;
+unload:
+   eina_module_unload(plugin->module);
+   return EINA_FALSE;
 }
 
 Eina_Bool
 plugin_unload(s_plugin *plugin)
 {
-   const Eina_Bool ok = eina_module_unload(plugin->module);
-   if (EINA_UNLIKELY(! ok))
-     CRI("Failed to unload plugin");
-   return ok;
+   PLUGIN_ENABLED_OR_RETURN(EINA_FALSE);
+   if (plugin->loaded)
+     {
+        const Eina_Bool ok = eina_module_unload(plugin->module);
+        if (EINA_UNLIKELY(! ok))
+          CRI("Failed to unload plugin");
+        else
+          plugin->loaded = EINA_FALSE;
+     }
+   return plugin->loaded;
 }
 
 Eina_Bool
@@ -224,22 +248,14 @@ plugin_shutdown(void)
      free(_load_paths[i]);
 }
 
-#else /* HAVE_PLUGINS */
-/*
- * Code below is when plugins support is disabled. Only init/shutdown shall be
- * implemented. The other functions must not be implemented. This serves as a
- * compile check to verify that we don't do shit in using the plugin module.
- */
+void
+plugin_enabled_set(Eina_Bool enabled)
+{
+   _enable_plugins = !!enabled;
+}
 
 Eina_Bool
-plugin_init(void)
+plugin_enabled_get(void)
 {
-   return EINA_TRUE;
+   return _enable_plugins;
 }
-
-void
-plugin_shutdown(void)
-{
-   /* Nothing to do */
-}
-#endif /* ! HAVE_PLUGINS */

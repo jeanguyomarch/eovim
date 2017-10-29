@@ -136,6 +136,7 @@ target_compile_definitions(eovim
    PACKAGE_BIN_DIR=\"${CMAKE_INSTALL_PREFIX}/bin\"
    PACKAGE_LIB_DIR=\"${CMAKE_INSTALL_PREFIX}/lib\"
    PACKAGE_DATA_DIR=\"${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}\"
+   SOURCE_DATA_DIR=\"${CMAKE_SOURCE_DIR}/data\"
    BUILD_DATA_DIR=\"${CMAKE_BINARY_DIR}\"
    BUILD_PLUGINS_DIR=\"${CMAKE_BINARY_DIR}/plugins\"
    LIB_SUFFIX=\"${LIB_SUFFIX}\"
@@ -149,6 +150,11 @@ install(
 install(
    FILES "${BUILD_THEMES_DIR}/default.edj"
    DESTINATION "share/${CMAKE_PROJECT_NAME}/themes"
+)
+install(FILES
+   "${CMAKE_SOURCE_DIR}/data/images/led_dark.png"
+   "${CMAKE_SOURCE_DIR}/data/images/led_light.png"
+   DESTINATION "share/${CMAKE_PROJECT_NAME}/images"
 )
 install(
    FILES "${CMAKE_SOURCE_DIR}/data/desktop/eovim.desktop"

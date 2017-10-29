@@ -27,5 +27,6 @@
 
 Eina_Bool main_in_tree_is(void);
 const char *main_edje_file_get(void);
+Eina_Inlist *main_plugins_get(void);
 
 #endif /* ! __EOVIM_UTILS_H__ */

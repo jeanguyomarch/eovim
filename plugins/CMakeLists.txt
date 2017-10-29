@@ -13,7 +13,11 @@ target_include_directories(libeovim
    ${EOVIM_INCLUDE_DIRS}
 )
 add_nazi_compiler_warnings(libeovim)
-set_target_properties(libeovim PROPERTIES PREFIX "")
+set_target_properties(libeovim PROPERTIES
+   PREFIX ""
+   # Place libeovim in another directory than plugins/, as in tree execution
+   # will consider libeovim as a plugin, due to its .so extension on Linux
+   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
 install(TARGETS libeovim LIBRARY DESTINATION lib)
 
 ##############################################################################

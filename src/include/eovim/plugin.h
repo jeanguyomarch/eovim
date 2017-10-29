@@ -26,14 +26,24 @@
 #include "eovim/types.h"
 #include <Eina.h>
 
-typedef struct plugin s_plugin;
+typedef struct
+{
+   EINA_INLIST;
+
+   Eina_Stringshare *name;
+   Eina_Module *module;
+   f_event_cb callback;
+   Eina_Bool loaded;
+} s_plugin;
+
 
 Eina_Inlist *plugin_list_new(void);
 void plugin_list_free(Eina_Inlist *list);
 
 Eina_Bool plugin_load(s_plugin *plugin);
 Eina_Bool plugin_unload(s_plugin *plugin);
-s_plugin *plugin_get(Eina_Inlist *item);
+void plugin_enabled_set(Eina_Bool enabled);
+Eina_Bool plugin_enabled_get(void);
 
 Eina_Bool plugin_init(void);
 void plugin_shutdown(void);
