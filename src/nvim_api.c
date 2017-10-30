@@ -259,6 +259,28 @@ nvim_api_command_output(s_nvim *nvim,
 }
 
 Eina_Bool
+nvim_api_command(s_nvim *nvim,
+                 const char *input,
+                 unsigned int input_size)
+{
+   const char api[] = "nvim_command";
+   s_request *const req = _request_new(nvim, api, sizeof(api) - 1);
+   if (EINA_UNLIKELY(! req))
+     {
+        CRI("Failed to create request");
+        return EINA_FALSE;
+     }
+   DBG("Running nvim command: %s", input);
+
+   msgpack_packer *const pk = &nvim->packer;
+   msgpack_pack_array(pk, 1);
+   msgpack_pack_str(pk, input_size);
+   msgpack_pack_str_body(pk, input, input_size);
+
+   return _request_send(nvim, req);
+}
+
+Eina_Bool
 nvim_api_var_integer_set(s_nvim *nvim,
                          const char *name,
                          int value)
