@@ -29,6 +29,7 @@
 #include "eovim/nvim_helper.h"
 #include "eovim/log.h"
 #include "eovim/mode.h"
+#include "eovim/main.h"
 
 enum
 {
@@ -357,6 +358,47 @@ _nvim_received_error_cb(void *data EINA_UNUSED,
    return ECORE_CALLBACK_PASS_ON;
 }
 
+static void
+_nvim_runtime_load(s_nvim *nvim)
+{
+   Eina_Strbuf *const buf = eina_strbuf_new();
+   if (EINA_UNLIKELY(! buf))
+     {
+        CRI("Failed to create string buffer");
+        return;
+     }
+
+   /* Compose the path to the runtime file */
+   const char *const dir = (main_in_tree_is())
+      ? SOURCE_DATA_DIR
+      : elm_app_data_dir_get();
+   eina_strbuf_append_printf(buf, "%s/vim/runtime.vim", dir);
+
+   /* Load the runtime file in memory */
+   const char *const filename = eina_strbuf_string_get(buf);
+   Eina_File *const file = eina_file_open(filename, EINA_FALSE);
+   if (EINA_UNLIKELY(! file))
+     {
+        CRI("Failed to create file from '%s'", filename);
+        goto end;
+     }
+   char *const map = eina_file_map_all(file, EINA_FILE_POPULATE);
+   if (EINA_UNLIKELY(! map))
+     {
+        CRI("Failed to map file '%s'", filename);
+        goto close_file;
+     }
+
+   /* Send it to neovim */
+   nvim_api_command(nvim, map, (unsigned int)strlen(map));
+
+   /* Release everything */
+   eina_file_map_free(file, map);
+close_file:
+   eina_file_close(file);
+end:
+   eina_strbuf_free(buf);
+}
 
 static void
 _virtual_interface_init(s_nvim *nvim)
@@ -578,6 +620,7 @@ nvim_new(const s_nvim_options *opts,
    nvim_api_ui_attach(nvim, opts->geometry.w, opts->geometry.h);
    nvim_helper_version_decode(nvim, _version_decode_cb);
    nvim_api_var_integer_set(nvim, "eovim_running", 1);
+   _nvim_runtime_load(nvim);
 
    /* Create the GUI window */
    if (EINA_UNLIKELY(! gui_add(&nvim->gui, nvim)))

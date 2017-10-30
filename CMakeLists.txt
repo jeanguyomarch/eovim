@@ -156,6 +156,10 @@ install(FILES
    "${CMAKE_SOURCE_DIR}/data/images/led_light.png"
    DESTINATION "share/${CMAKE_PROJECT_NAME}/images"
 )
+install(FILES
+   "${CMAKE_SOURCE_DIR}/data/vim/runtime.vim"
+   DESTINATION "share/${CMAKE_PROJECT_NAME}/vim"
+)
 install(
    FILES "${CMAKE_SOURCE_DIR}/data/desktop/eovim.desktop"
    DESTINATION "share/applications"
