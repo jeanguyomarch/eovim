@@ -352,8 +352,8 @@ _nvim_received_error_cb(void *data EINA_UNUSED,
                         void *event)
 {
    const Ecore_Exe_Event_Data *const info = event;
-   CRI("Received an error");
-   (void) info;
+   const char *const msg = info->data;
+   ERR("Error: %s", msg);
    return ECORE_CALLBACK_PASS_ON;
 }
 
