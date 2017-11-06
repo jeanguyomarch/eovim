@@ -259,3 +259,26 @@ plugin_enabled_get(void)
 {
    return _enable_plugins;
 }
+
+unsigned int
+plugin_list_load(const Eina_Inlist *plugins,
+                 const Eina_List *load_list)
+{
+   Eina_Stringshare *plug_enable;
+   s_plugin *plug;
+   Eina_List *l;
+   unsigned int loaded = 0;
+
+   EINA_LIST_FOREACH((Eina_List *)load_list, l, plug_enable)
+     {
+        EINA_INLIST_FOREACH(plugins, plug)
+          {
+             if (plug_enable == plug->name)
+               {
+                  const Eina_Bool ok = plugin_load(plug);
+                  if (ok) loaded++;
+               }
+          }
+     }
+   return loaded;
+}

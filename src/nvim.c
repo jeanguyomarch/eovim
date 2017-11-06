@@ -444,6 +444,22 @@ _version_decode_cb(s_nvim *nvim,
    _virtual_interface_setup(nvim);
 }
 
+static void
+_nvim_plugins_load(s_nvim *nvim)
+{
+   const Eina_List *const cfg_plugins = nvim->config->plugins;
+   Eina_Inlist *const plugins = main_plugins_get();
+   const unsigned int expect = eina_list_count(cfg_plugins);
+   const unsigned int loaded = plugin_list_load(plugins, cfg_plugins);
+
+   /* If we didn't load as many plugins as expected, warn */
+   if (EINA_UNLIKELY(expect != loaded))
+     WRN("The configuration expected %u plugins to be loaded, but "
+         "only %u were", expect, loaded);
+   else
+     INF("Loaded %u plugins out of %u", loaded, expect);
+}
+
 /*============================================================================*
  *                                 Public API                                 *
  *============================================================================*/
@@ -585,6 +601,9 @@ nvim_new(const s_nvim_options *opts,
         CRI("Failed to initialize a configuration");
         goto del_ustrbuf;
      }
+
+   /* Load the plugins requested by the config */
+   _nvim_plugins_load(nvim);
 
    /* Initialze msgpack for RPC */
    msgpack_sbuffer_init(&nvim->sbuffer);

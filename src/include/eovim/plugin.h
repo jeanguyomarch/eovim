@@ -39,6 +39,7 @@ typedef struct
 
 Eina_Inlist *plugin_list_new(void);
 void plugin_list_free(Eina_Inlist *list);
+unsigned int plugin_list_load(const Eina_Inlist *plugins, const Eina_List *load_list);
 
 Eina_Bool plugin_load(s_plugin *plugin);
 Eina_Bool plugin_unload(s_plugin *plugin);

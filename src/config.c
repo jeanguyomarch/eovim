@@ -26,13 +26,24 @@
 #include <Ecore_File.h>
 #include <Efreet.h>
 
-#define CONFIG_VERSION 3
+/*============================================================================
+ *
+ * When you touch to the configuration of Eovim, for anything. Like adding or
+ * removing a field, you __MUST__ upgrade the _config_version by INCREMENT IT
+ * by ONE. It shall never go back!
+ *
+ * This is very very very important, as invalid configurations will mess with
+ * existing configurations on the user side, and yield unexpected results.
+ *
+ *===========================================================================*/
+static const unsigned int _config_version = 4;
 
 static Eet_Data_Descriptor *_edd = NULL;
 static const char _key[] = "eovim/config";
 
 #define EDD_BASIC_ADD(Field, Type) \
    EET_DATA_DESCRIPTOR_ADD_BASIC(_edd, s_config, # Field, Field, Type)
+
 
 Eina_Bool
 config_init(void)
@@ -41,6 +52,7 @@ config_init(void)
 
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, s_config);
    _edd = eet_data_descriptor_stream_new(&eddc);
+
 
    /* ========================================================================
     * s_config serialization
@@ -53,6 +65,7 @@ config_init(void)
    EDD_BASIC_ADD(key_react, EET_T_UCHAR);
    EDD_BASIC_ADD(ext_popup, EET_T_UCHAR);
    EDD_BASIC_ADD(true_colors, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_LIST_STRING(_edd, s_config, "plugins", plugins);
 
    return EINA_TRUE;
 }
@@ -105,6 +118,22 @@ config_true_colors_set(s_config *config,
    config->true_colors = !!true_colors;
 }
 
+void
+config_plugin_add(s_config *config,
+                  const s_plugin *plugin)
+{
+   config->plugins = eina_list_append(config->plugins,
+                                      eina_stringshare_ref(plugin->name));
+}
+
+void
+config_plugin_del(s_config *config,
+                  const s_plugin *plugin)
+{
+   config->plugins = eina_list_remove(config->plugins, plugin->name);
+   eina_stringshare_del(plugin->name);
+}
+
 static s_config *
 _config_new(void)
 {
@@ -115,13 +144,14 @@ _config_new(void)
         return NULL;
      }
 
-   config->version = CONFIG_VERSION;
+   config->version = _config_version;
    config->font_name = eina_stringshare_add("Mono");
    config->font_size = 12;
    config->mute_bell = EINA_FALSE;
    config->key_react = EINA_TRUE;
    config->true_colors = EINA_TRUE;
    config->ext_popup = EINA_TRUE;
+   config->plugins = NULL;
 
    return config;
 }
@@ -184,6 +214,12 @@ config_load(const char *file)
         cfg->font_name = eina_stringshare_add(cfg->font_name);
         cfg->path = path;
 
+        /* We load strings from the config. Create stringshares from them */
+        Eina_List *l;
+        const char *plugin;
+        EINA_LIST_FOREACH(cfg->plugins, l, plugin)
+           eina_list_data_set(l, eina_stringshare_add(plugin));
+
         /* Previous configurations compatibility. If we load versions that
          * are earlier than the current version, set the default parameters
          * to be compatible with our new version.
@@ -198,11 +234,14 @@ config_load(const char *file)
               cfg->true_colors = EINA_TRUE;
               cfg->ext_popup = EINA_TRUE;
               /* Fall through */
+           case 3:
+              cfg->plugins = NULL;
+              /* Fall through */
            default:
               break;
           }
         /* Bump the version */
-        cfg->version = CONFIG_VERSION;
+        cfg->version = _config_version;
      }
    else
      {
@@ -231,6 +270,7 @@ config_save(s_config *config)
         CRI("Failed to open file '%s'", config->path);
         return;
      }
+
    const int ok = eet_data_write(ef, _edd, _key, config, 1);
    eet_close(ef);
    if (EINA_UNLIKELY(! ok))
@@ -243,6 +283,9 @@ config_save(s_config *config)
 void
 config_free(s_config *config)
 {
+   Eina_Stringshare *plugin;
+   EINA_LIST_FREE(config->plugins, plugin)
+     eina_stringshare_del(plugin);
    eina_stringshare_del(config->font_name);
    free(config->path);
    free(config);

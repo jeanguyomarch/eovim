@@ -374,18 +374,29 @@ _plug_content_get(void *data,
 }
 
 static void
-_plug_toggle(void *data EINA_UNUSED,
+_plug_toggle(void *data,
              Evas_Object *obj,
              void *info)
 {
+   s_gui *const gui = data;
+   s_config *const config = gui->nvim->config;
    Elm_Genlist_Item *const item = info;
    s_plugin *const plug = elm_object_item_data_get(item);
 
-   /* If the plugin was loaded, unload it. If the plugin was not loaded, load
-    * it. After these operations refresh the genlist to observe the visual
-    * change */
-   if (plug->loaded) plugin_unload(plug);
-   else plugin_load(plug);
+   /* If the plugin was loaded, unload it and remove if from the default loaded
+    * plugins.  If the plugin was not loaded, load it, and add it to the
+    * default loaded plugins.  After these operations refresh the genlist to
+    * observe the visual change */
+   if (plug->loaded)
+     {
+        plugin_unload(plug);
+        config_plugin_del(config, plug);
+     }
+   else
+     {
+        const Eina_Bool loaded = plugin_load(plug);
+        if (loaded) config_plugin_add(config, plug);
+     }
    elm_genlist_realized_items_update(obj);
 }
 
@@ -537,7 +548,7 @@ _plugins_prefs_new(s_gui *gui)
    Evas_Object *const list = elm_genlist_add(f);
    evas_object_size_hint_weight_set(list, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(list, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_smart_callback_add(list, "clicked,double", _plug_toggle, NULL);
+   evas_object_smart_callback_add(list, "clicked,double", _plug_toggle, gui);
 
    /* Load the genlist with the list of plugins */
    const Eina_Inlist *const plugs = main_plugins_get();
