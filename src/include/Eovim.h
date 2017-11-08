@@ -25,6 +25,7 @@
 
 #include <eovim/types.h>
 #include <eovim/version.h>
+#include <eovim/msgpack_helper.h>
 
 /* Eina and msgpack are mandatory */
 #include <Eina.h>

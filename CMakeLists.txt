@@ -182,6 +182,7 @@ if (WITH_PLUGINS)
       DESTINATION include/eovim-0)
    install(FILES
       "${CMAKE_SOURCE_DIR}/src/include/eovim/types.h"
+      "${CMAKE_SOURCE_DIR}/src/include/eovim/msgpack_helper.h"
       "${BUILD_INCLUDE_DIR}/eovim/version.h"
       DESTINATION include/eovim-0/eovim)
    add_subdirectory(plugins)
