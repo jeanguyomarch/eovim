@@ -84,7 +84,7 @@ _list_plugins_cb(const char *name,
    if (EINA_UNLIKELY(! plug_name))
      {
         CRI("Failed to create stringshare");
-        goto fail_free;
+        goto fail_del;
      }
 
    /* Go through the plugins already registered, to check if we can add this
