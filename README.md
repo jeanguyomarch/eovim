@@ -60,6 +60,14 @@ can feed it to `eovim` with the option `--nvim`.
 To get a list of all the available options, run `eovim --help`.
 
 
+# Plug-Ins
+
+Eovim supports plug-ins! They allow Eovim to respond to events from Neovim, and
+as such to make Neovim freely manipulate the native graphical user interface
+provided by Eovim. Details about plug-ins and how the built-in plug-ins work
+can be read in the README contained in the `plugins/` directory.
+
+
 # Hacking
 
 Eovim uses some environment variables that can influence its runtime. Some are

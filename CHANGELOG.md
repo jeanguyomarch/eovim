@@ -5,6 +5,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Plug-Ins infrastructure to allow Neovim to manipule the Eovim GUI.
+- Sizing plugin to make neovim alter the sizing of the Eovim's Window.
+
 ### Changed
 
 - Backspace is now always passed as `<BS>` to Eovim.
