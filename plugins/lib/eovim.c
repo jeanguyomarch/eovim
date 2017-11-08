@@ -23,8 +23,8 @@
 #include "eovim/nvim.h"
 #include "Eovim.h"
 
-EAPI s_gui *
-eovim_gui_get(s_nvim *nvim)
+EAPI Evas_Object *
+eovim_window_get(s_nvim *nvim)
 {
-   return &(nvim->gui);
+   return nvim->gui.win;
 }

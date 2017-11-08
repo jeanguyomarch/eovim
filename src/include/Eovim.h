@@ -27,8 +27,9 @@
 #include <eovim/version.h>
 #include <eovim/msgpack_helper.h>
 
-/* Eina and msgpack are mandatory */
+/* EFL and msgpack are mandatory */
 #include <Eina.h>
+#include <Evas.h>
 #include <msgpack.h>
 
 #ifndef EAPI
@@ -43,12 +44,12 @@
 #endif
 
 /**
- * Retrieve the GUI handler from a Neovim instance.
+ * Retrieve the Window handler from a Neovim instance.
  *
  * @param[in] nvim A pointer to the neovim instance. May not be NULL.
- * @return The GUI handler associated to @p nvim.
+ * @return The Window handler associated to @p nvim.
  */
-EAPI s_gui *eovim_gui_get(s_nvim *nvim)
+EAPI Evas_Object *eovim_window_get(s_nvim *nvim)
    EINA_ARG_NONNULL(1) EINA_WARN_UNUSED_RESULT EINA_PURE;
 
 /**
