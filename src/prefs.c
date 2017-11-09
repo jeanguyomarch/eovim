@@ -495,6 +495,16 @@ _ext_popup_changed_cb(void *data,
    config_ext_popup_set(gui->nvim->config, ext);
 }
 
+static void
+_ext_cmdline_changed_cb(void *data,
+                        Evas_Object *obj,
+                        void *info EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   const Eina_Bool ext = elm_check_state_get(obj);
+   config_ext_cmdline_set(gui->nvim->config, ext);
+}
+
 static Evas_Object *
 _nvim_prefs_new(s_gui *gui)
 {
@@ -518,6 +528,12 @@ _nvim_prefs_new(s_gui *gui)
    evas_object_smart_callback_add(compl, "changed", _ext_popup_changed_cb, gui);
    elm_check_state_set(compl, config->ext_popup);
    evas_object_show(compl);
+
+   /* Externalized command-line switch */
+   Evas_Object *const cmdline = _nvim_prefs_check_add(table, "Externalize Command-Line", row++);
+   evas_object_smart_callback_add(cmdline, "changed", _ext_cmdline_changed_cb, gui);
+   elm_check_state_set(cmdline, config->ext_cmdline);
+   evas_object_show(cmdline);
 
    /* Message */
    Evas_Object *const info = elm_label_add(table);

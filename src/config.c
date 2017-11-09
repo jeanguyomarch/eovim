@@ -36,7 +36,7 @@
  * existing configurations on the user side, and yield unexpected results.
  *
  *===========================================================================*/
-static const unsigned int _config_version = 4;
+static const unsigned int _config_version = 5;
 
 static Eet_Data_Descriptor *_edd = NULL;
 static const char _key[] = "eovim/config";
@@ -64,6 +64,7 @@ config_init(void)
    EDD_BASIC_ADD(mute_bell, EET_T_UCHAR);
    EDD_BASIC_ADD(key_react, EET_T_UCHAR);
    EDD_BASIC_ADD(ext_popup, EET_T_UCHAR);
+   EDD_BASIC_ADD(ext_cmdline, EET_T_UCHAR);
    EDD_BASIC_ADD(true_colors, EET_T_UCHAR);
    EET_DATA_DESCRIPTOR_ADD_LIST_STRING(_edd, s_config, "plugins", plugins);
 
@@ -112,6 +113,13 @@ config_ext_popup_set(s_config *config,
 }
 
 void
+config_ext_cmdline_set(s_config *config,
+                       Eina_Bool cmd)
+{
+   config->ext_cmdline = !!cmd;
+}
+
+void
 config_true_colors_set(s_config *config,
                        Eina_Bool true_colors)
 {
@@ -151,6 +159,7 @@ _config_new(void)
    config->key_react = EINA_TRUE;
    config->true_colors = EINA_TRUE;
    config->ext_popup = EINA_TRUE;
+   config->ext_cmdline = EINA_TRUE;
    config->plugins = NULL;
 
    return config;
@@ -236,6 +245,9 @@ config_load(const char *file)
               /* Fall through */
            case 3:
               cfg->plugins = NULL;
+              /* Fall through */
+           case 4:
+              cfg->ext_cmdline = EINA_TRUE;
               /* Fall through */
            default:
               break;
