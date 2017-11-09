@@ -65,16 +65,25 @@ _handle_request_response(s_nvim *nvim,
         goto fail;
      }
 
+   /* When this variable is se to EINA_TRUE, we won't process the response.
+    * This is here so we can go through the error message without crashing too
+    * early. */
+   Eina_Bool do_not_process = EINA_FALSE;
+
    /* Get the request from the pending requests list. */
    const uint32_t req_id = (uint32_t)args->ptr[1].via.u64;
    Eina_List *const req_item = nvim_api_request_find(nvim, req_id);
    if (EINA_UNLIKELY(! req_item))
      {
+        /* We probably should wait for the error message to be fetched back.
+         * So we start by throwing an error, then we tell that the response
+         * shall not be processed. */
         CRI("Uh... received a response to request %"PRIu32", but it was not "
             "registered. Something wrong happend somewhere!", req_id);
-        goto fail;
+        do_not_process = EINA_TRUE;
      }
-   DBG("Received response to request %"PRIu32, req_id);
+   else
+     DBG("Received response to request %"PRIu32, req_id);
 
    /* If 3rd arg is an array, this is an error message. */
    const msgpack_object_type err_type = args->ptr[2].type;
@@ -109,6 +118,11 @@ _handle_request_response(s_nvim *nvim,
         ERR("Error argument is of handled type 0x%x", err_type);
         goto fail_req;
      }
+
+   /* At this point, we have had the chance to read the error message. If we
+    * did, we would have exited earlier. If not, exit right now. */
+   if (EINA_UNLIKELY(do_not_process == EINA_TRUE))
+     goto fail_req;
 
    /* 4th argment, which contain the returned parameters */
    const msgpack_object *const result = &(args->ptr[3]);
