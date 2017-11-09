@@ -194,7 +194,7 @@ collections {
                rel1.relative: 1.0 0.0;
                rel2.to: "config";
                rel2.relative: 1.0 0.0;
-               align: 1.0 0.0;
+               align: 1.0 1.0;
                min: 26 26;
 
                params {

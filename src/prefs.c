@@ -585,7 +585,7 @@ prefs_show(s_gui *gui)
    /* Add a segment control that keeps track of all the pages */
    Evas_Object *const sec = elm_segment_control_add(box);
    evas_object_size_hint_weight_set(sec, EVAS_HINT_EXPAND, 0.0);
-   evas_object_size_hint_align_set(sec, 0.0, EVAS_HINT_FILL);
+   evas_object_size_hint_align_set(sec, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_smart_callback_add(sec, "changed", _page_change_cb, gui);
    evas_object_show(sec);
    elm_box_pack_start(box, sec);
