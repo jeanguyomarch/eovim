@@ -175,7 +175,7 @@ _arg_bool_get(const msgpack_object_array *args,
 }
 
 
-Eina_Bool
+static Eina_Bool
 nvim_event_resize(s_nvim *nvim,
                   const msgpack_object_array *args)
 {
@@ -191,7 +191,7 @@ nvim_event_resize(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_clear(s_nvim *nvim,
                  const msgpack_object_array *args EINA_UNUSED)
 {
@@ -199,7 +199,7 @@ nvim_event_clear(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_eol_clear(s_nvim *nvim,
                      const msgpack_object_array *args EINA_UNUSED)
 {
@@ -207,7 +207,7 @@ nvim_event_eol_clear(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_cursor_goto(s_nvim *nvim,
                        const msgpack_object_array *args)
 {
@@ -339,7 +339,7 @@ _mode_info_set(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_mode_info_set(s_nvim *nvim,
                          const msgpack_object_array *args)
 {
@@ -356,7 +356,7 @@ nvim_event_mode_info_set(s_nvim *nvim,
    return ret;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_update_menu(s_nvim *nvim EINA_UNUSED,
                        const msgpack_object_array *args EINA_UNUSED)
 {
@@ -364,7 +364,7 @@ nvim_event_update_menu(s_nvim *nvim EINA_UNUSED,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_busy_start(s_nvim *nvim,
                       const msgpack_object_array *args EINA_UNUSED)
 {
@@ -372,7 +372,7 @@ nvim_event_busy_start(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_busy_stop(s_nvim *nvim,
                      const msgpack_object_array *args EINA_UNUSED)
 {
@@ -380,7 +380,7 @@ nvim_event_busy_stop(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_mouse_on(s_nvim *nvim,
                     const msgpack_object_array *args EINA_UNUSED)
 {
@@ -388,7 +388,7 @@ nvim_event_mouse_on(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_mouse_off(s_nvim *nvim,
                      const msgpack_object_array *args EINA_UNUSED)
 {
@@ -396,7 +396,7 @@ nvim_event_mouse_off(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_mode_change(s_nvim *nvim,
                        const msgpack_object_array *args)
 {
@@ -415,7 +415,7 @@ nvim_event_mode_change(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_set_scroll_region(s_nvim *nvim,
                              const msgpack_object_array *args)
 {
@@ -434,7 +434,7 @@ nvim_event_set_scroll_region(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_scroll(s_nvim *nvim,
                   const msgpack_object_array *args)
 {
@@ -460,7 +460,7 @@ nvim_event_scroll(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_highlight_set(s_nvim *nvim,
                          const msgpack_object_array *args)
 {
@@ -574,7 +574,7 @@ nvim_event_highlight_set(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_put(s_nvim *nvim,
                const msgpack_object_array *args)
 {
@@ -622,7 +622,7 @@ nvim_event_put(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_bell(s_nvim *nvim,
                 const msgpack_object_array *args EINA_UNUSED)
 {
@@ -630,7 +630,7 @@ nvim_event_bell(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_visual_bell(s_nvim *nvim EINA_UNUSED,
                        const msgpack_object_array *args EINA_UNUSED)
 {
@@ -638,7 +638,7 @@ nvim_event_visual_bell(s_nvim *nvim EINA_UNUSED,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_update_fg(s_nvim *nvim,
                      const msgpack_object_array *args)
 {
@@ -651,7 +651,8 @@ nvim_event_update_fg(s_nvim *nvim,
    gui_update_fg(&nvim->gui, color);
    return EINA_TRUE;
 }
-Eina_Bool
+
+static Eina_Bool
 nvim_event_update_bg(s_nvim *nvim,
                      const msgpack_object_array *args)
 {
@@ -664,7 +665,8 @@ nvim_event_update_bg(s_nvim *nvim,
    gui_update_bg(&nvim->gui, color);
    return EINA_TRUE;
 }
-Eina_Bool
+
+static Eina_Bool
 nvim_event_update_sp(s_nvim *nvim,
                      const msgpack_object_array *args)
 {
@@ -678,7 +680,7 @@ nvim_event_update_sp(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_suspend(s_nvim *nvim EINA_UNUSED,
                    const msgpack_object_array *args EINA_UNUSED)
 {
@@ -686,7 +688,7 @@ nvim_event_suspend(s_nvim *nvim EINA_UNUSED,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_set_title(s_nvim *nvim EINA_UNUSED,
                      const msgpack_object_array *args EINA_UNUSED)
 {
@@ -694,7 +696,7 @@ nvim_event_set_title(s_nvim *nvim EINA_UNUSED,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_set_icon(s_nvim *nvim EINA_UNUSED,
                     const msgpack_object_array *args EINA_UNUSED)
 {
@@ -702,7 +704,7 @@ nvim_event_set_icon(s_nvim *nvim EINA_UNUSED,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_popupmenu_show(s_nvim *nvim,
                           const msgpack_object_array *args)
 {
@@ -745,7 +747,7 @@ nvim_event_popupmenu_show(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_popupmenu_hide(s_nvim *nvim,
                           const msgpack_object_array *args EINA_UNUSED)
 {
@@ -754,7 +756,7 @@ nvim_event_popupmenu_hide(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_popupmenu_select(s_nvim *nvim,
                             const msgpack_object_array *args)
 {
@@ -770,7 +772,7 @@ nvim_event_popupmenu_select(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_Bool
+static Eina_Bool
 nvim_event_tabline_update(s_nvim *nvim EINA_UNUSED,
                           const msgpack_object_array *args EINA_UNUSED)
 {

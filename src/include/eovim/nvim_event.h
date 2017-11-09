@@ -26,34 +26,6 @@
 #include "eovim/types.h"
 #include <msgpack.h>
 
-Eina_Bool nvim_event_resize(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_clear(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_eol_clear(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_cursor_goto(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_mode_info_set(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_update_menu(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_busy_start(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_busy_stop(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_mouse_on(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_mouse_off(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_mode_change(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_set_scroll_region(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_scroll(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_highlight_set(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_put(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_bell(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_visual_bell(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_update_fg(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_update_bg(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_update_sp(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_suspend(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_set_title(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_set_icon(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_popupmenu_show(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_popupmenu_hide(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_popupmenu_select(s_nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_tabline_update(s_nvim *nvim, const msgpack_object_array *args);
-
 Eina_Bool nvim_event_plugin_register(const char *command, f_event_cb callback);
 Eina_Bool nvim_event_dispatch(s_nvim *nvim, Eina_Stringshare *method_name,
                               Eina_Stringshare *command, const msgpack_object_array *args);
