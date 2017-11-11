@@ -49,6 +49,18 @@ struct gui
       Eina_Bool event;
    } completion;
 
+   struct {
+      Evas_Object *obj;
+      Evas_Object *info;
+      Evas_Object *menu;
+      Evas_Object *table;
+      Evas_Object *spacer;
+      Elm_Genlist_Item *sel_item;
+      size_t items_count;
+      ssize_t sel_index;
+      size_t cpos; /**< Cursor position */
+   } cmdline;
+
    s_prefs prefs;
 
    s_nvim *nvim;
@@ -90,6 +102,17 @@ void gui_completion_selected_set(s_gui *gui, int index);
 void gui_bell_ring(s_gui *gui);
 void gui_fullscreen_set(s_gui *gui, Eina_Bool fullscreen);
 
+void gui_cmdline_show(s_gui *gui, const char *content,
+                      const char *prompt, const char *firstc);
+void gui_cmdline_hide(s_gui *gui);
+
 void gui_size_recalculate(s_gui *gui);
+
+void gui_wildmenu_clear(s_gui *gui);
+void gui_wildmenu_append(s_gui *gui, Eina_Stringshare *item);
+void gui_wildmenu_show(s_gui *gui);
+void gui_wildmenu_select(s_gui *gui, ssize_t index);
+
+void gui_cmdline_cursor_pos_set(s_gui *gui, size_t pos);
 
 #endif /* ! __EOVIM_GUI_H__ */

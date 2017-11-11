@@ -63,6 +63,7 @@ add_custom_command(
    DEPENDS
    "${THEMES_DIR}/default.edc"
    "${THEMES_DIR}/cursor.edc"
+   "${THEMES_DIR}/cmdline.edc"
 
    VERBATIM
    COMMAND

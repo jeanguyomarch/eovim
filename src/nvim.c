@@ -452,6 +452,15 @@ _version_decode_cb(s_nvim *nvim,
                 "You are running neovim %s, which is unsupported. "
                 "Please consider upgrading Neovim.", vstr);
      }
+   /* We are now sure that we are running at least 0.2.0. */
+
+   /* From neovim 0.2.1, the command-line can be externalized */
+   if (NVIM_VERSION_PATCH(nvim) >= 1)
+     {
+        /* Cmdline and wildmenu are going by pair */
+        nvim_api_ui_ext_cmdline_set(nvim, nvim->config->ext_cmdline);
+        nvim_api_ui_ext_wildmenu_set(nvim, nvim->config->ext_cmdline);
+     }
 
    /* Now that we know Neovim's version, setup the virtual interface, that will
     * prevent compatibilty issues */

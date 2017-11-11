@@ -32,6 +32,7 @@ typedef void (*f_nvim_api_cb)(s_nvim *nvim, void *data, const msgpack_object *re
 Eina_Bool nvim_api_ui_attach(s_nvim *nvim, unsigned int width, unsigned int height);
 Eina_Bool nvim_api_ui_try_resize(s_nvim *nvim, unsigned int width, unsigned height);
 Eina_Bool nvim_api_ui_ext_cmdline_set(s_nvim *nvim, Eina_Bool externalize);
+Eina_Bool nvim_api_ui_ext_wildmenu_set(s_nvim *nvim, Eina_Bool externalize);
 Eina_Bool nvim_api_input(s_nvim *nvim, const char *input, unsigned int input_size);
 
 Eina_Bool nvim_api_eval(s_nvim *nvim, const char *input, unsigned int input_size,

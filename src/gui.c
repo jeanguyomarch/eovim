@@ -33,10 +33,14 @@
 static const char *const _nvim_data_key = "nvim";
 typedef enum
 {
-   THEME_MSG_BG         = 0,
+   THEME_MSG_BG = 0,
+   THEME_MSG_CMDLINE_INFO = 1,
 } e_theme_msg;
 
 static Elm_Genlist_Item_Class *_compl_simple_itc = NULL;
+static Elm_Genlist_Item_Class *_wildmenu_itc = NULL;
+
+static void _wildmenu_resize(s_gui *gui);
 
 static inline s_nvim *
 _nvim_get(const Evas_Object *obj)
@@ -54,10 +58,10 @@ _focus_in_cb(void *data,
 }
 
 static Evas_Object *
-_layout_item_add(const s_gui *gui,
+_layout_item_add(Evas_Object *parent,
                  const char *group)
 {
-   Evas_Object *const o = elm_layout_add(gui->win);
+   Evas_Object *const o = elm_layout_add(parent);
    evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
 
@@ -203,6 +207,7 @@ gui_add(s_gui *gui,
    EINA_SAFETY_ON_NULL_RETURN_VAL(gui, EINA_FALSE);
 
    const s_config *const config = nvim->config;
+   const char *const edje_file = main_edje_file_get();
    Evas_Object *o;
    gui->nvim = nvim;
 
@@ -212,7 +217,7 @@ gui_add(s_gui *gui,
    Evas *const evas = evas_object_evas_get(gui->win);
 
    /* Main Layout setup */
-   gui->layout = _layout_item_add(gui, "eovim/main");
+   gui->layout = _layout_item_add(gui->win, "eovim/main");
    if (EINA_UNLIKELY(! gui->layout))
      {
         CRI("Failed to get layout item");
@@ -226,11 +231,12 @@ gui_add(s_gui *gui,
    elm_win_resize_object_add(gui->win, gui->layout);
    evas_object_smart_callback_add(gui->win, "focus,in", _focus_in_cb, gui);
 
-   gui->termview = termview_add(gui->layout, nvim);
-   termview_font_set(gui->termview, config->font_name, config->font_size);
+   /* ========================================================================
+    * Completion GUI objects
+    * ===================================================================== */
 
    o = gui->completion.obj = edje_object_add(evas);
-   edje_object_file_set(o, main_edje_file_get(), "eovim/completion");
+   edje_object_file_set(o, edje_file, "eovim/completion");
    evas_object_smart_member_add(o, gui->layout);
 
    /* Create the completion genlist, and attach it to the theme layout.
@@ -244,13 +250,53 @@ gui_add(s_gui *gui,
    evas_object_data_set(o, _nvim_data_key, nvim);
    evas_object_show(o);
 
+   /* ========================================================================
+    * Termview GUI objects
+    * ===================================================================== */
+
+   gui->termview = termview_add(gui->layout, nvim);
+   termview_font_set(gui->termview, config->font_name, config->font_size);
    elm_layout_content_set(gui->layout, "eovim.main.view", gui->termview);
 
+   /* ========================================================================
+    * Command-Line GUI objects
+    * ===================================================================== */
+
+   gui->cmdline.obj = edje_object_part_swallow_get(gui->edje, "eovim.cmdline");
+   gui->cmdline.info = edje_object_part_swallow_get(gui->edje, "eovim.cmdline_info");
+
+   /* Table: will hold both the spacer and the genlist */
+   gui->cmdline.table = o = elm_table_add(gui->layout);
+   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_layout_content_set(gui->layout, "eovim.wildmenu", o);
+
+   /* Spacer: to make the genlist fit a given size */
+   gui->cmdline.spacer = o = evas_object_rectangle_add(evas);
+   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_color_set(o, 0, 0, 0, 0);
+   elm_table_pack(gui->cmdline.table, o, 0, 0, 1, 1);
+
+   /* Menu: the genlist that will hold the wildmenu items */
+   gui->cmdline.menu = o = elm_genlist_add(gui->layout);
+   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_genlist_homogeneous_set(o, EINA_TRUE);
+   elm_genlist_mode_set(o, ELM_LIST_COMPRESS);
+   elm_object_tree_focus_allow_set(o, EINA_FALSE);
+   elm_table_pack(gui->cmdline.table, o, 0, 0, 1, 1);
+   evas_object_show(gui->cmdline.menu);
+
+   /* ========================================================================
+    * Finalize GUI
+    * ===================================================================== */
+
+   gui_cmdline_hide(gui);
    evas_object_show(gui->termview);
    evas_object_show(gui->layout);
    evas_object_show(gui->win);
    gui_resize(gui, nvim->opts->geometry.w, nvim->opts->geometry.h);
-
    return EINA_TRUE;
 
 fail:
@@ -713,6 +759,27 @@ _completion_item_del(void *data,
    free(compl);
 }
 
+static void
+_wildmenu_item_del(void *data,
+                   Evas_Object *obj EINA_UNUSED)
+{
+   Eina_Stringshare *const item = data;
+   eina_stringshare_del(item);
+}
+
+static Evas_Object *
+_wildmenu_content_get(void *data,
+                      Evas_Object *obj,
+                      const char *part EINA_UNUSED)
+{
+   Eina_Stringshare *const item = data;
+   Evas_Object *const wdg = _layout_item_add(obj, "eovim/wildmenu_item");
+
+   elm_object_part_text_set(wdg, "text", item);
+   evas_object_show(wdg);
+   return wdg;
+}
+
 Eina_Bool
 gui_init(void)
 {
@@ -721,19 +788,37 @@ gui_init(void)
    if (EINA_UNLIKELY(! _compl_simple_itc))
      {
         CRI("Failed to create genlist item class");
-        return EINA_FALSE;
+        goto fail;
      }
    _compl_simple_itc->item_style = "full";
    _compl_simple_itc->func.text_get = NULL;
    _compl_simple_itc->func.content_get = _completion_gl_content_get;
    _compl_simple_itc->func.del = _completion_item_del;
 
+   /* Wildmenu list item class */
+   _wildmenu_itc = elm_genlist_item_class_new();
+   if (EINA_UNLIKELY(! _wildmenu_itc))
+     {
+        CRI("Failed to create genlist item class");
+        goto free_compl;
+     }
+   _wildmenu_itc->item_style = "full";
+   _wildmenu_itc->func.text_get = NULL;
+   _wildmenu_itc->func.content_get = _wildmenu_content_get;
+   _wildmenu_itc->func.del = _wildmenu_item_del;
+
    return EINA_TRUE;
+
+free_compl:
+   elm_genlist_item_class_free(_compl_simple_itc);
+fail:
+   return EINA_FALSE;
 }
 
 void
 gui_shutdown(void)
 {
+   elm_genlist_item_class_free(_wildmenu_itc);
    elm_genlist_item_class_free(_compl_simple_itc);
 }
 
@@ -750,4 +835,179 @@ gui_mode_update(s_gui *gui,
 {
    const s_mode *const mode = nvim_named_mode_get(gui->nvim, name);
    termview_cursor_mode_set(gui->termview, mode);
+}
+
+void
+gui_cmdline_show(s_gui *gui,
+                 const char *content,
+                 const char *prompt EINA_UNUSED,
+                 const char *firstc)
+{
+   const Edje_Message_String msg = {
+      .str = (char *)firstc,
+   };
+   edje_object_message_send(gui->cmdline.info, EDJE_MESSAGE_STRING,
+                            THEME_MSG_CMDLINE_INFO, (void *)(&msg));
+   edje_object_part_text_set(gui->cmdline.obj, "eovim.cmdline.text", content);
+
+   /* Show the completion panel */
+   edje_object_signal_emit(gui->layout, "eovim,cmdline,show", "eovim");
+
+   _wildmenu_resize(gui);
+}
+
+void
+gui_cmdline_hide(s_gui *gui)
+{
+   edje_object_signal_emit(gui->layout, "eovim,cmdline,hide", "eovim");
+}
+
+void
+gui_cmdline_cursor_pos_set(s_gui *gui,
+                           size_t pos)
+{
+   gui->cmdline.cpos = pos;
+   edje_object_part_text_cursor_pos_set(gui->cmdline.obj, "eovim.cmdline.text",
+                                        EDJE_CURSOR_MAIN, (int)pos);
+}
+
+static inline void
+_wildmenu_first_item_acquire(s_gui *gui)
+{
+   gui->cmdline.sel_item = elm_genlist_first_item_get(gui->cmdline.menu);
+   gui->cmdline.sel_index = 0;
+}
+
+void
+gui_wildmenu_select(s_gui *gui,
+                    ssize_t index)
+{
+   if (index < 0)
+     {
+        /* Negative: nothing to be selected at all! */
+        elm_genlist_item_selected_set(gui->cmdline.sel_item, EINA_FALSE);
+     }
+   else
+     {
+        /* At this point, we need to select something, but if we didn't have
+         * any item previously selected (this will happen after doing a full
+         * circle among the wildmenu items), start selecting the first item in
+         * the wildmenu. */
+        if ( gui->cmdline.sel_index < 0)
+          _wildmenu_first_item_acquire(gui);
+
+        if (index >= gui->cmdline.sel_index)
+          {
+             /* We select an index that is after the current one */
+             const ssize_t nb = index - gui->cmdline.sel_index;
+             for (ssize_t i = 0; i < nb; i++)
+               {
+                  gui->cmdline.sel_item =
+                     elm_genlist_item_next_get(gui->cmdline.sel_item);
+               }
+             elm_genlist_item_selected_set(gui->cmdline.sel_item, EINA_TRUE);
+          }
+        else /* index < gui->cmdline.sel_index */
+          {
+             /* We select an index that is before the current one */
+             const ssize_t nb = gui->cmdline.sel_index - index;
+             for (ssize_t i = 0; i < nb; i++)
+               {
+                  gui->cmdline.sel_item =
+                     elm_genlist_item_prev_get(gui->cmdline.sel_item);
+               }
+             elm_genlist_item_selected_set(gui->cmdline.sel_item, EINA_TRUE);
+          }
+     }
+
+   /* Finally, we update the index in cache, and select the item */
+   gui->cmdline.sel_index = index;
+}
+
+void
+gui_wildmenu_show(s_gui *gui)
+{
+   _wildmenu_resize(gui);
+
+   /* The first selected item will be the first one in the genlist */
+   _wildmenu_first_item_acquire(gui);
+   elm_genlist_item_selected_set(gui->cmdline.sel_item, EINA_TRUE);
+}
+
+void
+gui_wildmenu_append(s_gui *gui,
+                    Eina_Stringshare *item)
+{
+   elm_genlist_item_append(
+      gui->cmdline.menu, _wildmenu_itc, item,
+      NULL, ELM_GENLIST_ITEM_NONE,
+      NULL, NULL
+   );
+
+   /* And one more item! */
+   gui->cmdline.items_count++;
+}
+
+void
+gui_wildmenu_clear(s_gui *gui)
+{
+   gui->cmdline.items_count = 0;
+   gui->cmdline.sel_item = NULL;
+   gui->cmdline.sel_index = -1;
+   elm_genlist_clear(gui->cmdline.menu);
+
+   /* Give a height of zero to the area that contains the items, so it will
+    * visually disappear from the screen. */
+   int menu_w;
+   evas_object_geometry_get(gui->cmdline.table, NULL, NULL, &menu_w, NULL);
+   evas_object_size_hint_min_set(gui->cmdline.spacer, menu_w, 0);
+}
+
+static void
+_item_realized(void *data,
+               Evas_Object *obj EINA_UNUSED,
+               void *info EINA_UNUSED)
+{
+   /* This is a deferred call to _wildmenu_resize(). When done, unregister the
+    * callback! It does not make sense to keep it around.
+    */
+   s_gui *const gui = data;
+   _wildmenu_resize(gui);
+   evas_object_smart_callback_del_full(obj, "realized", _item_realized, data);
+}
+
+static void
+_wildmenu_resize(s_gui *gui)
+{
+   Evas_Object *const gl = gui->cmdline.menu;
+
+   /* If we have no items, don't bother to resize! */
+   if (! gui->cmdline.items_count) { return; }
+
+   Eina_List *const realized = elm_genlist_realized_items_get(gl);
+   if (! realized)
+     {
+        /* No items have yet been drawn in the genlist. Too bad, attach a
+         * callback so we will know when this will be done, and then go away!
+         */
+        evas_object_smart_callback_add(gl, "realized", _item_realized, gui);
+        return;
+     }
+
+   Evas_Object *const first = elm_object_item_track(eina_list_data_get(realized));
+   int item_height;
+   evas_object_geometry_get(first, NULL, NULL, NULL, &item_height);
+
+   int win_h, info_x, info_y, info_h, menu_w;
+   evas_object_geometry_get(gui->win, NULL, NULL, NULL, &win_h);
+   evas_object_geometry_get(gui->cmdline.info, &info_x, &info_y, NULL, &info_h);
+   evas_object_geometry_get(gui->cmdline.table, NULL, NULL, &menu_w, NULL);
+
+   const int height = item_height * (int)(gui->cmdline.items_count) + 2;
+   const int max_height = (int)((float)win_h * 0.8f); /* 80% of the window's height */
+
+   if (height <= max_height)
+     evas_object_size_hint_min_set(gui->cmdline.spacer, menu_w, height);
+   else
+     evas_object_size_hint_min_set(gui->cmdline.spacer, menu_w, max_height);
 }

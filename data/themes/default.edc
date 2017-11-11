@@ -29,6 +29,9 @@
 efl_version: 1 20;
 #endif
 
+#define THEME_MSG_BG            0
+#define THEME_MSG_CMDLINE_INFO  1
+
 externals {
    external: "elm";
 }
@@ -49,6 +52,42 @@ color_classes {
    color_class { name: "cursor_full";
       color: 255 255 255 255;
    }
+
+   /*========================================================================
+    * Color classes for the command-line info panel
+    *========================================================================*/
+   color_class { name: "cmdline_slash";
+      color: 127 127 0 255;
+   }
+   color_class { name: "cmdline_interro";
+      color: 127 53 0 255;
+   }
+   color_class { name: "cmdline_colomn";
+      color: 127 0 72 255;
+   }
+   color_class { name: "cmdline_default";
+      color: 0 0 127 255;
+   }
+}
+
+#define CMDLINE_INFO_STYLE(Color) \
+   "font=Sans font_size=14 font_weight=Bold color="Color" wrap=word left_margin=8 right_margin=8"
+styles {
+   style { name: "cmdline";
+      base: "font=Sans font_size=14 color=#bcbcbc wrap='word' left_margin=2 right_margin=2";
+   }
+   style { name: "cmdline_slash_info";
+      base: CMDLINE_INFO_STYLE("#ffffa7");
+   }
+   style { name: "cmdline_interro_info";
+      base: CMDLINE_INFO_STYLE("#ffcca7");
+   }
+   style { name: "cmdline_colomn_info";
+      base: CMDLINE_INFO_STYLE("#ffa7d9");
+   }
+   style { name: "cmdline_default_info";
+      base: CMDLINE_INFO_STYLE("#a7a7ff");
+   }
 }
 
 collections {
@@ -56,6 +95,8 @@ collections {
       images {
          image: "preferences.png" COMP;
          image: "bg_bevel.png" COMP;
+         image: "vertical_separated_bar_glow.png" COMP;
+         image: "inset_shadow.png" COMP;
       }
       sounds {
          sample { name: "bell" LOSSY 64;
@@ -66,7 +107,7 @@ collections {
          public bg_r, bg_g, bg_b, bg_a;
 
          public message(Msg_Type:type, id, ...) {
-            if (id == 0) { /* THEME_MSG_BG */
+            if (id == THEME_MSG_BG) {
                new part = PART:"eovim.background";
                custom_state(part, "default", 0.0);
                set_int(bg_r, getarg(2));
@@ -258,11 +299,96 @@ collections {
                visible: 1;
             }
          }
+
+         /*===================================================================
+          * Cmdline + Wildmenu Widget
+          *===================================================================*/
+         group { "eovim.cmdline_info"; source: "eovim/cmdline_info";
+            desc { "default";
+               rel.to: "eovim.cmdline";
+               rel2.relative: 0.0 1.0;
+               align: 1.0 0.5;
+               rel2.offset: 4 0;
+               fixed: 1 1;
+            }
+         }
+
+         group { "eovim.cmdline"; source: "eovim/cmdline";
+            desc { "default";
+               rel1.relative: 0.2 0.0;
+               rel2.relative: 0.8 0.0;
+               align: 0.5 0.0;
+               rel1.offset: 0 40;
+            }
+            desc { "hidden";
+               /* Hidden: the textblock will be above the main view */
+               inherit: "default";
+               align: 0.5 1.0;
+            }
+         }
+         swallow { "eovim.wildmenu";
+            desc { "default";
+               rel1.to: "eovim.cmdline";
+               rel2.to_x: "eovim.cmdline";
+               rel2.to_y: "eovim.main.view";
+
+               rel1.relative: 0.0 1.0;
+               rel2.relative: 1.0 0.0;
+               align: 0.5 0.0;
+               rel1.offset: 2 -5;
+               rel2.offset: -5 0;
+               fixed: 1 1;
+            }
+            desc { "hidden";
+               inherit: "default";
+               rel2.relative: 1.0 0.0;
+               visible: 0;
+            }
+         }
+         image { "wildmenu_shadow"; nomouse;
+            desc { "default";
+               image.normal: "inset_shadow.png";
+               image.border: 5 5 7 3;
+               rel.to: "eovim.wildmenu";
+            }
+         }
+         image { "wildmenu_bar"; nomouse;
+            desc { "default";
+               image.normal: "vertical_separated_bar_glow.png";
+               image.border: 7 7 7 7;
+               fill.smooth: 0;
+               min: 15 10;
+
+               rel1.to_x: "eovim.cmdline";
+               rel1.to_y: "eovim.wildmenu";
+               rel2.to_x: "eovim.cmdline";
+               rel2.to_y: "eovim.wildmenu";
+               rel1.relative: 1.0 0.0;
+               rel1.offset: 1 -10;
+               rel2.offset: 1 4;
+               align: 1.0 0.5;
+               fixed: 1 1;
+            }
+         }
       }
 
       programs {
          program { signal: "eovim,bell,ring"; source: "eovim";
             action: PLAY_SAMPLE "bell" 1.0 ALERT;
+         }
+
+         program { signal: "eovim,cmdline,show"; source: "eovim";
+            action: STATE_SET "default";
+            //transition: ACCELERATE 2.5;
+            transition: DECELERATE 0.5;
+            target: "eovim.cmdline";
+            target: "eovim.wildmenu";
+         }
+         program { signal: "eovim,cmdline,hide"; source: "eovim";
+            action: STATE_SET "hidden";
+            target: "eovim.cmdline";
+            target: "eovim.wildmenu";
+            transition: DECELERATE 0.5;
          }
       }
    }
@@ -361,5 +487,7 @@ collections {
       }
    }
 
+
+   #include "cmdline.edc"
    #include "cursor.edc"
 }

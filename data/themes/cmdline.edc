@@ -1,0 +1,238 @@
+/*
+ * Copyright (c) 2017 Jean Guyomarc'h
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+
+/*
+ * This file is to be included by default.edc
+ */
+
+group { "eovim/cmdline_info";
+   images {
+      image: "button_normal.png" COMP;
+      image: "inset_shadow.png" COMP;
+   }
+   script {
+      public message(Msg_Type:type, id, ...) {
+         if (id == THEME_MSG_CMDLINE_INFO) {
+            /* Get the prompt (aka. first character) */
+            new info[8];
+            getsarg(2, info, 8);
+
+            /* Determine which color class shall be applied */
+            new buf[32];
+            switch (info[0]) {
+               case '/':
+               strcat(buf, "cmdline_slash");
+               case ':':
+               strcat(buf, "cmdline_colomn");
+               case '?':
+               strcat(buf, "cmdline_interro");
+               default:
+               strcat(buf, "cmdline_default");
+            }
+
+            /* Change the background of the prompt */
+            new part_bg = PART:"bg_fill";
+            custom_state(part_bg, "default", 0.0);
+            set_state_val(part_bg, STATE_COLOR_CLASS, buf);
+            set_state(part_bg, "custom", 0.0);
+
+            /* Now change the text style by appending '_info' to buf,
+             * then the text itself. */
+            new part_txt = PART:"text";
+            strcat(buf, "_info");
+            custom_state(part_txt, "default", 0.0);
+            set_state_val(part_txt, STATE_TEXT_STYLE, buf);
+            set_state_val(part_txt, STATE_TEXT, info);
+            set_state(part_txt, "custom", 0.0);
+         }
+      }
+   }
+   parts {
+      image { "base"; nomouse;
+         desc { "default";
+            image {
+               normal: "button_normal.png";
+               border: 4 4 3 5;
+               middle: SOLID;
+            }
+            fill.smooth: 0;
+         }
+      }
+      rect { "bg_fill"; nomouse;
+         desc { "default";
+            color_class: "cmdline_default";
+            rel.to: "bg_outline";
+         }
+      }
+      image { "bg_outline"; nomouse;
+         desc { "default";
+            image {
+               normal: "inset_shadow.png";
+               border: 5 5 7 3;
+            }
+            rel.to: "text";
+         }
+      }
+      textblock { "text"; nomouse;
+         desc { "default";
+            text {
+               style: "cmdline_default_info";
+               min: 1 1;
+               align: 0.5 0.5;
+               ellipsis: 1.0;
+            }
+            rel.to: "base";
+            rel1.offset: 6 5;
+            rel2.offset: -6 -8;
+         }
+      }
+   }
+}
+
+group { "eovim/cmdline";
+   images {
+      image: "button_normal.png" COMP;
+      image: "vertical_separated_bar_glow.png" COMP;
+      image: "inset_shadow.png" COMP;
+   }
+   parts {
+      image { "base"; nomouse;
+         desc { "default";
+            image {
+               normal: "button_normal.png";
+               border: 4 4 3 5;
+               middle: SOLID;
+            }
+            fill.smooth: 0;
+         }
+      }
+      rect { "bg_fill"; nomouse;
+         desc { "default";
+            color: 48 48 48 255;
+            rel.to: "bg_outline";
+         }
+      }
+      image { "bg_outline"; nomouse;
+         desc { "default";
+            image {
+               normal: "inset_shadow.png";
+               border: 5 5 7 3;
+            }
+            rel.to: "eovim.cmdline.text";
+         }
+      }
+      textblock { "eovim.cmdline.text";
+         entry_mode: EDITABLE;
+         select_mode: DEFAULT;
+         cursor_mode: BEFORE;
+
+         /* Cursor of the cmdline entry */
+         source4: "eovim/cmdline_cursor";
+
+         /* TODO: source4: */
+
+         desc { "default";
+            rel1.to: "base";
+            rel2.to: "select_line";
+            rel2.relative: 0.0 1.0;
+            rel1.offset: 6 5;
+            rel2.offset: 0 -8;
+
+            text {
+               min: 0 1;
+               style: "cmdline";
+            }
+         }
+      }
+      image { "select_line"; nomouse;
+         desc { "default";
+            fixed: 1 1;
+            align: 1.0 0.5;
+            min: 15 10;
+            rel.to: "base";
+            rel1.relative: 1.0 0.0;
+            rel1.offset: 1 -3;
+            rel2.offset: 1 0;
+            image.normal: "vertical_separated_bar_glow.png";
+            image.border: 7 7 7 7;
+            fill.smooth : 0;
+         }
+      }
+   }
+}
+
+group { "eovim/wildmenu_item";
+   parts {
+      textblock { "text"; nomouse;
+         desc { "default";
+            text {
+               style: "cmdline";
+               min: 1 1;
+               align: 0.0 0.5;
+               ellipsis: 1.0;
+            }
+         }
+      }
+   }
+}
+
+group { "eovim/cmdline_cursor";
+   min: 1 0;
+   parts {
+      rect { "cursor"; nomouse;
+         desc { "default";
+            min: 1 12;
+            color: 255 255 255 255;
+         }
+         desc { "hidden";
+            inherit: "default";
+            color: 0 0 0 0;
+         }
+      }
+   }
+
+   // These programs are used to blink the cursor. They're
+   // started by the "load" signal, emitted when the EDJ file is loaded.
+   // It's a infinite loop between "default" and "hidden" states of
+   // the "cursor" part.
+   programs {
+      program { name: "cursor_hide"; signal: "load"; source: "";
+         action: STATE_SET "hidden" 0.0;
+         target: "cursor";
+         transition: SINUSOIDAL 0.2;
+         after: "cursor_hide_timer";
+      }
+      program { name: "cursor_hide_timer";
+         in: 0.2 0.0;
+         after: "cursor_show";
+      }
+      program { name: "cursor_show";
+         action: STATE_SET "default" 0.0;
+         target: "cursor";
+         after: "cursor_show_timer";
+      }
+      program { name: "cursor_show_timer";
+         in: 0.5 0.0;
+         after: "cursor_hide";
+      }
+   }
+}
