@@ -400,18 +400,22 @@ static Eina_Bool
 nvim_event_mode_change(s_nvim *nvim,
                        const msgpack_object_array *args)
 {
-   CHECK_BASE_ARGS_COUNT(args, ==, 1);
-   ARRAY_OF_ARGS_EXTRACT(args, params);
-   CHECK_ARGS_COUNT(params, ==, 2);
+   for (unsigned int i = 1; i < args->size; i++)
+     {
+        const msgpack_object *const obj = &(args->ptr[i]);
+        CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
 
-   Eina_Stringshare *name;
-   t_int index;
-   GET_ARG(params, 1, t_int, &index);
-   GET_ARG(params, 0, stringshare, &name);
+        ARRAY_OF_ARGS_EXTRACT(args, params);
+        CHECK_ARGS_COUNT(params, ==, 2);
 
-   gui_mode_update(&nvim->gui, name);
-   eina_stringshare_del(name);
+        Eina_Stringshare *name;
+        t_int index;
+        GET_ARG(params, 1, t_int, &index);
+        GET_ARG(params, 0, stringshare, &name);
 
+        gui_mode_update(&nvim->gui, name);
+        eina_stringshare_del(name);
+     }
    return EINA_TRUE;
 }
 
