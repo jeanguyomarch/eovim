@@ -53,3 +53,27 @@ Examples:
 " Make the F11 key toggle fullscreen
 :nnoremap <F11> :call Eovim("sizing", {'aspect': 'fullscreen_toggle'})<CR>
 ```
+
+
+## Image Viewer
+
+The image viewer plugin allows Eovim to display images when Neovim requires it.
+It accepts a single parameter, which is the absolute path to the image to be
+displayed. The supported extensions will vary in function of the EFL installed
+on the system, but the most mainstream formats can reliabily be read (jpg, png,
+gif).
+
+Once the image is show in Eovim, one must press a key to dismiss it, and grab
+back control on Eovim.
+
+The following example will make Eovim display an image when it is open in a
+buffer (the buffer will silently be discarded):
+
+```vim
+function! EovimImageViewer ()
+   call Eovim("imageviewer", expand("%:p"))
+   bdelete
+endfunction
+
+:autocmd! BufEnter *.png,*.jpg,*gif  call EovimImageViewer()
+```

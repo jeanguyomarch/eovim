@@ -25,3 +25,4 @@ install(TARGETS libeovim LIBRARY DESTINATION lib)
 ##############################################################################
 
 add_plugin(sizing)
+add_plugin(imageviewer)
