@@ -28,3 +28,9 @@ eovim_window_get(s_nvim *nvim)
 {
    return nvim->gui.win;
 }
+
+EAPI Evas_Object *
+eovim_termview_get(s_nvim *nvim)
+{
+   return nvim->gui.termview;
+}

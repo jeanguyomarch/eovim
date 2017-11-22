@@ -53,6 +53,16 @@ EAPI Evas_Object *eovim_window_get(s_nvim *nvim)
    EINA_ARG_NONNULL(1) EINA_WARN_UNUSED_RESULT EINA_PURE;
 
 /**
+ * Retrieve the Termview handler from a Neovim instance. The termview in Eovim
+ * is the widget that displays a text zone.
+ *
+ * @param[in] nvim A pointer to the neovim instance. May not be NULL.
+ * @return The Termview handler associated to @p nvim.
+ */
+EAPI Evas_Object *eovim_termview_get(s_nvim *nvim)
+   EINA_ARG_NONNULL(1) EINA_WARN_UNUSED_RESULT EINA_PURE;
+
+/**
  * @def EOVIM_PLUGIN_SYMBOL(Sym)
  *
  * Exports the parameter @p Sym as being the symbol to be called when the
