@@ -93,6 +93,7 @@ add_executable(eovim
    "${SRC_DIR}/nvim_api.c"
    "${SRC_DIR}/nvim_helper.c"
    "${SRC_DIR}/plugin.c"
+   "${SRC_DIR}/options.c"
    "${SRC_DIR}/contrib.c"
 )
 set_source_files_properties(

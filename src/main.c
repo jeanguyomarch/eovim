@@ -31,78 +31,13 @@
 #include "eovim/plugin.h"
 #include "eovim/log.h"
 #include "eovim/prefs.h"
-#include "eovim/version.h"
-#include <Ecore_Getopt.h>
+#include "eovim/options.h"
 
 int _eovim_log_domain = -1;
 
 static Eina_Bool _in_tree = EINA_FALSE;
 static Eina_Strbuf *_edje_file = NULL;
 static Eina_Inlist *_plugins = NULL;
-
-static Eina_Bool
-_parse_geometry_cb(const Ecore_Getopt *parser EINA_UNUSED,
-                   const Ecore_Getopt_Desc *desc EINA_UNUSED,
-                   const char *str,
-                   void *data EINA_UNUSED,
-                   Ecore_Getopt_Value *storage)
-{
-   s_geometry *const geo = (s_geometry *)storage->ptrp;
-   const int nb = sscanf(str, "%ux%u", &geo->w, &geo->h);
-   if (nb != 2)
-     {
-        ERR("Failed to parse geometry. <UINT>x<UINT> is expected (e.g. 80x24)");
-        return EINA_FALSE;
-     }
-   else if ((geo->w == 0) || (geo->h == 0))
-     {
-        ERR("Geometry cannot have a dimension of 0");
-        return EINA_FALSE;
-     }
-   return EINA_TRUE;
-}
-
-static const Ecore_Getopt _options =
-{
-   "eovim",
-   "%prog [options] [files...]",
-   EOVIM_VERSION,
-   "2017 (c) Jean Guyomarc'h",
-   "MIT",
-   "An EFL GUI client for NeoVim",
-   EINA_FALSE, /* Not strict: allows forwarding */
-   {
-      /* Neovim options remapped */
-      ECORE_GETOPT_STORE_TRUE('b', "binary", "Run neovim in binary mode"),
-      ECORE_GETOPT_STORE_TRUE('d', "diff", "Run neovim in diff mode"),
-      ECORE_GETOPT_STORE_TRUE('R', "read-only", "Run neovim in read-only mode"),
-      ECORE_GETOPT_STORE_TRUE('Z', "restricted", "Run neovim in restricted mode"),
-      ECORE_GETOPT_STORE_TRUE('n', "no-swap", "Disable swap files use"),
-      ECORE_GETOPT_STORE_STR('r', "recover", "Recover crashed session"),
-      ECORE_GETOPT_STORE_STR('u', "nvimrc", "Override nvim.init with a custom file"),
-      ECORE_GETOPT_STORE_TRUE('N', "no-plugins", "Don't load plugin scripts"),
-      ECORE_GETOPT_CALLBACK_ARGS('g', "geometry",
-         "Initial dimensions (in cells) of the window (e.g. 80x24)",
-         "GEOMETRY", _parse_geometry_cb, NULL),
-
-      ECORE_GETOPT_STORE_TRUE('o', NULL, "Open one horizontal window per file"),
-      ECORE_GETOPT_STORE_UINT('\0', "hsplit", "Open N horizontal windows"),
-      ECORE_GETOPT_STORE_TRUE('O', NULL, "Open one vertical window per file"),
-      ECORE_GETOPT_STORE_UINT('\0', "vsplit", "Open N vertical windows"),
-      ECORE_GETOPT_STORE_TRUE('p', NULL, "Open one tab page per file"),
-      ECORE_GETOPT_STORE_UINT('\0', "tabs", "Open N tab pages"),
-
-      /* Eovim options */
-      ECORE_GETOPT_STORE_STR('\0', "config",
-         "Provide an alternate user configuration"),
-      ECORE_GETOPT_STORE_TRUE('F', "fullscreen", "Run Eovim in full screen"),
-      ECORE_GETOPT_STORE_STR('t', "theme", "Name of the theme to be used"),
-      ECORE_GETOPT_STORE_STR('\0', "nvim", "Path to the nvim program"),
-      ECORE_GETOPT_HELP('h', "help"),
-      ECORE_GETOPT_VERSION('V', "version"),
-      ECORE_GETOPT_SENTINEL
-   }
-};
 
 typedef struct
 {
@@ -173,40 +108,9 @@ elm_main(int argc,
          char **argv)
 {
    int return_code = EXIT_FAILURE;
-   int args;
-   Eina_Bool quit_option = EINA_FALSE;
-   char *nvim_prog = "nvim";
-   char *theme = "default";
-   s_nvim_options opts;
-   nvim_options_defaults_set(&opts);
-
-   Ecore_Getopt_Value values[] = {
-      /* Neovim options remapped */
-      ECORE_GETOPT_VALUE_BOOL(opts.binary),
-      ECORE_GETOPT_VALUE_BOOL(opts.diff),
-      ECORE_GETOPT_VALUE_BOOL(opts.read_only),
-      ECORE_GETOPT_VALUE_BOOL(opts.restricted),
-      ECORE_GETOPT_VALUE_BOOL(opts.no_swap),
-      ECORE_GETOPT_VALUE_STR(opts.recover),
-      ECORE_GETOPT_VALUE_STR(opts.nvimrc),
-      ECORE_GETOPT_VALUE_BOOL(opts.no_plugins),
-      ECORE_GETOPT_VALUE_PTR_CAST(opts.geometry),
-
-      ECORE_GETOPT_VALUE_BOOL(opts.hsplit.per_file),
-      ECORE_GETOPT_VALUE_UINT(opts.hsplit.count),
-      ECORE_GETOPT_VALUE_BOOL(opts.vsplit.per_file),
-      ECORE_GETOPT_VALUE_UINT(opts.vsplit.count),
-      ECORE_GETOPT_VALUE_BOOL(opts.tsplit.per_file),
-      ECORE_GETOPT_VALUE_UINT(opts.tsplit.count),
-
-      /* Eovim options */
-      ECORE_GETOPT_VALUE_STR(opts.config_path),
-      ECORE_GETOPT_VALUE_BOOL(opts.fullscreen),
-      ECORE_GETOPT_VALUE_STR(theme),
-      ECORE_GETOPT_VALUE_STR(nvim_prog),
-      ECORE_GETOPT_VALUE_BOOL(quit_option),
-      ECORE_GETOPT_VALUE_BOOL(quit_option),
-   };
+   const char **args = NULL;
+   s_options opts;
+   options_defaults_set(&opts);
 
    /* First step: initialize the logging framework */
    _eovim_log_domain = eina_log_domain_register("eovim", EINA_COLOR_RED);
@@ -217,18 +121,22 @@ elm_main(int argc,
      }
 
    /* Do the getopts */
-   args = ecore_getopt_parse(&_options, values, argc, argv);
-   if (args < 0)
+   const e_options_result opts_res = options_parse(argc, (const char *const *)argv, &opts, &args);
+   switch (opts_res)
      {
-        CRI("Failed to parse command-line arguments");
-        goto log_unregister;
-     }
+      case OPTIONS_RESULT_QUIT:
+         return_code = EXIT_SUCCESS;
+         goto log_unregister;
 
-   /* Did we require quitting? Quit! */
-   if (quit_option)
-     {
-        return_code = EXIT_SUCCESS;
-        goto log_unregister;
+      case OPTIONS_RESULT_ERROR:
+         goto log_unregister;
+
+      case OPTIONS_RESULT_CONTINUE:
+         break;
+
+      default:
+         CRI("Wtf?! Enum value out of switch");
+         goto log_unregister;
      }
 
 #ifdef HAVE_PLUGINS
@@ -253,7 +161,7 @@ elm_main(int argc,
    const char *const env = getenv("EOVIM_IN_TREE");
    _in_tree = (env) ? !!atoi(env) : EINA_FALSE;
 
-   if (EINA_UNLIKELY(! _edje_file_init(theme)))
+   if (EINA_UNLIKELY(! _edje_file_init(opts.theme)))
      {
         CRI("Failed to compose edje file path");
         goto log_unregister;
@@ -281,9 +189,7 @@ elm_main(int argc,
    /*=========================================================================
     * Create the Neovim handler
     *========================================================================*/
-   s_nvim *const nvim = nvim_new(&opts, nvim_prog,
-                                 (unsigned int)(argc - args),
-                                 (const char *const *)(&argv[args]));
+   s_nvim *const nvim = nvim_new(&opts, args);
    if (EINA_UNLIKELY(! nvim))
      {
         CRI("Failed to create a NeoVim instance");
@@ -307,6 +213,7 @@ modules_shutdown:
    eina_strbuf_free(_edje_file);
 log_unregister:
    eina_log_domain_unregister(_eovim_log_domain);
+   free(args);
 end:
    return return_code;
 }
