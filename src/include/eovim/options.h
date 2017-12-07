@@ -45,7 +45,7 @@ typedef enum
    OPTIONS_RESULT_CONTINUE,
 } e_options_result;
 
-e_options_result options_parse(int argc, const char *const argv[], s_options *opts, const char ***ret);
+e_options_result options_parse(int argc, const char *argv[], s_options *opts);
 void options_defaults_set(s_options *opts);
 
 #endif /* ! __EOVIM_OPTIONS_H__ */

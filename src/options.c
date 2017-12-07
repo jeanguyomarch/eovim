@@ -72,6 +72,9 @@ _show_help(void)
  * an Eovim option. If found, it will be processed by Eovim, otherwise it will
  * be directly forwarded to neovim. Positional arguments are automatically
  * forwarded to neovim.
+ *
+ * Forwarding is done by mutating argv, so it will contain uniquely forwarded
+ * arguments until NULL is reached.
  */
 
 enum
@@ -156,19 +159,15 @@ _parse_geometry(s_geometry *geo,
 
 e_options_result
 options_parse(int argc,
-              const char *const argv[],
-              s_options *opts,
-              const char ***ret)
+              const char *argv[],
+              s_options *opts)
 {
    e_options_result res = OPTIONS_RESULT_CONTINUE;
 
-   /* We forward in a stack-allocated array (c99) track of the arguments that
-    * must be kept for forwarding. If a cell at a given index is EINA_TRUE,
-    * it will be forwarded to neovim */
-   Eina_Bool forward[argc];
-   memset(forward, 0, sizeof(forward));
-   size_t forward_count = 0;
-
+   /* This function will mutate argv, it will store in it the arguments to be
+    * forwarded, in the order they have been encountered. NULL we be inserted
+    * at the end of these. */
+   size_t fwd = 0;
    for (int i = 1; i < argc; i++) /* Exclude argv[0] */
      {
         const char *const it = argv[i];
@@ -234,30 +233,18 @@ options_parse(int argc,
 
                    /* Unhandled: forward to neovim */
                 default:
-                   forward[i] = EINA_TRUE;
-                   forward_count++;
+                   argv[fwd++] = argv[i];
                    break;
                }
           }
         else
           {
              /* That's a positional, forward to neovim */
-             forward[i] = EINA_TRUE;
-             forward_count++;
+             argv[fwd++] = argv[i];
           }
      }
-
-   /* Generate the array containing the residual arguments that were not
-    * parsed by Eovim itself */
-   *ret = malloc((forward_count + 1) * sizeof(void*));
-   if (EINA_UNLIKELY(! ret))
-     {
-        CRI("Failed to allocate memory");
-        return OPTIONS_RESULT_ERROR;
-     }
-   for (int i = 0, j = 0; i < argc; i++)
-     if (forward[i]) (*ret)[j++] = argv[i];
-   (*ret)[forward_count] = NULL;
+   /* Done. Set to NULL the last element of argv to be forwarded. */
+   argv[fwd] = NULL;
 
    return res;
 }

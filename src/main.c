@@ -108,7 +108,6 @@ elm_main(int argc,
          char **argv)
 {
    int return_code = EXIT_FAILURE;
-   const char **args = NULL;
    s_options opts;
    options_defaults_set(&opts);
 
@@ -121,7 +120,7 @@ elm_main(int argc,
      }
 
    /* Do the getopts */
-   const e_options_result opts_res = options_parse(argc, (const char *const *)argv, &opts, &args);
+   const e_options_result opts_res = options_parse(argc, (const char **)argv, &opts);
    switch (opts_res)
      {
       case OPTIONS_RESULT_QUIT:
@@ -189,7 +188,7 @@ elm_main(int argc,
    /*=========================================================================
     * Create the Neovim handler
     *========================================================================*/
-   s_nvim *const nvim = nvim_new(&opts, args);
+   s_nvim *const nvim = nvim_new(&opts, (const char *const *)argv);
    if (EINA_UNLIKELY(! nvim))
      {
         CRI("Failed to create a NeoVim instance");
@@ -213,7 +212,6 @@ modules_shutdown:
    eina_strbuf_free(_edje_file);
 log_unregister:
    eina_log_domain_unregister(_eovim_log_domain);
-   free(args);
 end:
    return return_code;
 }
