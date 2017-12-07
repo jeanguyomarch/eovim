@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Backspace is now always passed as `<BS>` to Eovim.
+- Remove --hsplit, --vsplit and --tabs from the CLI, as unknown options are now
+  directly forwarded to neovim.
 
 
 ## [0.1.1] - 2017-10-26
