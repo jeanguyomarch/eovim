@@ -9,12 +9,14 @@ function (add_plugin Plugin)
    target_include_directories(${Plugin}
       SYSTEM PRIVATE
       ${EINA_INCLUDE_DIRS}
+      ${EVAS_INCLUDE_DIRS}
       ${ELEMENTARY_INCLUDE_DIRS}
       ${MSGPACK_INCLUDE_DIRS}
       ${EOVIM_INCLUDE_DIRS}
    )
    target_link_libraries(${Plugin}
       ${EINA_LIBRARIES}
+      ${EVAS_LIBRARIES}
       ${ELEMENTARY_LIBRARIES}
       ${MSGPACK_LIBRARIES}
       libeovim
