@@ -77,7 +77,7 @@ _show_help(void)
  * arguments until NULL is reached.
  */
 
-enum
+typedef enum
 {
    OPT_FORBIDDEN        = 0,
    OPT_CONFIG           = 1,
@@ -89,12 +89,12 @@ enum
    OPT_THEME            = 't',
    OPT_HELP             = 'h',
    OPT_VERSION          = 'V',
-};
+} e_opt;
 
 typedef struct
 {
    const char *const long_opt; /**< Long option name */
-   const int short_opt; /**< Option identifier */
+   const e_opt short_opt; /**< Option identifier */
 } s_arg;
 
 #define ARG(Long, Short) { .long_opt = Long, .short_opt = Short }
@@ -134,7 +134,7 @@ _find_short_option(const char *arg)
 {
    /* Match the character after the leading '-'. E.g. "-o" shall match 'o' */
    for (size_t i = 0; i < _args_size; i++)
-     if (arg[1] == _args[i].short_opt)
+     if ((e_opt)(arg[1]) == _args[i].short_opt)
        return _args[i].short_opt;
    return -1;
 }
