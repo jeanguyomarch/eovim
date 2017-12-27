@@ -379,8 +379,6 @@ collections {
 
          program { signal: "eovim,cmdline,show"; source: "eovim";
             action: STATE_SET "default";
-            //transition: ACCELERATE 2.5;
-            transition: DECELERATE 0.5;
             target: "eovim.cmdline";
             target: "eovim.wildmenu";
          }
@@ -388,7 +386,7 @@ collections {
             action: STATE_SET "hidden";
             target: "eovim.cmdline";
             target: "eovim.wildmenu";
-            transition: DECELERATE 0.5;
+            transition: ACCELERATE 0.2;
          }
       }
    }
