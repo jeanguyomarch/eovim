@@ -91,10 +91,14 @@ struct termview
 
    Eina_Rectangle scroll; /**< Scrolling region */
 
-   /* When mouse drag starts, we store in here the button that was pressed when
-    * dragging was initiated. Since there is no button 0, we use 0 as a value
-    * telling that there is no dragging */
-   int mouse_drag; /**< Doing mouse drag */
+   struct {
+      /* When mouse drag starts, we store in here the button that was pressed
+       * when dragging was initiated. Since there is no button 0, we use 0 as a
+       * value telling that there is no dragging */
+      int btn;
+      unsigned int prev_cx; /**< Previous X position */
+      unsigned int prev_cy; /**< Previous Y position */
+   } mouse_drag;
 
    /* Writing position */
    unsigned int x; /**< Cursor X */
@@ -317,13 +321,24 @@ _termview_mouse_move_cb(void *data,
    s_termview *const sd = data;
 
    /* If there is no mouse drag, nothing to do! */
-   if (! sd->mouse_drag) { return; }
+   if (! sd->mouse_drag.btn) { return; }
 
    const Evas_Event_Mouse_Move *const ev = event;
    unsigned int cx, cy;
 
    _coords_to_cell(sd, ev->cur.canvas.x, ev->cur.canvas.y, &cx, &cy);
-   _mouse_event(sd, "Drag", cx, cy, sd->mouse_drag);
+
+   /* Did we move? If not, stop right here */
+   if ((cx == sd->mouse_drag.prev_cx) && (cy == sd->mouse_drag.prev_cy))
+      return;
+
+   /* At this point, we have actually moved the mouse while holding a mouse
+    * button, hence dragging. Send the event then update the current mouse
+    * position. */
+   _mouse_event(sd, "Drag", cx, cy, sd->mouse_drag.btn);
+
+   sd->mouse_drag.prev_cx = cx;
+   sd->mouse_drag.prev_cy = cy;
 }
 
 static void
@@ -338,7 +353,7 @@ _termview_mouse_up_cb(void *data,
 
    _coords_to_cell(sd, ev->canvas.x, ev->canvas.y, &cx, &cy);
    _mouse_event(sd, "Release", cx, cy, ev->button);
-   sd->mouse_drag = 0; /* Disable mouse dragging */
+   sd->mouse_drag.btn = 0; /* Disable mouse dragging */
 }
 
 static void
@@ -352,8 +367,14 @@ _termview_mouse_down_cb(void *data,
    unsigned int cx, cy;
 
    _coords_to_cell(sd, ev->canvas.x, ev->canvas.y, &cx, &cy);
+
+   /* When pressing down the mouse, we just registered the first values thay
+    * may be used for dragging with the mouse. */
+   sd->mouse_drag.prev_cx = cx;
+   sd->mouse_drag.prev_cy = cy;
+
    _mouse_event(sd, "Mouse", cx, cy, ev->button);
-   sd->mouse_drag = ev->button; /* Enable mouse dragging */
+   sd->mouse_drag.btn = ev->button; /* Enable mouse dragging */
 }
 
 static void
