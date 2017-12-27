@@ -697,15 +697,25 @@ static Eina_Bool
 nvim_event_set_title(s_nvim *nvim EINA_UNUSED,
                      const msgpack_object_array *args EINA_UNUSED)
 {
-   CRI("Unimplemented");
+   CHECK_BASE_ARGS_COUNT(args, ==, 1);
+   ARRAY_OF_ARGS_EXTRACT(args, params);
+   CHECK_ARGS_COUNT(params, ==, 1);
+
+   Eina_Stringshare *const title =
+      EOVIM_MSGPACK_STRING_EXTRACT(&params->ptr[0], fail);
+   gui_title_set(&nvim->gui, title);
+   eina_stringshare_del(title);
+
    return EINA_TRUE;
+fail:
+   return EINA_FALSE;
 }
 
 static Eina_Bool
 nvim_event_set_icon(s_nvim *nvim EINA_UNUSED,
                     const msgpack_object_array *args EINA_UNUSED)
 {
-   CRI("Unimplemented");
+   /* Do nothing. Seems it can be safely ignored. */
    return EINA_TRUE;
 }
 

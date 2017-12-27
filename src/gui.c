@@ -823,6 +823,16 @@ gui_shutdown(void)
 }
 
 void
+gui_title_set(s_gui *gui,
+              const char *title)
+{
+   EINA_SAFETY_ON_NULL_RETURN(title);
+
+   /* Set the title to the window, or just "Eovim" if it happens to be empty */
+   elm_win_title_set(gui->win, (title[0]) ? title : "Eovim");
+}
+
+void
 gui_fullscreen_set(s_gui *gui,
                    Eina_Bool fullscreen)
 {
