@@ -71,5 +71,6 @@ void termview_fg_color_get(const Evas_Object *obj, int *r, int *g, int *b, int *
 s_termview_color termview_color_decompose(uint32_t col, Eina_Bool true_colors);
 void termview_cell_to_coords(const Evas_Object *obj, unsigned int cell_x, unsigned int cell_y, int *px, int *py);
 void termview_cursor_mode_set(Evas_Object *obj, const s_mode *mode);
+void termview_cursor_visibility_set(Evas_Object *obj, Eina_Bool visible);
 
 #endif /* ! __EOVIM_TERMVIEW_H__ */

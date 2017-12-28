@@ -1241,3 +1241,12 @@ termview_cursor_mode_set(Evas_Object *obj,
     * It is not made easy!!!! */
    sd->nvim->hl_group_decode(sd->nvim, mode->hl_id, _cursor_color_get);
 }
+
+void
+termview_cursor_visibility_set(Evas_Object *obj,
+                               Eina_Bool visible)
+{
+   s_termview *const sd = evas_object_smart_data_get(obj);
+   if (visible) evas_object_show(sd->cursor);
+   else evas_object_hide(sd->cursor);
+}

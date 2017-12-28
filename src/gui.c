@@ -861,6 +861,7 @@ gui_cmdline_show(s_gui *gui,
    const Edje_Message_String msg = {
       .str = (char *)firstc,
    };
+   termview_cursor_visibility_set(gui->termview, EINA_FALSE);
    edje_object_message_send(gui->cmdline.info, EDJE_MESSAGE_STRING,
                             THEME_MSG_CMDLINE_INFO, (void *)(&msg));
    edje_object_part_text_set(gui->cmdline.obj, "eovim.cmdline.text", content);
@@ -875,6 +876,7 @@ void
 gui_cmdline_hide(s_gui *gui)
 {
    edje_object_signal_emit(gui->layout, "eovim,cmdline,hide", "eovim");
+   termview_cursor_visibility_set(gui->termview, EINA_TRUE);
 }
 
 void
