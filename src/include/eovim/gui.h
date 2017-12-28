@@ -36,6 +36,13 @@ struct gui
    Evas_Object *edje;
    Evas_Object *termview;
 
+   /** The cache is a stringbuffer used to perform dynamic string operations.
+    * Since the whole gui code is executed on the main thread, this is very
+    * fine to use a global like this, as long as its use is restricted to a
+    * known event scope.
+    */
+   Eina_Strbuf *cache;
+
    struct {
       Evas_Object *obj;
       Evas_Object *gl;

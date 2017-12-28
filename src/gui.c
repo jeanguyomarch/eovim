@@ -211,6 +211,13 @@ gui_add(s_gui *gui,
    Evas_Object *o;
    gui->nvim = nvim;
 
+   gui->cache = eina_strbuf_new();
+   if (EINA_UNLIKELY(! gui->cache))
+     {
+        CRI("Failed to create cache string buffer");
+        goto fail;
+     }
+
    /* Window setup */
    gui->win = elm_win_util_standard_add("eovim", "Eovim");
    elm_win_autodel_set(gui->win, EINA_TRUE);
@@ -301,6 +308,7 @@ gui_add(s_gui *gui,
    return EINA_TRUE;
 
 fail:
+   if (gui->cache) eina_strbuf_free(gui->cache);
    evas_object_del(gui->win);
    return EINA_FALSE;
 }
@@ -310,6 +318,7 @@ gui_del(s_gui *gui)
 {
    if (EINA_LIKELY(gui != NULL))
      {
+        eina_strbuf_free(gui->cache);
         evas_object_del(gui->win);
      }
 }
@@ -592,13 +601,9 @@ _completion_sel_cb(void *data,
       : 1; /* No item selected? Take the first one */
    const int compl_idx = elm_genlist_item_index_get(item);
 
-   /* Create a string buffer that will hold the input to be passed to neovim */
-   Eina_Strbuf *const input = eina_strbuf_new();
-   if (EINA_UNLIKELY(! input))
-     {
-        CRI("Failed to create string buffer");
-        return;
-     }
+   /* Use a string buffer that will hold the input to be passed to neovim */
+   Eina_Strbuf *const input = gui->cache;
+   eina_strbuf_reset(input);
 
    /* If the item to be completed is greater than the selected item, spam the
     * <C-n> to make neovim advance the selection. Otherwise, the <C-p>.
@@ -619,7 +624,6 @@ _completion_sel_cb(void *data,
    /* Pass all these data to neovim and cleanup behind us */
    nvim_api_input(gui->nvim, eina_strbuf_string_get(input),
                   (unsigned int)eina_strbuf_length_get(input));
-   eina_strbuf_free(input);
 }
 
 void
