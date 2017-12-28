@@ -963,7 +963,6 @@ _wildmenu_sel_cb(void *data,
 {
    s_gui *const gui = data;
    const Elm_Genlist_Item *const item = event;
-   Eina_Stringshare *const wild = elm_object_item_data_get(item);
 
    /* If an item was selected, but at the initiative of neovim, we will just
     * discard the event, to notify we have processed it, but will stop right
