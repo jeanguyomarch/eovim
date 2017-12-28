@@ -66,6 +66,7 @@ struct gui
       size_t items_count;
       ssize_t sel_index;
       size_t cpos; /**< Cursor position */
+      Eina_Bool nvim_sel_event; /**< Nvim initiated a selection */
    } cmdline;
 
    s_prefs prefs;

@@ -904,6 +904,9 @@ gui_wildmenu_select(s_gui *gui,
      }
    else
      {
+        /* The selection has been initiated by neovim */
+        gui->cmdline.nvim_sel_event = EINA_TRUE;
+
         /* At this point, we need to select something, but if we didn't have
          * any item previously selected (this will happen after doing a full
          * circle among the wildmenu items), start selecting the first item in
@@ -949,18 +952,71 @@ gui_wildmenu_show(s_gui *gui)
 
    /* The first selected item will be the first one in the genlist */
    _wildmenu_first_item_acquire(gui);
+   gui->cmdline.nvim_sel_event = EINA_TRUE;
    elm_genlist_item_selected_set(gui->cmdline.sel_item, EINA_TRUE);
+}
+
+static void
+_wildmenu_sel_cb(void *data,
+                 Evas_Object *obj EINA_UNUSED,
+                 void *event)
+{
+   s_gui *const gui = data;
+   const Elm_Genlist_Item *const item = event;
+   Eina_Stringshare *const wild = elm_object_item_data_get(item);
+
+   /* If an item was selected, but at the initiative of neovim, we will just
+    * discard the event, to notify we have processed it, but will stop right
+    * here, right now, because this function is made to handle user selection
+    */
+   if (gui->cmdline.nvim_sel_event)
+     {
+        gui->cmdline.nvim_sel_event = EINA_FALSE;
+        return;
+     }
+
+   /* Use a string buffer that will hold the input to be passed to neovim */
+   Eina_Strbuf *const input = gui->cache;
+   eina_strbuf_reset(input);
+
+   const ssize_t item_idx = (ssize_t)elm_genlist_item_index_get(item);
+   const ssize_t sel_idx = (gui->cmdline.sel_index >= 0)
+      ? gui->cmdline.sel_index
+      : 1;
+
+   /* To make neovim select the wildmenu item, we will write N times
+    * <C-n> or <C-p> from the current index to the target one. When done,
+    * we will insert <CR> to make the selection apply */
+   if (sel_idx < item_idx)
+     {
+        for (ssize_t i = sel_idx; i < item_idx; i++)
+          eina_strbuf_append_length(input, "<C-n>", 5);
+     }
+   else /* sel_idx >= item_idx */
+     {
+        for (ssize_t i = item_idx; i >= sel_idx; i--)
+          eina_strbuf_append_length(input, "<C-p>", 5);
+     }
+
+   /* Send a signal to end the wildmenu selection */
+   eina_strbuf_append_length(input, "<CR>", 4);
+
+   /* Pass all these data to neovim and cleanup behind us */
+   nvim_api_input(gui->nvim, eina_strbuf_string_get(input),
+                  (unsigned int)eina_strbuf_length_get(input));
+   printf("Wildmenu selection: %zi vs %zi\n", item_idx, sel_idx);
 }
 
 void
 gui_wildmenu_append(s_gui *gui,
                     Eina_Stringshare *item)
 {
-   elm_genlist_item_append(
+   Elm_Genlist_Item *const wild_item = elm_genlist_item_append(
       gui->cmdline.menu, _wildmenu_itc, item,
       NULL, ELM_GENLIST_ITEM_NONE,
-      NULL, NULL
+      _wildmenu_sel_cb, gui
    );
+   elm_object_item_data_set(wild_item, (void *)item);
 
    /* And one more item! */
    gui->cmdline.items_count++;
