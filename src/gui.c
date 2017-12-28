@@ -282,6 +282,7 @@ gui_add(s_gui *gui,
    gui->cmdline.menu = o = elm_genlist_add(gui->layout);
    evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_scroller_policy_set(o, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_OFF);
    elm_genlist_homogeneous_set(o, EINA_TRUE);
    elm_genlist_mode_set(o, ELM_LIST_COMPRESS);
    elm_object_tree_focus_allow_set(o, EINA_FALSE);
@@ -929,6 +930,9 @@ gui_wildmenu_select(s_gui *gui,
              elm_genlist_item_selected_set(gui->cmdline.sel_item, EINA_TRUE);
           }
      }
+
+   /* Bring in the item */
+   elm_genlist_item_bring_in(gui->cmdline.sel_item, ELM_GENLIST_ITEM_SCROLLTO_IN);
 
    /* Finally, we update the index in cache, and select the item */
    gui->cmdline.sel_index = index;
