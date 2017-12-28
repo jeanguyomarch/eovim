@@ -9,12 +9,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Plug-Ins infrastructure to allow Neovim to manipule the Eovim GUI.
 - Sizing plugin to make neovim alter the sizing of the Eovim's Window.
+- Plugin to preview images directly from Eovim.
+- Externalization of cmdline and wildmenu.
+- Support for neovim setting the window title.
 
 ### Changed
 
 - Backspace is now always passed as `<BS>` to Eovim.
 - Remove --hsplit, --vsplit and --tabs from the CLI, as unknown options are now
   directly forwarded to neovim.
+
+### Fixed
+
+- Dragging the mouse does select characters instead of words.
+- Initial sizing issues that may lead to ill-formed windows.
 
 
 ## [0.1.1] - 2017-10-26
