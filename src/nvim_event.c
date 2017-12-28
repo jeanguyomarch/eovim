@@ -827,9 +827,6 @@ nvim_event_cmdline_show(s_nvim *nvim,
    //const int64_t level =
    //   EOVIM_MSGPACK_INT64_EXTRACT(&params->ptr[5], del_prompt);
 
-   /* Set the cursor position within the command-line */
-   gui_cmdline_cursor_pos_set(&nvim->gui, (size_t)pos);
-
    /* Create the string buffer, which will hold the content of the cmdline */
    Eina_Strbuf *const buf = eina_strbuf_new();
    if (EINA_UNLIKELY(! buf))
@@ -860,6 +857,9 @@ nvim_event_cmdline_show(s_nvim *nvim,
      }
 
    gui_cmdline_show(&nvim->gui, eina_strbuf_string_get(buf), prompt, firstc);
+
+   /* Set the cursor position within the command-line */
+   gui_cmdline_cursor_pos_set(&nvim->gui, (size_t)pos);
 
    ret = EINA_TRUE;
 del_buf:
