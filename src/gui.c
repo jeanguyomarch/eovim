@@ -1069,9 +1069,10 @@ _wildmenu_resize(s_gui *gui)
         return;
      }
 
-   Evas_Object *const first = elm_object_item_track(eina_list_data_get(realized));
+   Evas_Object *const first = eina_list_data_get(realized);
+   Evas_Object *const track = elm_object_item_track(first);
    int item_height;
-   evas_object_geometry_get(first, NULL, NULL, NULL, &item_height);
+   evas_object_geometry_get(track, NULL, NULL, NULL, &item_height);
 
    int win_h, info_x, info_y, info_h, menu_w;
    evas_object_geometry_get(gui->win, NULL, NULL, NULL, &win_h);
@@ -1085,4 +1086,5 @@ _wildmenu_resize(s_gui *gui)
      evas_object_size_hint_min_set(gui->cmdline.spacer, menu_w, height);
    else
      evas_object_size_hint_min_set(gui->cmdline.spacer, menu_w, max_height);
+   elm_object_item_untrack(first);
 }
