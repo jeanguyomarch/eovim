@@ -12,7 +12,13 @@ Eovim is the Enlightened Neovim. That's just an [EFL][1] GUI client for
 Eovim is still at an alpha stage. However, it should be possible to use it for
 developping daily, as most of the Neovim interfaces have been implemented.
 
-[![Screenshot](https://phab.enlightenment.org/file/data/jxgenow5sduf4bjlzasd/PHID-FILE-lf7f5hqmdfehkxxize5c/eovim.png)](https://phab.enlightenment.org/w/projects/eovim/)
+# Screenshots
+
+[![Screenshot](https://phab.enlightenment.org/file/data/eox5fhtkpub5ffft3ex5/PHID-FILE-qmjmn2mzkowziaiphdsz/Screenshot_from_2017-12-30_17-16-52.png)][9]
+[![Screenshot](https://phab.enlightenment.org/file/data/mggrhqzd6dl3t3nbmswa/PHID-FILE-mvi65ftut5dbutuowvws/Screenshot_from_2017-12-27_22-59-42.png)][9]
+
+Have a look at [the Enlightenment Wiki][8] for more.
+
 
 # Installation
 
@@ -112,3 +118,5 @@ logo. Eovim's logo should be understood as a tribute to Neovim.
 [5]: https://cmake.org/
 [6]: https://git.enlightenment.org/tools/exactness.git/
 [7]: https://raw.githubusercontent.com/neovim/neovim.github.io/master/logos/neovim-logo-600x173.png
+[8]: https://phab.enlightenment.org/w/projects/eovim/#screenshots
+[9]: https://phab.enlightenment.org/w/projects/eovim/
