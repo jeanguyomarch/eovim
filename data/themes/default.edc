@@ -336,6 +336,10 @@ collections {
                image.border: 5 5 7 3;
                rel.to: "eovim.wildmenu";
             }
+            desc { "hidden";
+               inherit: "default";
+               visible: 0;
+            }
          }
          image { "wildmenu_bar"; nomouse;
             desc { "default";
@@ -354,6 +358,10 @@ collections {
                align: 1.0 0.5;
                fixed: 1 1;
             }
+            desc { "hidden";
+               inherit: "default";
+               visible: 0;
+            }
          }
       }
 
@@ -366,11 +374,15 @@ collections {
             action: STATE_SET "default";
             target: "eovim.cmdline";
             target: "eovim.wildmenu";
+            target: "wildmenu_shadow";
+            target: "wildmenu_bar";
          }
          program { signal: "eovim,cmdline,hide"; source: "eovim";
             action: STATE_SET "hidden";
             target: "eovim.cmdline";
             target: "eovim.wildmenu";
+            target: "wildmenu_shadow";
+            target: "wildmenu_bar";
             transition: ACCELERATE 0.2;
          }
       }
