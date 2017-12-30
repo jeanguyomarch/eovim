@@ -730,17 +730,48 @@ nvim_event_popupmenu_show(s_nvim *nvim,
    const msgpack_object *const data_obj = &(params->ptr[0]);
    CHECK_TYPE(data_obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
    const msgpack_object_array *const data = &(data_obj->via.array);
+   s_gui *const gui = &nvim->gui;
 
    t_int selected, row, col;
    GET_ARG(params, 1, t_int, &selected);
    GET_ARG(params, 2, t_int, &row);
    GET_ARG(params, 3, t_int, &col);
 
+   /* Okay, now this gets annoying. We will proceed in two passes on the
+    * completion items. The gui uses a genlist, which is hardcore to use.
+    * When we append an item to the genlist, it is asynchroneously created,
+    * and without prior knowledge of all the compltion items, we canot
+    * properly size the genlist.
+    *
+    * So, we go through all the items once. We do all the type checks, and
+    * calculate the maximum length of the word and menu items.
+    * These maxima will be used to size the genlist later. Since all checks
+    * are done in the first pass, the second pass does not need to perform
+    * them again.
+    */
+   size_t max_len_word = 0;
+   size_t max_len_menu = 0;
    for (unsigned int i = 0; i < data->size; i++)
      {
         CHECK_TYPE(&data->ptr[i], MSGPACK_OBJECT_ARRAY, EINA_FALSE);
         const msgpack_object_array *const completion = &(data->ptr[i].via.array);
         CHECK_ARGS_COUNT(completion, ==, 4);
+
+        EOVIM_MSGPACK_STRING_CHECK(&completion->ptr[0], fail); /* word */
+        EOVIM_MSGPACK_STRING_CHECK(&completion->ptr[1], fail); /* kind */
+        EOVIM_MSGPACK_STRING_CHECK(&completion->ptr[2], fail); /* menu */
+        EOVIM_MSGPACK_STRING_CHECK(&completion->ptr[3], fail); /* info */
+
+        max_len_word = MAX(max_len_word, completion->ptr[0].via.str.size);
+        max_len_menu = MAX(max_len_menu, completion->ptr[2].via.str.size);
+     }
+
+   gui_completion_prepare(gui, data->size, max_len_word, max_len_menu);
+
+   /* Second pass. Remember, no checks required. */
+   for (unsigned int i = 0; i < data->size; i++)
+     {
+        const msgpack_object_array *const completion = &(data->ptr[i].via.array);
 
         s_completion *const compl = malloc(sizeof(s_completion));
         if (EINA_UNLIKELY(! compl))
@@ -748,18 +779,23 @@ nvim_event_popupmenu_show(s_nvim *nvim,
              CRI("Failed to allocate memory for completion");
              return EINA_FALSE;
           }
-        GET_ARG(completion, 0, stringshare, &compl->word);
-        GET_ARG(completion, 1, stringshare, &compl->kind);
-        GET_ARG(completion, 2, stringshare, &compl->menu);
-        GET_ARG(completion, 3, stringshare, &compl->info);
+#define STRINGSHARE_NEW(Obj) \
+   eina_stringshare_add_length((Obj).via.str.ptr, (Obj).via.str.size)
+        compl->word = STRINGSHARE_NEW(completion->ptr[0]);
+        compl->kind = STRINGSHARE_NEW(completion->ptr[1]);
+        compl->menu = STRINGSHARE_NEW(completion->ptr[2]);
+        compl->info = STRINGSHARE_NEW(completion->ptr[3]);
+#undef STRINGSHARE_GET
 
-        gui_completion_add(&nvim->gui, compl);
+        gui_completion_add(gui, compl);
      }
 
-   gui_completion_show(&nvim->gui, (int)selected,
+   gui_completion_show(gui, (int)selected,
                        (unsigned int)col, (unsigned int)row);
 
    return EINA_TRUE;
+fail:
+   return EINA_FALSE;
 }
 
 static Eina_Bool

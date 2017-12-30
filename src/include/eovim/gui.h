@@ -46,14 +46,13 @@ struct gui
    struct {
       Evas_Object *obj;
       Evas_Object *gl;
+      Evas_Object *table;
+      Evas_Object *spacer;
       Elm_Genlist_Item *sel;
-      struct {
-         unsigned int at_x;
-         unsigned int at_y;
-         unsigned int count;
-         Eina_Bool calculated;
-      } items;
-      Eina_Bool event;
+      size_t items_count;
+      size_t max_type_len;
+      size_t max_word_len;
+      Eina_Bool nvim_sel_event;
    } completion;
 
    struct {
@@ -101,6 +100,7 @@ void gui_config_show(s_gui *gui);
 void gui_config_hide(s_gui *gui);
 void gui_die(s_gui *gui, const char *fmt, ...);
 
+void gui_completion_prepare(s_gui *gui, size_t items, size_t max_word_len, size_t max_menu_len);
 void gui_completion_show(s_gui *gui, int selected, unsigned int x, unsigned int y);
 void gui_completion_hide(s_gui *gui);
 void gui_completion_clear(s_gui *gui);

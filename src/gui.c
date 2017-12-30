@@ -35,9 +35,10 @@ typedef enum
 {
    THEME_MSG_BG = 0,
    THEME_MSG_CMDLINE_INFO = 1,
+   THEME_MSG_COMPLETION_KIND = 2,
 } e_theme_msg;
 
-static Elm_Genlist_Item_Class *_compl_simple_itc = NULL;
+static Elm_Genlist_Item_Class *_compl_itc = NULL;
 static Elm_Genlist_Item_Class *_wildmenu_itc = NULL;
 
 static void _wildmenu_resize(s_gui *gui);
@@ -116,89 +117,6 @@ gui_size_recalculate(s_gui *gui)
    termview_refresh(gui->termview);
 }
 
-static void
-_completion_genlist_sizing_eval(s_gui *gui,
-                                const Elm_Genlist_Item *item)
-{
-   Evas_Object *const obj = gui->completion.obj;
-
-   /* Get the size of the completion item */
-   const Evas_Object *const widget = elm_object_item_part_content_get(
-      item, "elm.swallow.content"
-   );
-   int item_w, item_h;
-   evas_object_geometry_get(widget, NULL, NULL, &item_w, &item_h);
-
-
-   /* Get the position where the completion panel was triggerred */
-   int px, py;
-   termview_cell_to_coords(gui->termview, gui->completion.items.at_x,
-                           gui->completion.items.at_y, &px, &py);
-
-   /* Termview dimensions */
-   int tv_orig_y, tv_width, tv_height;
-   evas_object_geometry_get(gui->termview, NULL, &tv_orig_y, &tv_width, &tv_height);
-
-   /* Calculate the (my) ideal height */
-   const int visible_items = MIN((int)gui->completion.items.count, 10);
-   const int height = ((visible_items + 1) * item_h);
-
-   /* Termview cell height */
-   int cell_h;
-   termview_cell_size_get(gui->termview, NULL, (unsigned int *)&cell_h);
-
-   int resize_h;
-   int pos_y;
-   if (py + cell_h + height < tv_height)
-     {
-        /* (1) If there is room below the insertion point, try to place the
-         * completion panel on the line BELOW. */
-        resize_h = height;
-        pos_y = cell_h + py;
-     }
-   else if (py - height > 0)
-     {
-        /* (2) If no room below, try to place the completion panel ABOVE */
-        resize_h = height;
-        pos_y = py - resize_h;
-     }
-   else
-     {
-        /* (3) Oh noo, perfect size does not fit anywhere. Take the side where
-         * we have the most room and fill it completely */
-        if (py > tv_height / 2) /* Place it above */
-          {
-             resize_h = py - tv_orig_y;
-             pos_y = py - resize_h;
-          }
-        else /* Place it below */
-          {
-             resize_h = tv_height - (py + cell_h);
-             pos_y = py + cell_h;
-          }
-     }
-
-   const int max_width = tv_width - px;
-   evas_object_move(obj, px, pos_y);
-   evas_object_resize(obj, MIN(800, max_width), resize_h); /* XXX Find better*/
-   evas_object_show(obj);
-}
-
-static void
-_realized_cb(void *data,
-             Evas_Object *genlist EINA_UNUSED,
-             void *info)
-{
-   s_gui *const gui = data;
-   const Elm_Genlist_Item *const item = info;
-
-   /* If the genlist's sizing has already been evaluated, don't do it twice */
-   if (! gui->completion.items.calculated)
-     {
-        gui->completion.items.calculated = EINA_TRUE;
-        _completion_genlist_sizing_eval(gui, item);
-     }
-}
 
 Eina_Bool
 gui_add(s_gui *gui,
@@ -246,15 +164,33 @@ gui_add(s_gui *gui,
    edje_object_file_set(o, edje_file, "eovim/completion");
    evas_object_smart_member_add(o, gui->layout);
 
-   /* Create the completion genlist, and attach it to the theme layout.
-    * It shall not be subject to focus. */
-   o = gui->completion.gl = elm_genlist_add(gui->layout);
+
+   /* Table: item that will hold the genlist and a spacer */
+   gui->completion.table = o = elm_table_add(gui->layout);
    evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_smart_callback_add(o, "realized", _realized_cb, gui);
-   elm_object_tree_focus_allow_set(o, EINA_FALSE);
    edje_object_part_swallow(gui->completion.obj, "eovim.completion", o);
+   evas_object_show(o);
+
+   /* Spacer: allows to give a fixed-size to the genlist */
+   gui->completion.spacer = o = evas_object_rectangle_add(evas);
+   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_color_set(o, 0, 0, 0, 0);
+   elm_table_pack(gui->completion.table, o, 0, 0, 1, 1);
+   evas_object_show(o);
+
+   /* Create the completion genlist, and attach it to the theme layout.
+    * It shall not be subject to focus. */
+   o = gui->completion.gl = elm_genlist_add(gui->completion.table);
+   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_scroller_policy_set(o, ELM_SCROLLER_POLICY_AUTO, ELM_SCROLLER_POLICY_OFF);
+   elm_object_tree_focus_allow_set(o, EINA_FALSE);
+   elm_genlist_homogeneous_set(o, EINA_TRUE);
+   elm_genlist_mode_set(o, ELM_LIST_COMPRESS);
    evas_object_data_set(o, _nvim_data_key, nvim);
+   elm_table_pack(gui->completion.table, o, 0, 0, 1, 1);
    evas_object_show(o);
 
    /* ========================================================================
@@ -294,13 +230,14 @@ gui_add(s_gui *gui,
    elm_genlist_mode_set(o, ELM_LIST_COMPRESS);
    elm_object_tree_focus_allow_set(o, EINA_FALSE);
    elm_table_pack(gui->cmdline.table, o, 0, 0, 1, 1);
-   evas_object_show(gui->cmdline.menu);
+   evas_object_show(o);
 
    /* ========================================================================
     * Finalize GUI
     * ===================================================================== */
 
    gui_cmdline_hide(gui);
+   gui_wildmenu_clear(gui);
    evas_object_show(gui->termview);
    evas_object_show(gui->layout);
    evas_object_show(gui->win);
@@ -528,41 +465,106 @@ gui_bg_color_set(s_gui *gui,
    edje_object_message_send(gui->edje, EDJE_MESSAGE_INT_SET, THEME_MSG_BG, msg);
 }
 
+static inline Evas_Object *
+_compl_text_set(Evas_Object *layout,
+                const s_config *cfg,
+                const char *text)
+{
+   Evas_Object *const edje = elm_layout_edje_get(layout);
+   edje_object_text_class_set(edje, "completion_text",
+                              cfg->font_name, (int)cfg->font_size);
+   elm_layout_text_set(layout, "text", text);
+   return edje;
+}
+
+static void
+_spacer_set(Evas_Object *obj,
+            size_t char_w,
+            size_t char_h,
+            size_t len)
+{
+   /* This function set the minimum size for a spacer, and initializes common
+    * parameters, such as invisible color and normal size hints. */
+   const int size = (int)char_w * (int)len;
+   evas_object_size_hint_weight_set(obj, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(obj, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_min_set(obj, size, (int)char_h);
+   evas_object_color_set(obj, 0, 0, 0, 0);
+   evas_object_show(obj);
+}
+
 static Evas_Object *
-_completion_gl_content_get(void *data,
-                           Evas_Object *obj,
-                           const char *part EINA_UNUSED)
+_compl_content_get(void *data,
+                   Evas_Object *obj,
+                   const char *part EINA_UNUSED)
 {
    const s_completion *const compl = data;
    const s_nvim *const nvim = _nvim_get(obj);
+   s_gui *const gui = (s_gui *)(&nvim->gui);
    const s_config *const cfg = nvim->config;
-   char buf[1024];
-   char *ptr = buf;
-   size_t size = sizeof(buf);
+   Evas_Object *o;
 
-   /* Prepare the completion text */
-   int bytes = snprintf(ptr, size,
-                        "<font='%s' font_size=%u align=left>",
-                        cfg->font_name, cfg->font_size);
-   ptr += bytes; size -= (size_t)bytes;
-   if (compl->kind[0] == '\0')
+   /* Each element of the completion is a table that is designed as follows:
+    *
+    * +------+------------+-----------------+
+    * | kind |<----- Type | Completion ---->|
+    * +------+------------+-----------------+
+    *
+    */
+
+   Evas *const evas = evas_object_evas_get(obj);
+
+   /* XXX: I don't know how this will work with large glyphs... Pretty sure we
+    * are doomed. Hopefully this should never happen. */
+   unsigned int char_w, char_h;
+   termview_cell_size_get(gui->termview, &char_w, &char_h);
+
+   /* Table that will hold the completion elements */
+   Evas_Object *const table = o = elm_table_add(obj);
+   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_table_padding_set(o, (int)char_w * 2, 0);
+   evas_object_show(o);
+
+   /* Column 0: the item giving the KIND of the completion. If we got an empty
+    * string, then we don't bother with it. Nothing will be shown. */
+   if (compl->kind[0] != '\0')
      {
-        bytes = snprintf(ptr, size, " %s", compl->word);
-     }
-   else
-     {
-        bytes = snprintf(ptr, size, " <hilight>%s</hilight> <b>%s</b>",
-                         compl->kind, compl->word);
-     }
-   ptr += bytes; size -= (size_t)bytes;
+        Evas_Object *const kind = _layout_item_add(table, "eovim/completion/kind");
+        Evas_Object *const kind_edje = _compl_text_set(kind, cfg, compl->kind);
+        evas_object_show(kind);
+        elm_table_pack(table, kind, 0, 0, 1, 1);
 
-   if (compl->menu[0] != '\0')
-     snprintf(ptr, size, "<br>%s" ,compl->menu);
+        /* For the 'kind' item, we will send a message to the edje theme, to update
+         * the background of the text, and maybe change it as well */
+        const Edje_Message_String msg = { .str = (char *)compl->kind };
+        edje_object_message_send(kind_edje, EDJE_MESSAGE_STRING,
+                                 THEME_MSG_COMPLETION_KIND, (void *)(&msg));
+     }
 
-   /* Set the completion text */
-   Evas_Object *const text = elm_label_add(obj);
-   elm_object_text_set(text, buf);
-   return text;
+   /* Column 1: spacer to make all the elements the same size */
+   o = evas_object_rectangle_add(evas);
+   _spacer_set(o, char_w, char_h, gui->completion.max_type_len);
+   elm_table_pack(table, o, 1, 0, 1, 1);
+
+   /* Column 1: type part, above the spacer */
+   o = _layout_item_add(table, "eovim/completion/type");
+   _compl_text_set(o, cfg, compl->menu);
+   elm_table_pack(table, o, 1, 0, 1, 1);
+   evas_object_show(o);
+
+   /* Column 2: spacer to make all the elements the same size */
+   o = evas_object_rectangle_add(evas);
+   _spacer_set(o, char_w, char_h, gui->completion.max_word_len);
+   elm_table_pack(table, o, 2, 0, 1, 1);
+
+   /* Column 2: completion contents */
+   o = _layout_item_add(table, "eovim/completion/word");
+   _compl_text_set(o, cfg, compl->word);
+   elm_table_pack(table, o, 2, 0, 1, 1);
+   evas_object_show(o);
+
+   return table;
 }
 
 
@@ -574,23 +576,13 @@ _completion_sel_cb(void *data,
 {
    s_gui *const gui = data;
    const Elm_Genlist_Item *const item = event;
-   const s_completion *const compl = elm_object_item_data_get(item);
-
-   /* If we have a completion info, we shall display it */
-   if (compl->info[0] != '\0')
-     {
-        edje_object_part_text_set(gui->completion.obj,
-                                  "eovim.completion.info", compl->info);
-        edje_object_signal_emit(gui->completion.obj,
-                                "eovim,completion,info,show", "eovim");
-     }
 
    /* If the completion.event is set, the item was selected because of a
     * neovim event, not because the user did clic on the item.
     * So we reset the event, and abort the function right here */
-   if (gui->completion.event)
+   if (gui->completion.nvim_sel_event)
      {
-        gui->completion.event = EINA_FALSE;
+        gui->completion.nvim_sel_event = EINA_FALSE;
         return;
      }
 
@@ -598,7 +590,7 @@ _completion_sel_cb(void *data,
     * clicked on and we want to insert. */
    const int sel_idx = gui->completion.sel
       ? elm_genlist_item_index_get(gui->completion.sel)
-      : 1; /* No item selected? Take the first one */
+      : 0; /* No item selected? Take the first one */
    const int compl_idx = elm_genlist_item_index_get(item);
 
    /* Use a string buffer that will hold the input to be passed to neovim */
@@ -627,16 +619,25 @@ _completion_sel_cb(void *data,
 }
 
 void
-gui_completion_add(s_gui *gui,
-                   s_completion *completion)
+gui_completion_prepare(s_gui *gui,
+                       size_t items,
+                       size_t max_word_len,
+                       size_t max_menu_len)
 {
-   Elm_Genlist_Item *const item = elm_genlist_item_append(
-      gui->completion.gl, _compl_simple_itc, completion,
+   gui->completion.items_count = items;
+   gui->completion.max_word_len = max_word_len;
+   gui->completion.max_type_len = max_menu_len;
+}
+
+void
+gui_completion_add(s_gui *gui,
+                   s_completion *compl)
+{
+   elm_genlist_item_append(
+      gui->completion.gl, _compl_itc, compl,
       NULL, ELM_GENLIST_ITEM_NONE,
       _completion_sel_cb, gui
    );
-   elm_object_item_data_set(item, completion);
-   gui->completion.items.count++;
 }
 
 static Elm_Genlist_Item *
@@ -685,7 +686,7 @@ gui_completion_selected_set(s_gui *gui,
    if (index < 0)
      {
         Elm_Genlist_Item *const selected = elm_genlist_selected_item_get(gl);
-        gui->completion.event = EINA_FALSE;
+        gui->completion.nvim_sel_event = EINA_FALSE;
         if (selected)
           elm_genlist_item_selected_set(selected, EINA_FALSE);
         gui->completion.sel = NULL;
@@ -693,7 +694,7 @@ gui_completion_selected_set(s_gui *gui,
    else /* index is >= 0, we can safely cast it as unsigned */
      {
         Elm_Genlist_Item *const item = _gl_nth_get(gl, (unsigned int)index);
-        gui->completion.event = EINA_TRUE;
+        gui->completion.nvim_sel_event = EINA_TRUE;
         elm_genlist_item_selected_set(item, EINA_TRUE);
         elm_genlist_item_bring_in(item, ELM_GENLIST_ITEM_SCROLLTO_IN);
         gui->completion.sel = item;
@@ -706,24 +707,133 @@ gui_completion_show(s_gui *gui,
                     unsigned int x,
                     unsigned int y)
 {
-   /* Before starting to setup the ui, we mark the completion as incoming
-    * from neovim */
-   gui->completion.event = EINA_TRUE;
-   gui->completion.items.at_x = x;
-   gui->completion.items.at_y = y;
+   /*
+    * When showing the completion, we will also proceed to a resizing
+    * operation, to make the completion pop-up fit the screen best.
+    *
+    * So this function works in two parts:
+    * - calculate the best size for the popup
+    * - ensure the visibility of the completion popup
+    */
 
-   Evas_Object *const obj = gui->completion.obj;
-
-   /* Show the completion panel */
-   edje_object_signal_emit(obj, "eovim,completion,show", "eovim");
+   /* Get the absolute position where the completion panel was triggerred */
+   int px, py;
+   termview_cell_to_coords(gui->termview, x, y, &px, &py);
 
    /* Select the appropriate item */
    if (selected >= 0)
      {
+        /* Selection is at the initiative of neovim */
+        gui->completion.nvim_sel_event = EINA_TRUE;
+
         Elm_Genlist_Item *const sel = _gl_nth_get(gui->completion.gl,
                                                   (unsigned int)selected);
         elm_genlist_item_selected_set(sel, EINA_TRUE);
      }
+
+   /*
+    * Mhhh... okay... this is a bit experimental, but I think it will do.
+    * Each element of the completion genlist has the same height, and a
+    * known maximum width.
+    *
+    * So we will set the height as being the count of elements times the
+    * height of one element. If it is greater than 60% of the window, or
+    * cannot fit, it will be clamped.
+    *
+    * For the width, we need to calculate it. It is a bit wacky. We rely on
+    * the font being monospace and not having fancy non-latin characters.
+    * We know the maximum lengths of the strings to fit in a completion
+    * item, so we multiply this length with the size of a termview cell, which
+    * has the X-advance of glyphs. With Unicode characters, it will certainly
+    * be wrong.
+    */
+
+   /* Termview dimensions */
+   int tv_orig_y, tv_width, tv_height;
+   evas_object_geometry_get(gui->termview, NULL, &tv_orig_y, &tv_width, &tv_height);
+
+   /* Cell' size */
+   int char_w, char_h;
+   termview_cell_size_get(gui->termview,
+                          (unsigned int *)(&char_w), (unsigned int *)(&char_h));
+
+   /* This is the ideal width.
+    *
+    * Kind takes 1 char
+    * Kind and type are separated by 1 char
+    * Type has a max length.
+    * Word has a max length.
+    * Type and work are separated by 2 char
+    * We add 2 extra chars for good measure.
+    */
+   const int ideal_width =
+      (int)(gui->completion.max_type_len + gui->completion.max_word_len + 6) *
+      char_w;
+
+   /* This is the ideal height. We add 7 because it looks nice.
+    * Maybe this will change with various fonts... that's lame. */
+   const int ideal_height =
+      (char_h + 7) *
+      (int)gui->completion.items_count;
+
+   /* Window's size */
+   int win_w, win_h;
+   evas_object_geometry_get(gui->win, NULL, NULL, &win_w, &win_h);
+
+   /* We will not make the popup larger than 90% of the window's width,
+    * not larger than 60% of the window's height */
+   const int max_width = (int)((float)win_w * 0.9f);
+   const int max_height = (int)((float)win_h * 0.6f);
+   int width = MIN(ideal_width, max_width);
+   int height = MIN(ideal_height, max_height);
+
+   /* Sizing */
+   int pos_y;
+   const int h_offset = 7;
+   const int cell_h = char_h + h_offset; /* Line height a little offset */
+
+   /* Ensure we have room to place the popup. We try to find the best place
+    * that fits with the most completion contents. */
+   if (py + cell_h + height < tv_height)
+     {
+        /* (1) If there is room below the insertion point, try to place the
+         * completion panel on the line BELOW. */
+        pos_y = cell_h + py;
+     }
+   else if (py - height > 0)
+     {
+        /* (2) If no room below, try to place the completion panel ABOVE */
+        pos_y = py - height - h_offset;
+     }
+   else
+     {
+        /* (3) Oh noo, perfect size does not fit anywhere. Take the side where
+         * we have the most room and fill it completely */
+        if (py > tv_height / 2) /* Place it above */
+          {
+             height = py - tv_orig_y;
+             pos_y = py - height - h_offset;
+          }
+        else /* Place it below */
+          {
+             height = tv_height - (py + cell_h);
+             pos_y = py + cell_h;
+          }
+     }
+
+   /* If the width is too big to fit, we reduce it */
+   if (px + width > tv_width) { width = tv_width - px; }
+
+   /* Show the completion panel: we move it where the completion was, show it,
+    * set make sure the **visible** part of the genlist fits it height,
+    * and resize the final object
+    */
+   Evas_Object *const obj = gui->completion.obj;
+   edje_object_signal_emit(obj, "eovim,completion,show", "eovim");
+   evas_object_move(obj, px, pos_y);
+   evas_object_size_hint_min_set(gui->completion.spacer, 1, height);
+   evas_object_size_hint_max_set(gui->completion.spacer, width, height);
+   evas_object_resize(obj, width, height);
 }
 
 void
@@ -731,14 +841,17 @@ gui_completion_hide(s_gui *gui)
 {
    Evas_Object *const obj = gui->completion.obj;
    edje_object_signal_emit(obj, "eovim,completion,hide", "eovim");
-   evas_object_hide(obj);
 }
 
 void
 gui_completion_clear(s_gui *gui)
 {
    gui->completion.sel = NULL;
-   memset(&gui->completion.items, 0, sizeof(gui->completion.items));
+
+   /* Reset the maximum sizes for the next instance of the completion */
+   gui->completion.max_type_len = 0;
+   gui->completion.max_word_len = 0;
+   gui->completion.items_count = 0;
    elm_genlist_clear(gui->completion.gl);
 }
 
@@ -752,8 +865,8 @@ gui_bell_ring(s_gui *gui)
 }
 
 static void
-_completion_item_del(void *data,
-                     Evas_Object *obj EINA_UNUSED)
+_compl_item_del(void *data,
+                Evas_Object *obj EINA_UNUSED)
 {
    s_completion *const compl = data;
 
@@ -778,7 +891,7 @@ _wildmenu_content_get(void *data,
                       const char *part EINA_UNUSED)
 {
    Eina_Stringshare *const item = data;
-   Evas_Object *const wdg = _layout_item_add(obj, "eovim/wildmenu_item");
+   Evas_Object *const wdg = _layout_item_add(obj, "eovim/wildmenu/item");
 
    elm_object_part_text_set(wdg, "text", item);
    evas_object_show(wdg);
@@ -789,16 +902,16 @@ Eina_Bool
 gui_init(void)
 {
    /* Completion list item class */
-   _compl_simple_itc = elm_genlist_item_class_new();
-   if (EINA_UNLIKELY(! _compl_simple_itc))
+   _compl_itc = elm_genlist_item_class_new();
+   if (EINA_UNLIKELY(! _compl_itc))
      {
         CRI("Failed to create genlist item class");
         goto fail;
      }
-   _compl_simple_itc->item_style = "full";
-   _compl_simple_itc->func.text_get = NULL;
-   _compl_simple_itc->func.content_get = _completion_gl_content_get;
-   _compl_simple_itc->func.del = _completion_item_del;
+   _compl_itc->item_style = "full";
+   _compl_itc->func.text_get = NULL;
+   _compl_itc->func.content_get = _compl_content_get;
+   _compl_itc->func.del = _compl_item_del;
 
    /* Wildmenu list item class */
    _wildmenu_itc = elm_genlist_item_class_new();
@@ -815,7 +928,7 @@ gui_init(void)
    return EINA_TRUE;
 
 free_compl:
-   elm_genlist_item_class_free(_compl_simple_itc);
+   elm_genlist_item_class_free(_compl_itc);
 fail:
    return EINA_FALSE;
 }
@@ -824,7 +937,7 @@ void
 gui_shutdown(void)
 {
    elm_genlist_item_class_free(_wildmenu_itc);
-   elm_genlist_item_class_free(_compl_simple_itc);
+   elm_genlist_item_class_free(_compl_itc);
 }
 
 void
@@ -1039,16 +1152,16 @@ gui_wildmenu_clear(s_gui *gui)
 }
 
 static void
-_item_realized(void *data,
-               Evas_Object *obj EINA_UNUSED,
-               void *info EINA_UNUSED)
+_wild_item_realized(void *data,
+                    Evas_Object *obj,
+                    void *info EINA_UNUSED)
 {
    /* This is a deferred call to _wildmenu_resize(). When done, unregister the
     * callback! It does not make sense to keep it around.
     */
    s_gui *const gui = data;
    _wildmenu_resize(gui);
-   evas_object_smart_callback_del_full(obj, "realized", _item_realized, data);
+   evas_object_smart_callback_del_full(obj, "realized", _wild_item_realized, data);
 }
 
 static void
@@ -1065,7 +1178,7 @@ _wildmenu_resize(s_gui *gui)
         /* No items have yet been drawn in the genlist. Too bad, attach a
          * callback so we will know when this will be done, and then go away!
          */
-        evas_object_smart_callback_add(gl, "realized", _item_realized, gui);
+        evas_object_smart_callback_add(gl, "realized", _wild_item_realized, gui);
         return;
      }
 
@@ -1087,4 +1200,5 @@ _wildmenu_resize(s_gui *gui)
    else
      evas_object_size_hint_min_set(gui->cmdline.spacer, menu_w, max_height);
    elm_object_item_untrack(first);
+   eina_list_free(realized);
 }

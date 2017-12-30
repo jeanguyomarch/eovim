@@ -24,6 +24,24 @@
  * This file is to be included by default.edc
  */
 
+color_classes {
+   /*========================================================================
+    * Color classes for the command-line info panel
+    *========================================================================*/
+   color_class { name: "cmdline_slash";
+      color: 127 127 0 255;
+   }
+   color_class { name: "cmdline_interro";
+      color: 127 53 0 255;
+   }
+   color_class { name: "cmdline_colomn";
+      color: 127 0 72 255;
+   }
+   color_class { name: "cmdline_default";
+      color: 0 0 127 255;
+   }
+}
+
 group { "eovim/cmdline_info";
    images {
       image: "button_normal.png" COMP;
@@ -180,7 +198,7 @@ group { "eovim/cmdline";
    }
 }
 
-group { "eovim/wildmenu_item";
+group { "eovim/wildmenu/item";
    parts {
       textblock { "text"; nomouse;
          desc { "default";

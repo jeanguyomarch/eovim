@@ -31,6 +31,7 @@ efl_version: 1 20;
 
 #define THEME_MSG_BG            0
 #define THEME_MSG_CMDLINE_INFO  1
+#define THEME_MSG_COMPLETION_KIND    2
 
 externals {
    external: "elm";
@@ -51,22 +52,6 @@ color_classes {
    }
    color_class { name: "cursor_full";
       color: 255 255 255 255;
-   }
-
-   /*========================================================================
-    * Color classes for the command-line info panel
-    *========================================================================*/
-   color_class { name: "cmdline_slash";
-      color: 127 127 0 255;
-   }
-   color_class { name: "cmdline_interro";
-      color: 127 53 0 255;
-   }
-   color_class { name: "cmdline_colomn";
-      color: 127 0 72 255;
-   }
-   color_class { name: "cmdline_default";
-      color: 0 0 127 255;
    }
 }
 
@@ -391,101 +376,8 @@ collections {
       }
    }
 
-   group { "eovim/completion";
-      images {
-         image: "tooltip-base.png" COMP;
-      }
-      styles {
-         style { name: "info_style";
-            base: "font=Mono font_size=12 style=glow color=#3399ffff glow_color=#3399ff18 glow2_color=#3399ff12 wrap=word";
-         }
-      }
-      parts {
-         image { "base"; nomouse;
-            desc { "default";
-               image.normal: "tooltip-base.png";
-               image.border: 7 7 6 8;
-               image.middle: SOLID;
-               visible: 0;
-            }
-            desc { "visible";
-               inherit: "default";
-               visible: 1;
-            }
-         }
-         swallow { "eovim.completion";
-            desc { "default";
-               rel1.to: "base";
-               rel1.offset: 8 6;
-               rel2.to: "base";
-               rel2.offset: -7 -8;
-               visible: 0;
-            }
-            desc { "visible";
-               inherit: "default";
-               visible: 1;
-            }
-         }
-         image { "info"; nomouse;
-            desc { "default";
-               image.normal: "tooltip-base.png";
-               image.border: 7 7 6 8;
-               image.middle: SOLID;
-               rel.to: "eovim.completion.info";
-               rel1.offset: -20 -3;
-               rel2.offset: 0 -10;
-               visible: 0;
-            }
-            desc { "visible";
-               inherit: "default";
-               visible: 1;
-            }
-         }
-         textblock { "eovim.completion.info"; nomouse;
-            desc { "default";
-               rel1.to: "base";
-               rel1.relative: 0.0 1.0;
-               rel1.offset: 20 3;
-               align: 0.5 0.0;
-               visible: 0;
-               text {
-                  style: "info_style";
-                  min: 0 1;
-               }
-            }
-            desc { "visible";
-               inherit: "default";
-               visible: 1;
-            }
-         }
 
-      }
-      programs {
-         program { signal: "eovim,completion,show"; source: "eovim";
-            action: STATE_SET "visible";
-            target: "base";
-            target: "eovim.completion";
-            after: "show_done";
-         }
-         program { name: "show_done";
-            action: SIGNAL_EMIT "eovim,completion,visible" "eovim";
-         }
-         program { signal: "eovim,completion,hide"; source: "eovim";
-            action: STATE_SET "default";
-            target: "base";
-            target: "info";
-            target: "eovim.completion";
-            target: "eovim.completion.info";
-         }
-         program { signal: "eovim,completion,info,show"; source: "eovim";
-            action: STATE_SET "visible";
-            target: "info";
-            target: "eovim.completion.info";
-         }
-      }
-   }
-
-
+   #include "completion.edc"
    #include "cmdline.edc"
    #include "cursor.edc"
 }
