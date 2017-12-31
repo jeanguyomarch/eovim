@@ -1,0 +1,62 @@
+.TH EOVIM "1" "December 2017" "eovim @PROJECT_VERSION@" "User Commands"
+
+.SH NAME
+\fBeovim\fR \- EFL Code Editor using Neovim
+
+.SH SYNOPSIS
+.B eovim
+.I [options] [files...]
+
+.SH DESCRIPTION
+\fBeovim\fR is a code editor written with the EFL (Enlightenment Foundation
+Libraries), that uses Neovim as a back-end. It supports all the UI
+externalization means that Neovim provides, as well as its own plug-ins system
+to make Neovim plug-ins control the GUI offered by Eovim.
+
+.SH OPTIONS
+.TP
+\fB\-N\fR, \fB\-\-no\-plugin\fR, \fB\-\-noplugin\fR
+Do not load any plugin
+.TP
+\fB\-\-nvim\fR \fInvim\fR
+Use \fInvim\fR as the Neovim program to be run by eovim.
+.TP
+\fB\-g\fR, \fB\-\-geometry\fR \fIWxH\fR
+Set the initial dimensions of the window where \fIW\fR is the width in cells of
+the neovim window, and \fIH\fR is its height (e.g. 80x24 for a 80x24 cells
+window).
+.TP
+\fB\-\-config\fR \fIpath\fR
+Provide an alternate GUI configuration, where \fIpath\fR is the path to an
+eovim configuration.
+.TP
+\fB\-F\fR, \fB\-\-fullscreen\fR
+Start Eovim in fullscreen.
+.TP
+\fB\-t\fR, \fB\-\-theme\fR \fIpath\fR
+Provide an alternate theme to Eovim that resides at \fIpath\fR.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display this message
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Show Eovim's version
+.PP
+
+Additionnaly, eovim forwards options it has no knowledge of to Neovim.
+Run \fBnvim \-\-help\fR to learn more about Neovim's options.
+
+.SH VIM RUNTIME
+.TP
+\fBeovim\fR adds its own overlay to the Vim runtime provided by Neovim:
+.IP
+\fBfunction\fR \fIEovim(...)\fR
+The communication channel for neovim to send events to the Eovim plug-ins.
+.IP
+\fBvariable\fR \fIeovim_running\fR
+This integer is defined and set to 1 when Eovim spawn an neovim, making it
+possible for the user to known whether neovim is run under Eovim or not.
+
+
+.SH AUTHORS
+Eovim is written and maintained by Jean Guyomarc'h.
