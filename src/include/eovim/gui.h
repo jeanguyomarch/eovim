@@ -46,8 +46,6 @@ struct gui
    struct {
       Evas_Object *obj;
       Evas_Object *gl;
-      Evas_Object *table;
-      Evas_Object *spacer;
       Elm_Genlist_Item *sel;
       size_t items_count;
       size_t max_type_len;

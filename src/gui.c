@@ -182,33 +182,19 @@ gui_add(s_gui *gui,
    edje_object_file_set(o, edje_file, "eovim/completion");
    evas_object_smart_member_add(o, gui->layout);
 
-
-   /* Table: item that will hold the genlist and a spacer */
-   gui->completion.table = o = elm_table_add(gui->layout);
-   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   edje_object_part_swallow(gui->completion.obj, "eovim.completion", o);
-   evas_object_show(o);
-
-   /* Spacer: allows to give a fixed-size to the genlist */
-   gui->completion.spacer = o = evas_object_rectangle_add(evas);
-   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_color_set(o, 0, 0, 0, 0);
-   elm_table_pack(gui->completion.table, o, 0, 0, 1, 1);
-   evas_object_show(o);
-
    /* Create the completion genlist, and attach it to the theme layout.
     * It shall not be subject to focus. */
-   o = gui->completion.gl = elm_genlist_add(gui->completion.table);
+   o = gui->completion.gl = elm_genlist_add(gui->layout);
    evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_align_set(o, 0.0, EVAS_HINT_FILL);
    elm_scroller_policy_set(o, ELM_SCROLLER_POLICY_AUTO, ELM_SCROLLER_POLICY_OFF);
    elm_object_tree_focus_allow_set(o, EINA_FALSE);
-   elm_genlist_homogeneous_set(o, EINA_TRUE);
-   elm_genlist_mode_set(o, ELM_LIST_COMPRESS);
+   // FIXME Okay, this is fishy. I tell the genlist not to be homogenous (which
+   // is that I think I want), items are screwed up horizontally. Maybe a bug
+   // in elm_genlist???
+   // FIXME elm_genlist_homogeneous_set(o, EINA_TRUE);
    evas_object_data_set(o, _nvim_data_key, nvim);
-   elm_table_pack(gui->completion.table, o, 0, 0, 1, 1);
+   edje_object_part_swallow(gui->completion.obj, "eovim.completion", o);
    evas_object_show(o);
 
    /* ========================================================================
@@ -514,13 +500,15 @@ _spacer_set(Evas_Object *obj,
 static Evas_Object *
 _compl_content_get(void *data,
                    Evas_Object *obj,
-                   const char *part EINA_UNUSED)
+                   const char *part)
 {
    const s_completion *const compl = data;
    const s_nvim *const nvim = _nvim_get(obj);
    s_gui *const gui = (s_gui *)(&nvim->gui);
    const s_config *const cfg = nvim->config;
    Evas_Object *o;
+
+   if (! eina_streq(part, "elm.swallow.content")) { return NULL; }
 
    /* Each element of the completion is a table that is designed as follows:
     *
@@ -808,6 +796,7 @@ gui_completion_show(s_gui *gui,
    /* Sizing */
    int pos_y;
    const int h_offset = 7;
+   const int w_offset = 7;
    const int cell_h = char_h + h_offset; /* Line height a little offset */
 
    /* Ensure we have room to place the popup. We try to find the best place
@@ -840,7 +829,8 @@ gui_completion_show(s_gui *gui,
      }
 
    /* If the width is too big to fit, we reduce it */
-   if (px + width > tv_width) { width = tv_width - px; }
+   if (px + width > tv_width)
+      width = tv_width - px - w_offset;
 
    /* Show the completion panel: we move it where the completion was, show it,
     * set make sure the **visible** part of the genlist fits it height,
@@ -849,8 +839,6 @@ gui_completion_show(s_gui *gui,
    Evas_Object *const obj = gui->completion.obj;
    edje_object_signal_emit(obj, "eovim,completion,show", "eovim");
    evas_object_move(obj, px, pos_y);
-   evas_object_size_hint_min_set(gui->completion.spacer, 1, height);
-   evas_object_size_hint_max_set(gui->completion.spacer, width, height);
    evas_object_resize(obj, width, height);
 }
 
