@@ -9,7 +9,7 @@ find_program(GZIP gzip)
 if (GZIP)
    add_custom_command(
       OUTPUT "${MAN_OUT}.gz"
-      COMMAND "${GZIP}" "${MAN_OUT}")
+      COMMAND "${GZIP}" -k "${MAN_OUT}")
    set(MAN_OUT "${MAN_OUT}.gz")
    add_custom_target(man-zip ALL
       DEPENDS ${MAN_OUT})
