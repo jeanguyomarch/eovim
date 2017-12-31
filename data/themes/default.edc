@@ -153,17 +153,15 @@ collections {
             desc { "hover";
                inherit: "default";
                color: 51 153 255 255;
-               min: 26 26;
             }
 
             program { signal: "mouse,in"; source: "config_icon";
                action: STATE_SET "hover";
-               transition: ACCELERATE 0.5;
+               transition: SPRING 0.7 2.0 4;
                target: "config_icon";
             }
             program { signal: "mouse,out"; source: "config_icon";
                action: STATE_SET "default";
-               transition: DECELERATE 1.0;
                target: "config_icon";
             }
             program { signal: "mouse,clicked,1"; source: "config_icon";
