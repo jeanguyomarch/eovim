@@ -603,6 +603,7 @@ _completion_sel_cb(void *data,
    Eina_Strbuf *const input = gui->cache;
    eina_strbuf_reset(input);
 
+
    /* If the item to be completed is greater than the selected item, spam the
     * <C-n> to make neovim advance the selection. Otherwise, the <C-p>.
     * If the indexes are the same, do nothing. */
@@ -613,7 +614,7 @@ _completion_sel_cb(void *data,
      }
    else if (sel_idx > compl_idx)
      {
-        for (int i = compl_idx; i >= sel_idx; i--)
+        for (int i = compl_idx; i < sel_idx; i++)
           eina_strbuf_append_length(input, "<C-p>", 5);
      }
    /* Send a signal to end the completion */
@@ -1007,13 +1008,6 @@ gui_cmdline_cursor_pos_set(s_gui *gui,
                                         EDJE_CURSOR_MAIN, (int)pos);
 }
 
-static inline void
-_wildmenu_first_item_acquire(s_gui *gui)
-{
-   gui->cmdline.sel_item = elm_genlist_first_item_get(gui->cmdline.menu);
-   gui->cmdline.sel_index = 0;
-}
-
 void
 gui_wildmenu_select(s_gui *gui,
                     ssize_t index)
@@ -1032,8 +1026,12 @@ gui_wildmenu_select(s_gui *gui,
          * any item previously selected (this will happen after doing a full
          * circle among the wildmenu items), start selecting the first item in
          * the wildmenu. */
-        if ( gui->cmdline.sel_index < 0)
-          _wildmenu_first_item_acquire(gui);
+        if (gui->cmdline.sel_index < 0)
+          {
+             gui->cmdline.sel_item =
+                elm_genlist_first_item_get(gui->cmdline.menu);
+             gui->cmdline.sel_index = 0;
+          }
 
         if (index >= gui->cmdline.sel_index)
           {
@@ -1070,11 +1068,6 @@ void
 gui_wildmenu_show(s_gui *gui)
 {
    _wildmenu_resize(gui);
-
-   /* The first selected item will be the first one in the genlist */
-   _wildmenu_first_item_acquire(gui);
-   gui->cmdline.nvim_sel_event = EINA_TRUE;
-   elm_genlist_item_selected_set(gui->cmdline.sel_item, EINA_TRUE);
 }
 
 static void
@@ -1099,22 +1092,27 @@ _wildmenu_sel_cb(void *data,
    Eina_Strbuf *const input = gui->cache;
    eina_strbuf_reset(input);
 
-   const ssize_t item_idx = (ssize_t)elm_genlist_item_index_get(item);
-   const ssize_t sel_idx = (gui->cmdline.sel_index >= 0)
-      ? gui->cmdline.sel_index
-      : 1;
+   /* For some strange reason, genlist indexing starts at 1! WTF. */
+   const int item_idx = elm_genlist_item_index_get(item) - 1;
+   const int sel_idx = (gui->cmdline.sel_index >= 0)
+      ? (int)gui->cmdline.sel_index
+      : 0; /* No item selected? Take the first one */
+
+   /* No item selected? Initiate the completion. */
+   if (! gui->cmdline.sel_item)
+     eina_strbuf_append_length(input, "<C-n>", 5);
 
    /* To make neovim select the wildmenu item, we will write N times
     * <C-n> or <C-p> from the current index to the target one. When done,
     * we will insert <CR> to make the selection apply */
    if (sel_idx < item_idx)
      {
-        for (ssize_t i = sel_idx; i < item_idx; i++)
+        for (int i = sel_idx; i < item_idx; i++)
           eina_strbuf_append_length(input, "<C-n>", 5);
      }
    else /* sel_idx >= item_idx */
      {
-        for (ssize_t i = item_idx; i >= sel_idx; i--)
+        for (int i = item_idx; i < sel_idx; i++)
           eina_strbuf_append_length(input, "<C-p>", 5);
      }
 
@@ -1124,7 +1122,6 @@ _wildmenu_sel_cb(void *data,
    /* Pass all these data to neovim and cleanup behind us */
    nvim_api_input(gui->nvim, eina_strbuf_string_get(input),
                   (unsigned int)eina_strbuf_length_get(input));
-   printf("Wildmenu selection: %zi vs %zi\n", item_idx, sel_idx);
 }
 
 void
