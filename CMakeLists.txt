@@ -65,6 +65,7 @@ add_custom_command(
    "${THEMES_DIR}/cursor.edc"
    "${THEMES_DIR}/cmdline.edc"
    "${THEMES_DIR}/completion.edc"
+   "${THEMES_DIR}/tab.edc"
 
    VERBATIM
    COMMAND

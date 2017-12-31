@@ -71,10 +71,13 @@ struct gui
    s_prefs prefs;
 
    s_nvim *nvim;
+   Eina_Inarray *tabs;
 
    /** Keep track of how many times gui_busy_set() was called. This prevents
     * useless calls to the theme or nested set issues */
    int busy_count;
+
+   unsigned int active_tab; /**< Identifier of the active tab */
 };
 
 Eina_Bool gui_init(void);
@@ -124,5 +127,10 @@ void gui_wildmenu_select(s_gui *gui, ssize_t index);
 void gui_cmdline_cursor_pos_set(s_gui *gui, size_t pos);
 
 void gui_title_set(s_gui *gui, const char *title);
+
+void gui_tabs_reset(s_gui *gui);
+void gui_tabs_add(s_gui *gui, const char *name, unsigned int id, Eina_Bool active);
+void gui_tabs_show(s_gui *gui);
+void gui_tabs_hide(s_gui *gui);
 
 #endif /* ! __EOVIM_GUI_H__ */

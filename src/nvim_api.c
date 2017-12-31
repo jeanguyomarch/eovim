@@ -159,8 +159,8 @@ nvim_api_ui_attach(s_nvim *nvim,
    msgpack_pack_int64(pk, width);
    msgpack_pack_int64(pk, height);
 
-   /* Pack the options. There are 2: rgb & ext_popupmenu. */
-   msgpack_pack_map(pk, 2);
+   /* Pack the options. There are 2: rgb, ext_popupmenu and ext_tabline */
+   msgpack_pack_map(pk, 3);
 
    /* Pack the RGB option (boolean) */
      {
@@ -180,6 +180,16 @@ nvim_api_ui_attach(s_nvim *nvim,
         msgpack_pack_str(pk, len);
         msgpack_pack_str_body(pk, key, len);
         if (cfg->ext_popup) msgpack_pack_true(pk);
+        else msgpack_pack_false(pk);
+     }
+
+   /* Pack the External tabline */
+     {
+        const char key[] = "ext_tabline";
+        const size_t len = sizeof(key) - 1;
+        msgpack_pack_str(pk, len);
+        msgpack_pack_str_body(pk, key, len);
+        if (cfg->ext_tabs) msgpack_pack_true(pk);
         else msgpack_pack_false(pk);
      }
 

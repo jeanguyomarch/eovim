@@ -29,14 +29,14 @@
 /*============================================================================
  *
  * When you touch to the configuration of Eovim, for anything. Like adding or
- * removing a field, you __MUST__ upgrade the _config_version by INCREMENT IT
- * by ONE. It shall never go back!
+ * removing a field, you __MUST__ upgrade the _config_version by INCREMENTING
+ * IT by ONE. It shall never go back!
  *
  * This is very very very important, as invalid configurations will mess with
  * existing configurations on the user side, and yield unexpected results.
  *
  *===========================================================================*/
-static const unsigned int _config_version = 5;
+static const unsigned int _config_version = 6;
 
 static Eet_Data_Descriptor *_edd = NULL;
 static const char _key[] = "eovim/config";
@@ -65,6 +65,7 @@ config_init(void)
    EDD_BASIC_ADD(key_react, EET_T_UCHAR);
    EDD_BASIC_ADD(ext_popup, EET_T_UCHAR);
    EDD_BASIC_ADD(ext_cmdline, EET_T_UCHAR);
+   EDD_BASIC_ADD(ext_tabs, EET_T_UCHAR);
    EDD_BASIC_ADD(true_colors, EET_T_UCHAR);
    EET_DATA_DESCRIPTOR_ADD_LIST_STRING(_edd, s_config, "plugins", plugins);
 
@@ -120,6 +121,13 @@ config_ext_cmdline_set(s_config *config,
 }
 
 void
+config_ext_tabs_set(s_config *config,
+                    Eina_Bool tabs)
+{
+   config->ext_tabs = !!tabs;
+}
+
+void
 config_true_colors_set(s_config *config,
                        Eina_Bool true_colors)
 {
@@ -160,6 +168,7 @@ _config_new(void)
    config->true_colors = EINA_TRUE;
    config->ext_popup = EINA_TRUE;
    config->ext_cmdline = EINA_TRUE;
+   config->ext_tabs = EINA_TRUE;
    config->plugins = NULL;
 
    return config;
@@ -248,6 +257,9 @@ config_load(const char *file)
               /* Fall through */
            case 4:
               cfg->ext_cmdline = EINA_TRUE;
+              /* Fall through */
+           case 5:
+              cfg->ext_tabs = EINA_TRUE;
               /* Fall through */
            default:
               break;

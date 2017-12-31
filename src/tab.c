@@ -20,54 +20,60 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __EOVIM_TYPES_H__
-#define __EOVIM_TYPES_H__
+#include "eovim/types.h"
+#include "eovim/log.h"
 
-#include <Eina.h>
-#include <msgpack.h>
-#include <stdint.h>
-
-typedef int64_t t_int;
-typedef struct version s_version;
-typedef struct request s_request;
-typedef struct nvim s_nvim;
-typedef struct config s_config;
-typedef struct mode s_mode;
-typedef struct position s_position;
-typedef struct gui s_gui;
-typedef struct tab s_tab;
-typedef struct prefs s_prefs;
-typedef struct completion s_completion;
-typedef struct geometry s_geometry;
-typedef Eina_Bool (*f_event_cb)(s_nvim *nvim, const msgpack_object_array *args);
-
-typedef enum
+struct tab
 {
-   CURSOR_SHAPE_BLOCK           = 0,
-   CURSOR_SHAPE_HORIZONTAL      = 1,
-   CURSOR_SHAPE_VERTICAL        = 2,
-} e_cursor_shape;
-
-struct completion
-{
-   Eina_Stringshare *word;
-   Eina_Stringshare *kind;
-   Eina_Stringshare *menu;
-   Eina_Stringshare *info;
+   EINA_INLIST;
+   Eina_Stringshare *name;
+   unsigned int id;
 };
 
-struct geometry
-{
-   unsigned int w;
-   unsigned int h;
-};
 
-struct version
+s_tab *
+tab_new(Eina_Stringshare *name,
+        unsigned int id)
 {
-   unsigned int major;
-   unsigned int minor;
-   unsigned int patch;
-   char extra[32];
-};
+   s_tab *const tab = malloc(sizeof(s_tab));
+   if (EINA_UNLIKELY(! tab))
+     {
+        CRI("Failed to allocate memory for tab object");
+        return NULL;
+     }
 
-#endif /* ! __EOVIM_TYPES_H__ */
+   tab->name = name;
+   tab->id = id;
+
+   return tab;
+}
+
+void
+tab_chain_add(s_tab *tab,
+              s_tab **parent)
+{
+///   tab->chain = *parent;
+   *parent = tab;
+}
+
+void
+tab_free(s_tab *tab)
+{
+   EINA_SAFETY_ON_NULL_RETURN(tab);
+   eina_stringshare_del(tab->name);
+   free(tab);
+}
+
+const s_tab *
+tab_find(const s_tab *list,
+         Eina_Stringshare *name,
+         unsigned int id)
+{
+   while (list)
+     {
+        if ((list->name == name) && (list->id == id))
+          return list;
+        list = list->chain;
+     }
+   return NULL;
+}

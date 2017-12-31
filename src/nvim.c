@@ -40,6 +40,13 @@ enum
    __HANDLERS_LAST /* Sentinel */
 };
 
+struct tab
+{
+   EINA_INLIST;
+   Eina_Stringshare *name;
+   unsigned int id;
+};
+
 static Ecore_Event_Handler *_event_handlers[__HANDLERS_LAST];
 static s_nvim *_nvim_instance = NULL;
 
@@ -707,6 +714,34 @@ nvim_mouse_enabled_set(s_nvim *nvim,
                        Eina_Bool enable)
 {
    nvim->mouse_enabled = !!enable;
+}
+
+Eina_Bool
+nvim_tab_add(s_nvim *nvim,
+             Eina_Stringshare *name,
+             unsigned int id)
+{
+   s_tab *tab;
+
+   /* Check if the tab already exists. If it does, no change to do. */
+   EINA_INLIST_FOREACH(nvim->tabs, tab)
+     {
+        if ((tab->name == name) && (tab->id == id))
+          return EINA_FALSE;
+     }
+
+   tab = malloc(sizeof(s_tab));
+   if (EINA_UNLIKELY(! tab))
+     {
+        CRI("Failed to allocate memory for tab object");
+        return EINA_FALSE;
+     }
+
+   tab->name = name;
+   tab->id = id;
+   nvim->tabs = eina_inlist_append(nvim->tabs, EINA_INLIST_GET(tab));
+
+   return EINA_TRUE;
 }
 
 Eina_Bool

@@ -38,6 +38,9 @@ externals {
 }
 
 color_classes {
+   color_class { name: "background";
+      color: 128 128 128 255;
+   }
    color_class { name: "cursor_off";
       color: 51 153 255 0;
    }
@@ -79,7 +82,6 @@ collections {
    group { "eovim/main";
       images {
          image: "preferences.png" COMP;
-         image: "bg_bevel.png" COMP;
          image: "vertical_separated_bar_glow.png" COMP;
          image: "inset_shadow.png" COMP;
       }
@@ -93,23 +95,33 @@ collections {
 
          public message(Msg_Type:type, id, ...) {
             if (id == THEME_MSG_BG) {
-               new part = PART:"eovim.background";
-               custom_state(part, "default", 0.0);
-               set_int(bg_r, getarg(2));
-               set_int(bg_g, getarg(3));
-               set_int(bg_b, getarg(4));
-               set_int(bg_a, getarg(5));
-               set_state_val(part, STATE_COLOR, get_int(bg_r), get_int(bg_g), get_int(bg_b), get_int(bg_a));
-               set_state(part, "custom", 0.0);
+               new r = getarg(2);
+               new g = getarg(3);
+               new b = getarg(4);
+               new a = getarg(5);
+               set_color_class("background", r, g, b, a);
             }
          }
       }
 
       parts {
-         rect { "tabs_headings";
+         rect { "tabs_headings"; nomouse;
             desc { "default";
-               rel2.relative: 1.0 0.0; // XXX For now
-               visible: 0; // XXX For now
+               rel2.relative: 1.0 0.0;
+               align: 0.5 0.0;
+               color_class: "background";
+            }
+            desc { "active";
+               inherit: "default";
+               min: 1 24;
+            }
+         }
+         box { "eovim.tabline";
+            desc { "default";
+               rel.to: "tabs_headings";
+               box {
+                  layout: "horizontal_homogeneous";
+               }
             }
          }
 
@@ -119,21 +131,9 @@ collections {
          rect { "eovim.background"; nomouse;
             desc { "default";
                rel.to: "eovim.main.view";
-               color: 128 128 128 255;
+               color_class: "background";
             }
          }
-         image { "bevel"; nomouse;
-            desc { "default";
-               fixed: 1 1;
-               rel1.to: "eovim.main.view";
-               rel2.to: "eovim.main.view";
-               image.normal: "bg_bevel.png";
-               image.border: 3 3 3 3;
-               image.middle: 0;
-               fill.smooth: 0;
-            }
-         }
-
          swallow { "eovim.main.view";
             desc { "default";
                rel1.to: "tabs_headings";
@@ -385,6 +385,20 @@ collections {
             target: "wildmenu_bar";
             transition: ACCELERATE 0.2;
          }
+         program { signal: "eovim,tabs,show"; source: "eovim";
+            action: STATE_SET "active";
+            target: "tabs_headings";
+            transition: ACCELERATE 0.2;
+            after: "tabs_shown";
+         }
+         program { name: "tabs_shown";
+            action: SIGNAL_EMIT "eovim,tabs,shown" "eovim";
+         }
+         program { signal: "eovim,tabs,hide"; source: "eovim";
+            action: STATE_SET "default";
+            target: "tabs_headings";
+            transition: ACCELERATE 0.2;
+         }
       }
    }
 
@@ -392,4 +406,5 @@ collections {
    #include "completion.edc"
    #include "cmdline.edc"
    #include "cursor.edc"
+   #include "tab.edc"
 }

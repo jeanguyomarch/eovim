@@ -37,6 +37,7 @@ struct config
    Eina_Bool key_react;
    Eina_Bool ext_popup;
    Eina_Bool ext_cmdline;
+   Eina_Bool ext_tabs;
    Eina_Bool true_colors;
 
    /* Internals */
@@ -53,6 +54,7 @@ void config_bell_mute_set(s_config *config, Eina_Bool mute);
 void config_key_react_set(s_config *config, Eina_Bool react);
 void config_ext_popup_set(s_config *config, Eina_Bool pop);
 void config_ext_cmdline_set(s_config *config, Eina_Bool cmd);
+void config_ext_tabs_set(s_config *config, Eina_Bool tabs);
 void config_true_colors_set(s_config *config, Eina_Bool true_colors);
 void config_plugin_add(s_config *config, const s_plugin *plugin);
 void config_plugin_del(s_config *config, const s_plugin *plugin);

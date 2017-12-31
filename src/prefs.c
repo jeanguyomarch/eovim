@@ -486,6 +486,16 @@ _true_colors_changed_cb(void *data,
 }
 
 static void
+_ext_tabs_changed_cb(void *data,
+                     Evas_Object *obj,
+                     void *info EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   const Eina_Bool ext = elm_check_state_get(obj);
+   config_ext_tabs_set(gui->nvim->config, ext);
+}
+
+static void
 _ext_popup_changed_cb(void *data,
                       Evas_Object *obj,
                       void *info EINA_UNUSED)
@@ -523,6 +533,12 @@ _nvim_prefs_new(s_gui *gui)
    elm_check_state_set(cols, config->true_colors);
    evas_object_show(cols);
 
+   /* Externalized tabs switch */
+   Evas_Object *const tabs = _nvim_prefs_check_add(table, "Externalize Tabs", row++);
+   evas_object_smart_callback_add(tabs, "changed", _ext_tabs_changed_cb, gui);
+   elm_check_state_set(tabs, config->ext_tabs);
+   evas_object_show(tabs);
+
    /* Completion popup switch */
    Evas_Object *const compl = _nvim_prefs_check_add(table, "Externalize Completion Popup", row++);
    evas_object_smart_callback_add(compl, "changed", _ext_popup_changed_cb, gui);
@@ -534,6 +550,7 @@ _nvim_prefs_new(s_gui *gui)
    evas_object_smart_callback_add(cmdline, "changed", _ext_cmdline_changed_cb, gui);
    elm_check_state_set(cmdline, config->ext_cmdline);
    evas_object_show(cmdline);
+
 
    /* Message */
    Evas_Object *const info = elm_label_add(table);

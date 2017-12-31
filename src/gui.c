@@ -38,10 +38,18 @@ typedef enum
    THEME_MSG_COMPLETION_KIND = 2,
 } e_theme_msg;
 
+struct tab
+{
+   EINA_INLIST;
+   Eina_Stringshare *name;
+   unsigned int id;
+};
+
 static Elm_Genlist_Item_Class *_compl_itc = NULL;
 static Elm_Genlist_Item_Class *_wildmenu_itc = NULL;
 
 static void _wildmenu_resize(s_gui *gui);
+static void _tabs_shown_cb(void *data, Evas_Object *obj, const char *emission, const char *source);
 
 static inline s_nvim *
 _nvim_get(const Evas_Object *obj)
@@ -136,10 +144,18 @@ gui_add(s_gui *gui,
         goto fail;
      }
 
+   gui->tabs = eina_inarray_new(sizeof(unsigned int), 4);
+   if (EINA_UNLIKELY(! gui->tabs))
+     {
+        CRI("Failed to create inline array");
+        goto fail;
+     }
+
    /* Window setup */
    gui->win = elm_win_util_standard_add("eovim", "Eovim");
    elm_win_autodel_set(gui->win, EINA_TRUE);
    Evas *const evas = evas_object_evas_get(gui->win);
+
 
    /* Main Layout setup */
    gui->layout = _layout_item_add(gui->win, "eovim/main");
@@ -153,6 +169,8 @@ gui_add(s_gui *gui,
                                   _prefs_show_cb, nvim);
    elm_layout_signal_callback_add(gui->layout, "config,close", "eovim",
                                   _prefs_hide_cb, nvim);
+   elm_layout_signal_callback_add(gui->layout, "eovim,tabs,shown", "eovim",
+                                  _tabs_shown_cb, nvim);
    elm_win_resize_object_add(gui->win, gui->layout);
    evas_object_smart_callback_add(gui->win, "focus,in", _focus_in_cb, gui);
 
@@ -246,6 +264,7 @@ gui_add(s_gui *gui,
 
 fail:
    if (gui->cache) eina_strbuf_free(gui->cache);
+   if (gui->tabs) eina_inarray_free(gui->tabs);
    evas_object_del(gui->win);
    return EINA_FALSE;
 }
@@ -253,11 +272,10 @@ fail:
 void
 gui_del(s_gui *gui)
 {
-   if (EINA_LIKELY(gui != NULL))
-     {
-        eina_strbuf_free(gui->cache);
-        evas_object_del(gui->win);
-     }
+   EINA_SAFETY_ON_NULL_RETURN(gui);
+   eina_inarray_free(gui->tabs);
+   eina_strbuf_free(gui->cache);
+   evas_object_del(gui->win);
 }
 
 static void
@@ -1201,4 +1219,140 @@ _wildmenu_resize(s_gui *gui)
      evas_object_size_hint_min_set(gui->cmdline.spacer, menu_w, max_height);
    elm_object_item_untrack(first);
    eina_list_free(realized);
+}
+
+
+/*============================================================================*
+ *                                  TAB LINE                                  *
+ *============================================================================*/
+
+static void
+_tabs_shown_cb(void *data,
+               Evas_Object *obj EINA_UNUSED,
+               const char *emission EINA_UNUSED,
+               const char *source EINA_UNUSED)
+{
+   /* After the tabs have been shown, we need to re-evaluate the layout,
+    * so the size taken by the tabline will impact the main view */
+   s_nvim *const nvim = data;
+   s_gui *const gui = &nvim->gui;
+
+   elm_layout_sizing_eval(gui->layout);
+}
+
+static void
+_tab_close_cb(void *data,
+              Evas_Object *obj EINA_UNUSED,
+              const char *sig EINA_UNUSED,
+              const char *src EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   s_nvim *const nvim = gui->nvim;
+   const char cmd[] = ":tabclose";
+   nvim_api_command(nvim, cmd, sizeof(cmd) - 1);
+}
+
+static void
+_tab_activate_cb(void *data,
+                 Evas_Object *obj,
+                 const char *sig EINA_UNUSED,
+                 const char *src EINA_UNUSED)
+{
+   s_gui *const gui = data;
+
+   /* The tab ID is stored as a raw value in a pointer field */
+   const unsigned int id =
+      (unsigned int)(uintptr_t)evas_object_data_get(obj, "tab_id");
+
+   /* If the tab is already activated, do not activate it more */
+   if (id == gui->active_tab)
+     return;
+
+   /* Find the tab index. This is more complex than it should be, but since
+    * neovim only gives us its internal IDs, we have to convert them into the
+    * tab IDs as they are ordered on screen (e.g from left to right).
+    *
+    * We go through the list of tabs, to find the current index we are on and
+    * the index of the tab to be activated.
+    */
+   unsigned int *it;
+   unsigned int active_index = UINT_MAX;
+   unsigned int tab_index = UINT_MAX;
+   EINA_INARRAY_FOREACH(gui->tabs, it)
+     {
+        /* When found a candidate, evaluate the index by some pointer
+         * arithmetic.  This avoids to keep around a counter. At this
+         * point, gui->active_tabs != id. */
+        if (*it == id)
+          tab_index = (unsigned)(it - (unsigned int*)gui->tabs->members);
+        else if (*it == gui->active_tab)
+          active_index = (unsigned)(it - (unsigned int*)gui->tabs->members);
+     }
+   if (EINA_UNLIKELY((tab_index == UINT_MAX) || (active_index == UINT_MAX)))
+     {
+        CRI("Something went wrong while finding the tab index: %u, %u",
+            tab_index, active_index);
+        return;
+     }
+
+   /* Compose the command to select the tab. See :help tabnext. */
+   const int diff = (int)active_index - (int)tab_index;
+   char cmd[32];
+   const int bytes = snprintf(
+      cmd, sizeof(cmd), ":%c%utabnext",
+      (diff < 0) ? '+' : '-',
+      (diff < 0) ? -diff : diff
+   );
+   nvim_api_command(gui->nvim, cmd, (unsigned)bytes);
+}
+
+void
+gui_tabs_reset(s_gui *gui)
+{
+   gui->active_tab = 0;
+   eina_inarray_flush(gui->tabs);
+   edje_object_part_box_remove_all(gui->edje, "eovim.tabline", EINA_TRUE);
+}
+
+void
+gui_tabs_show(s_gui *gui)
+{
+   elm_layout_signal_emit(gui->layout, "eovim,tabs,show", "eovim");
+}
+
+void
+gui_tabs_hide(s_gui *gui)
+{
+   elm_layout_signal_emit(gui->layout, "eovim,tabs,hide", "eovim");
+}
+
+void
+gui_tabs_add(s_gui *gui,
+             const char *name,
+             unsigned int id,
+             Eina_Bool active)
+{
+   Evas *const evas = evas_object_evas_get(gui->layout);
+
+   /* Register the current tab */
+   eina_inarray_push(gui->tabs, &id);
+
+   Evas_Object *const edje = edje_object_add(evas);
+   evas_object_data_set(edje, "tab_id", (void *)(uintptr_t)id);
+   edje_object_file_set(edje, main_edje_file_get(), "eovim/tab");
+   edje_object_signal_callback_add(edje, "tab,close", "eovim",
+                                   _tab_close_cb, gui);
+   edje_object_signal_callback_add(edje, "tab,activate", "eovim",
+                                   _tab_activate_cb, gui);
+   evas_object_size_hint_align_set(edje, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(edje, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   edje_object_part_text_set(edje, "eovim.tab.title", name);
+   evas_object_show(edje);
+
+   if (active)
+     {
+        edje_object_signal_emit(edje, "eovim,tab,activate", "eovim");
+        gui->active_tab = id;
+     }
+   edje_object_part_box_append(gui->edje, "eovim.tabline", edje);
 }
