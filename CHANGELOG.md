@@ -5,6 +5,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+
+## [0.1.2] - 2017-12-31
+
 ### Added
 
 - Plug-Ins infrastructure to allow Neovim to manipule the Eovim GUI.
@@ -17,13 +20,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Backspace is now always passed as `<BS>` to Eovim.
-- Remove --hsplit, --vsplit and --tabs from the CLI, as unknown options are now
-  directly forwarded to neovim.
+- Space is now always passed as `<Space>` to Eovim.
+- Remove `--hsplit`, `--vsplit` and `--tabs` from the CLI, as unknown options
+  are now directly forwarded to neovim.
 
 ### Fixed
 
 - Dragging the mouse does select characters instead of words.
 - Initial sizing issues that may lead to ill-formed windows.
+- Various runtime errors upon invalid msgpack parsing.
 
 
 ## [0.1.1] - 2017-10-26
@@ -70,5 +75,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Initial theme (default).
 
 
-[Unreleased]: https://github.com/jeanguyomarch/eovim/compare/v0.1.1...master
+[Unreleased]: https://github.com/jeanguyomarch/eovim/compare/v0.1.2...master
 [0.1.1]: https://github.com/jeanguyomarch/eovim/compare/v0.1.0...v0.1.1
+[0.1.2]: https://github.com/jeanguyomarch/eovim/compare/v0.1.1...v0.1.2
