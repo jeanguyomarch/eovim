@@ -9,8 +9,7 @@ Eovim is the Enlightened Neovim. That's just an [EFL][1] GUI client for
 [![Build Status](https://travis-ci.org/jeanguyomarch/eovim.svg?branch=master)](https://travis-ci.org/jeanguyomarch/eovim)
 [![Coverity Scan Build](https://scan.coverity.com/projects/13836/badge.svg)](https://scan.coverity.com/projects/13836)
 
-Eovim is still at an alpha stage. However, it should be possible to use it for
-developping daily, as most of the Neovim interfaces have been implemented.
+Eovim is still in development, but it is stable enough to be used for your daily programming.
 
 # Screenshots
 
@@ -20,10 +19,20 @@ developping daily, as most of the Neovim interfaces have been implemented.
 Have a look at [the Enlightenment Wiki][8] for more.
 
 
+# Why Eovim?
+
+Eovim is written in plain C, with the amazing [EFL][1]. You have great added
+value to the text-only neovim with a minimal runtime overhead. No need to spawn
+a web browser to use it! If you don't like the externalized UI, it can be
+turned off, or changed via themes. Eovim also provides its own plugin system,
+so the UI can be modified directly from neovim.
+
+Have a problem/question/suggestion? Feel free to [open an issue][10]. Join the club!
+
 # Installation
 
 Eovim requires the following components to be installed on your system before
-you can start hacking:
+you can start hacking around:
 
 - [EFL][1]: this framework of libraries is packaged in most of the GNU/Linux
   distributions and on macOS. Do not forget to install the efl-devel package
@@ -120,3 +129,4 @@ logo. Eovim's logo should be understood as a tribute to Neovim.
 [7]: https://raw.githubusercontent.com/neovim/neovim.github.io/master/logos/neovim-logo-600x173.png
 [8]: https://phab.enlightenment.org/w/projects/eovim/#screenshots
 [9]: https://phab.enlightenment.org/w/projects/eovim/
+[10]: https://github.com/jeanguyomarch/eovim/issues/new
