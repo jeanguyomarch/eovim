@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Plugin to preview images directly from Eovim.
 - Externalization of cmdline and wildmenu.
 - Support for neovim setting the window title.
+- Externalization of the tabline.
 
 ### Changed
 

@@ -14,7 +14,7 @@ developping daily, as most of the Neovim interfaces have been implemented.
 
 # Screenshots
 
-[![Screenshot](https://phab.enlightenment.org/file/data/eox5fhtkpub5ffft3ex5/PHID-FILE-qmjmn2mzkowziaiphdsz/Screenshot_from_2017-12-30_17-16-52.png)][9]
+[![Screenshot](https://phab.enlightenment.org/file/data/4dnksyycnc2otmptswgy/PHID-FILE-jcyfful2wqtxzm3ednvb/Screenshot_from_2017-12-31_12-01-28.png)][9]
 [![Screenshot](https://phab.enlightenment.org/file/data/mggrhqzd6dl3t3nbmswa/PHID-FILE-mvi65ftut5dbutuowvws/Screenshot_from_2017-12-27_22-59-42.png)][9]
 
 Have a look at [the Enlightenment Wiki][8] for more.
