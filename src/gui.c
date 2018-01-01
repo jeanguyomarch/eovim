@@ -125,6 +125,20 @@ gui_size_recalculate(s_gui *gui)
    termview_refresh(gui->termview);
 }
 
+static void
+_win_close_cb(void *data,
+              Evas_Object *obj EINA_UNUSED,
+              void *info EINA_UNUSED)
+{
+   /* When closing the neovim window, send to neovim the :quitall! command
+    * so it will be naturally terminated.
+    *
+    * TODO: see if they are unsaved files ...
+    */
+   s_nvim *const nvim = data;
+   const char cmd[] = ":quitall!";
+   nvim_api_command(nvim, cmd, sizeof(cmd) - 1);
+}
 
 Eina_Bool
 gui_add(s_gui *gui,
@@ -154,6 +168,7 @@ gui_add(s_gui *gui,
    /* Window setup */
    gui->win = elm_win_util_standard_add("eovim", "Eovim");
    elm_win_autodel_set(gui->win, EINA_TRUE);
+   evas_object_smart_callback_add(gui->win, "delete,request", _win_close_cb, nvim);
    Evas *const evas = evas_object_evas_get(gui->win);
 
 
