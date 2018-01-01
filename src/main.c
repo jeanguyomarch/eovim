@@ -102,6 +102,24 @@ main_plugins_get(void)
    return _plugins;
 }
 
+/* This function is a hack around a bug in the EFL backtrace bug.  If an ERR()
+ * or CRI() is hit, for any reason, Eovim crash due to invalid memory handling
+ * in eina_bt.
+ *
+ * Since Eovim is using Elementary, eina has already been initialized when
+ * entering the elm_main(), and the backtrace level has already been set.  So
+ * we use a constructor function (GNU extension) to set the environment with an
+ * EINA_LOG_BACKTRACE that will disable all backtraces, unless it has been
+ * previously specified by the user.
+ */
+static void __attribute__((constructor))
+__constructor(void)
+{
+   const char bt_env[] = "EINA_LOG_BACKTRACE";
+   if (! getenv(bt_env))
+     setenv(bt_env, "-1", 1);
+}
+
 EAPI_MAIN int elm_main(int argc, char **argv);
 EAPI_MAIN int
 elm_main(int argc,
