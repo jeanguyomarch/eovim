@@ -999,7 +999,8 @@ gui_cmdline_show(s_gui *gui,
    termview_cursor_visibility_set(gui->termview, EINA_FALSE);
    edje_object_message_send(gui->cmdline.info, EDJE_MESSAGE_STRING,
                             THEME_MSG_CMDLINE_INFO, (void *)(&msg));
-   edje_object_part_text_set(gui->cmdline.obj, "eovim.cmdline.text", content);
+   edje_object_part_text_unescaped_set(gui->cmdline.obj, "eovim.cmdline.text",
+                                       content);
 
    /* Show the completion panel */
    elm_layout_signal_emit(gui->layout, "eovim,cmdline,show", "eovim");
