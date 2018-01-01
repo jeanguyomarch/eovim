@@ -987,7 +987,7 @@ gui_cmdline_show(s_gui *gui,
    edje_object_part_text_set(gui->cmdline.obj, "eovim.cmdline.text", content);
 
    /* Show the completion panel */
-   edje_object_signal_emit(gui->layout, "eovim,cmdline,show", "eovim");
+   elm_layout_signal_emit(gui->layout, "eovim,cmdline,show", "eovim");
 
    _wildmenu_resize(gui);
 }
@@ -995,7 +995,7 @@ gui_cmdline_show(s_gui *gui,
 void
 gui_cmdline_hide(s_gui *gui)
 {
-   edje_object_signal_emit(gui->layout, "eovim,cmdline,hide", "eovim");
+   elm_layout_signal_emit(gui->layout, "eovim,cmdline,hide", "eovim");
    termview_cursor_visibility_set(gui->termview, EINA_TRUE);
 }
 
