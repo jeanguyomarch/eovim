@@ -1,4 +1,12 @@
 cmake_minimum_required(VERSION 3.0.2)
+
+# Eovim's version works in two different modes:
+# (1) major.minor.patch (semver) for stable (released) sources
+# (2) major.minor.patch.99 for development (nightly) sources
+#
+# When a tweak revision (i.e. 99) is added to normal semver (1), Eovim
+# considers it is in a development stage. It will automatically add the (short)
+# git hash of Eovim to its version, if the sources are from a git repository.
 project(eovim LANGUAGES C VERSION 0.1.2.99)
 
 include(CheckTypeSize)
@@ -34,6 +42,7 @@ if (WITH_PLUGINS)
    include(plugin)
 endif ()
 include(compiler_warnings)
+include(git_commit)
 
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(THEMES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data/themes")
