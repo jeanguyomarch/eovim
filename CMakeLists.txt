@@ -48,6 +48,7 @@ set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(THEMES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data/themes")
 set(BUILD_THEMES_DIR "${CMAKE_BINARY_DIR}/themes")
 set(BUILD_INCLUDE_DIR "${CMAKE_BINARY_DIR}/include")
+set(EFL_MIN_VERSION 1.19)
 
 file(MAKE_DIRECTORY "${BUILD_THEMES_DIR}")
 file(MAKE_DIRECTORY "${BUILD_INCLUDE_DIR}/eovim")
@@ -71,17 +72,17 @@ set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CP
 set(CPACK_RPM_PACKAGE_LICENSE "MIT")
 set(CPACK_RPM_PACKAGE_GROUP "Applications/Editors")
 set(CPACK_RPM_PACKAGE_DESCRIPTION "Eovim is the Enlightened Neovim. That's just an EFL GUI client for Neovim.")
-set(CPACK_RPM_PACKAGE_REQUIRES "neovim >= 0.2.0, efl >= 1.20")
+set(CPACK_RPM_PACKAGE_REQUIRES "neovim >= 0.2.0, efl >= ${EFL_MIN_VERSION}")
 
 include(CPack)
 
-find_package(Eina REQUIRED)
-find_package(Eet REQUIRED)
-find_package(Evas REQUIRED)
-find_package(Ecore REQUIRED COMPONENTS File Input)
-find_package(Edje REQUIRED)
-find_package(Efreet REQUIRED)
-find_package(Elementary REQUIRED)
+find_package(Eina ${EFL_MIN_VERSION} REQUIRED)
+find_package(Eet ${EFL_MIN_VERSION} REQUIRED)
+find_package(Evas ${EFL_MIN_VERSION} REQUIRED)
+find_package(Ecore ${EFL_MIN_VERSION} REQUIRED COMPONENTS File Input)
+find_package(Edje ${EFL_MIN_VERSION} REQUIRED)
+find_package(Efreet ${EFL_MIN_VERSION} REQUIRED)
+find_package(Elementary ${EFL_MIN_VERSION} REQUIRED)
 find_package(MsgPack REQUIRED)
 
 add_custom_command(
