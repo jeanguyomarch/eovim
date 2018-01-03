@@ -1,0 +1,3 @@
+- `eovim --version`:
+- `nvim --version | head -n1`:
+- `edje_cc --version`:
