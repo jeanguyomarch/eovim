@@ -54,8 +54,6 @@ struct gui
    } completion;
 
    struct {
-      Evas_Object *obj;
-      Evas_Object *info;
       Evas_Object *menu;
       Evas_Object *table;
       Evas_Object *spacer;

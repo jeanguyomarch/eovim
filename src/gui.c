@@ -224,9 +224,6 @@ gui_add(s_gui *gui,
     * Command-Line GUI objects
     * ===================================================================== */
 
-   gui->cmdline.obj = edje_object_part_swallow_get(gui->edje, "eovim.cmdline");
-   gui->cmdline.info = edje_object_part_swallow_get(gui->edje, "eovim.cmdline_info");
-
    /* Table: will hold both the spacer and the genlist */
    gui->cmdline.table = o = elm_table_add(gui->layout);
    evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -997,9 +994,10 @@ gui_cmdline_show(s_gui *gui,
       .str = (char *)firstc,
    };
    termview_cursor_visibility_set(gui->termview, EINA_FALSE);
-   edje_object_message_send(gui->cmdline.info, EDJE_MESSAGE_STRING,
+   edje_object_message_send(gui->edje, EDJE_MESSAGE_STRING,
                             THEME_MSG_CMDLINE_INFO, (void *)(&msg));
-   edje_object_part_text_unescaped_set(gui->cmdline.obj, "eovim.cmdline.text",
+   edje_object_part_text_unescaped_set(gui->edje,
+                                       "eovim.cmdline:eovim.cmdline.text",
                                        content);
 
    /* Show the completion panel */
@@ -1020,7 +1018,8 @@ gui_cmdline_cursor_pos_set(s_gui *gui,
                            size_t pos)
 {
    gui->cmdline.cpos = pos;
-   edje_object_part_text_cursor_pos_set(gui->cmdline.obj, "eovim.cmdline.text",
+   edje_object_part_text_cursor_pos_set(gui->edje,
+                                       "eovim.cmdline:eovim.cmdline.text",
                                         EDJE_CURSOR_MAIN, (int)pos);
 }
 
@@ -1206,9 +1205,8 @@ _wildmenu_resize(s_gui *gui)
    int item_height;
    evas_object_geometry_get(track, NULL, NULL, NULL, &item_height);
 
-   int win_h, info_x, info_y, info_h, menu_w;
+   int win_h, menu_w;
    evas_object_geometry_get(gui->win, NULL, NULL, NULL, &win_h);
-   evas_object_geometry_get(gui->cmdline.info, &info_x, &info_y, NULL, &info_h);
    evas_object_geometry_get(gui->cmdline.table, NULL, NULL, &menu_w, NULL);
 
    const int height = item_height * (int)(gui->cmdline.items_count) + 2;
