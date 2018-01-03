@@ -90,6 +90,8 @@ static const s_kv_keymap _map[] =
    KM("Next", "PageDown"),
    KM("Delete", "Del"),
    KM("space", "Space"),
+   KM_IDENT("Tab"),
+   KM("ISO_Left_Tab", "Tab"),
 };
 
 static Eina_Hash *_keymap = NULL;
