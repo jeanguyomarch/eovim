@@ -115,9 +115,7 @@ main_plugins_get(void)
 static void __attribute__((constructor))
 __constructor(void)
 {
-   const char bt_env[] = "EINA_LOG_BACKTRACE";
-   if (! getenv(bt_env))
-     setenv(bt_env, "-1", 1);
+   setenv("EINA_LOG_BACKTRACE", "-1", 0);
 }
 
 EAPI_MAIN int elm_main(int argc, char **argv);
