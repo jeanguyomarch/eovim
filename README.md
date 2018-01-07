@@ -64,15 +64,18 @@ If we want to run `eovim` without installing it, please refer to the
 eovim [options] [files...]
 ```
 
-For now, `eovim` can be run without any argument. This is equivalent to run
-Neovim without any file. You can pass files as arguments to `eovim`, they will
-be opened at startup the same way Neovim does.
+Eovim command-line usage is exactly the same than what Vim or Neovim
+provides.  You can run `eovim --help` or `man eovim` to get more help about how
+to use its command-line form. It basically adds options on top the ones
+provided by Neovim. If a command is not understood by Eovim itself, it will be
+passed to Neovim.
+
+The man page will give you greater details, and especially will give
+information about the Vim Runtime modifications that are operated by Eovim.
 
 When `eovim` starts, it spawns an instance of Neovim. If it happens that `nvim`
 is not in your `PATH` or if you want to use an alterate binary of Neovim, you
 can feed it to `eovim` with the option `--nvim`.
-
-To get a list of all the available options, run `eovim --help`.
 
 
 # Plug-Ins
