@@ -31,7 +31,10 @@ Provide an alternate GUI configuration, where \fIpath\fR is the path to an
 eovim configuration.
 .TP
 \fB\-F\fR, \fB\-\-fullscreen\fR
-Start Eovim in fullscreen.
+Start Eovim in a full-screen window
+.TP
+\fB\-M\fR, \fB\-\-maximized\fR
+Start Eovim in a maximized window
 .TP
 \fB\-t\fR, \fB\-\-theme\fR \fIpath\fR
 Provide an alternate theme to Eovim that resides at \fIpath\fR.

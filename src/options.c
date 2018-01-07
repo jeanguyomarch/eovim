@@ -44,6 +44,7 @@ _show_help(void)
       "                          (e.g. 80x24 for a 80x24 cells window)\n"
       "  --config <path>         Provide an alternate GUI configuration\n"
       "  -F, --fullscreen        Run Eovim in fullscreen\n"
+      "  -M, --maximized         Run Eovim in a maximized window\n"
       "  -t, --theme <path>      Provide an alternate theme to Eovim\n"
       "  -h, --help              Display this message\n"
       "  -V, --version           Show Eovim's version\n"
@@ -86,6 +87,7 @@ typedef enum
    OPT_NO_PLUGIN        = 'N',
    OPT_GEOMETRY         = 'g',
    OPT_FULLSCREEN       = 'F',
+   OPT_MAXIMIZED        = 'M',
    OPT_THEME            = 't',
    OPT_HELP             = 'h',
    OPT_VERSION          = 'V',
@@ -107,6 +109,7 @@ static const s_arg _args[] =
    ARG("geometry",      OPT_GEOMETRY),
    ARG("config",        OPT_CONFIG),
    ARG("fullscreen",    OPT_FULLSCREEN),
+   ARG("maximized",     OPT_MAXIMIZED),
    ARG("theme",         OPT_THEME),
    ARG("help",          OPT_HELP),
    ARG("version",       OPT_VERSION),
@@ -219,6 +222,11 @@ options_parse(int argc,
                    /* Fullscreen, store true */
                 case OPT_FULLSCREEN:
                    opts->fullscreen = EINA_TRUE;
+                   break;
+
+                   /* Maximized, store true */
+                case OPT_MAXIMIZED:
+                   opts->maximized = EINA_TRUE;
                    break;
 
                    /* Help, print the help and stop */

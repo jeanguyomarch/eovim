@@ -108,6 +108,7 @@ void gui_completion_selected_set(s_gui *gui, int index);
 
 void gui_bell_ring(s_gui *gui);
 void gui_fullscreen_set(s_gui *gui, Eina_Bool fullscreen);
+void gui_maximized_set(s_gui *gui, Eina_Bool maximized);
 
 void gui_cmdline_show(s_gui *gui, const char *content,
                       const char *prompt, const char *firstc);

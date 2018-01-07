@@ -976,6 +976,13 @@ gui_fullscreen_set(s_gui *gui,
 }
 
 void
+gui_maximized_set(s_gui *gui,
+                  Eina_Bool maximized)
+{
+   elm_win_maximized_set(gui->win, maximized);
+}
+
+void
 gui_mode_update(s_gui *gui,
                 Eina_Stringshare *name)
 {

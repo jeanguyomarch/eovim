@@ -659,6 +659,7 @@ nvim_new(const s_options *opts,
         CRI("Failed to set up the graphical user interface");
         goto del_process;
      }
+   gui_maximized_set(&nvim->gui, opts->maximized);
    gui_fullscreen_set(&nvim->gui, opts->fullscreen);
 
    return nvim;
