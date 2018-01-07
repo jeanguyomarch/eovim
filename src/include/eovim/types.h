@@ -35,7 +35,6 @@ typedef struct config s_config;
 typedef struct mode s_mode;
 typedef struct position s_position;
 typedef struct gui s_gui;
-typedef struct tab s_tab;
 typedef struct prefs s_prefs;
 typedef struct completion s_completion;
 typedef struct geometry s_geometry;

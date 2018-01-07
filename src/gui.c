@@ -38,12 +38,11 @@ typedef enum
    THEME_MSG_COMPLETION_KIND = 2,
 } e_theme_msg;
 
-struct tab
+typedef struct
 {
-   EINA_INLIST;
    Eina_Stringshare *name;
    unsigned int id;
-};
+} s_tab;
 
 static Elm_Genlist_Item_Class *_compl_itc = NULL;
 static Elm_Genlist_Item_Class *_wildmenu_itc = NULL;
