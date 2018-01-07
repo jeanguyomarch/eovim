@@ -46,7 +46,7 @@ struct gui
    struct {
       Evas_Object *obj;
       Evas_Object *gl;
-      Elm_Genlist_Item *sel;
+      Elm_Object_Item *sel;
       size_t items_count;
       size_t max_type_len;
       size_t max_word_len;
@@ -57,7 +57,7 @@ struct gui
       Evas_Object *menu;
       Evas_Object *table;
       Evas_Object *spacer;
-      Elm_Genlist_Item *sel_item;
+      Elm_Object_Item *sel_item;
       size_t items_count;
       ssize_t sel_index;
       size_t cpos; /**< Cursor position */

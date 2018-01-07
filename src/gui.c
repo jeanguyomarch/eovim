@@ -592,7 +592,7 @@ _completion_sel_cb(void *data,
                    void *event)
 {
    s_gui *const gui = data;
-   const Elm_Genlist_Item *const item = event;
+   const Elm_Object_Item *const item = event;
 
    /* If the completion.event is set, the item was selected because of a
     * neovim event, not because the user did clic on the item.
@@ -658,7 +658,7 @@ gui_completion_add(s_gui *gui,
    );
 }
 
-static Elm_Genlist_Item *
+static Elm_Object_Item *
 _gl_nth_get(const Evas_Object *gl,
             unsigned int index)
 {
@@ -668,7 +668,7 @@ _gl_nth_get(const Evas_Object *gl,
     */
    const unsigned int items = elm_genlist_items_count(gl);
    const unsigned int half = items / 2;
-   Elm_Genlist_Item *ret = NULL;
+   Elm_Object_Item *ret = NULL;
 
    if (EINA_UNLIKELY(index >= items))
      {
@@ -703,7 +703,7 @@ gui_completion_selected_set(s_gui *gui,
 
    if (index < 0)
      {
-        Elm_Genlist_Item *const selected = elm_genlist_selected_item_get(gl);
+        Elm_Object_Item *const selected = elm_genlist_selected_item_get(gl);
         gui->completion.nvim_sel_event = EINA_FALSE;
         if (selected)
           elm_genlist_item_selected_set(selected, EINA_FALSE);
@@ -711,7 +711,7 @@ gui_completion_selected_set(s_gui *gui,
      }
    else /* index is >= 0, we can safely cast it as unsigned */
      {
-        Elm_Genlist_Item *const item = _gl_nth_get(gl, (unsigned int)index);
+        Elm_Object_Item *const item = _gl_nth_get(gl, (unsigned int)index);
         gui->completion.nvim_sel_event = EINA_TRUE;
         elm_genlist_item_selected_set(item, EINA_TRUE);
         elm_genlist_item_bring_in(item, ELM_GENLIST_ITEM_SCROLLTO_IN);
@@ -744,7 +744,7 @@ gui_completion_show(s_gui *gui,
         /* Selection is at the initiative of neovim */
         gui->completion.nvim_sel_event = EINA_TRUE;
 
-        Elm_Genlist_Item *const sel = _gl_nth_get(gui->completion.gl,
+        Elm_Object_Item *const sel = _gl_nth_get(gui->completion.gl,
                                                   (unsigned int)selected);
         elm_genlist_item_selected_set(sel, EINA_TRUE);
      }
@@ -1090,7 +1090,7 @@ _wildmenu_sel_cb(void *data,
                  void *event)
 {
    s_gui *const gui = data;
-   const Elm_Genlist_Item *const item = event;
+   const Elm_Object_Item *const item = event;
 
    /* If an item was selected, but at the initiative of neovim, we will just
     * discard the event, to notify we have processed it, but will stop right
@@ -1142,7 +1142,7 @@ void
 gui_wildmenu_append(s_gui *gui,
                     Eina_Stringshare *item)
 {
-   Elm_Genlist_Item *const wild_item = elm_genlist_item_append(
+   Elm_Object_Item *const wild_item = elm_genlist_item_append(
       gui->cmdline.menu, _wildmenu_itc, item,
       NULL, ELM_GENLIST_ITEM_NONE,
       _wildmenu_sel_cb, gui

@@ -246,7 +246,7 @@ _font_sel_cb(void *data,
 {
    s_gui *const gui = data;
    s_config *const config = gui->nvim->config;
-   const Elm_Genlist_Item *const item = event;
+   const Elm_Object_Item *const item = event;
    const s_font *const font = elm_object_item_data_get(item);
 
    /*
@@ -262,7 +262,7 @@ _config_font_name_add(s_gui *gui,
                       Evas_Object *parent)
 {
    const s_config *const config = gui->nvim->config;
-   Elm_Genlist_Item *sel_item = NULL;
+   Elm_Object_Item *sel_item = NULL;
 
    /* Frame container */
    Evas_Object *const f = _frame_add(parent, "Font Name Settings");
@@ -300,7 +300,7 @@ _config_font_name_add(s_gui *gui,
              continue;
           }
 
-        Elm_Genlist_Item *const item = elm_genlist_item_append(
+        Elm_Object_Item *const item = elm_genlist_item_append(
            gl, _font_itc, font, NULL, ELM_GENLIST_ITEM_NONE, _font_sel_cb, gui
         );
 
@@ -380,7 +380,7 @@ _plug_toggle(void *data,
 {
    s_gui *const gui = data;
    s_config *const config = gui->nvim->config;
-   Elm_Genlist_Item *const item = info;
+   Elm_Object_Item *const item = info;
    s_plugin *const plug = elm_object_item_data_get(item);
 
    /* If the plugin was loaded, unload it and remove if from the default loaded
