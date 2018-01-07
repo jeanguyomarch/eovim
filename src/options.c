@@ -55,9 +55,6 @@ _show_help(void)
    puts(help);
 }
 
-/* Visual alias to tell that two strings are equal */
-#define STREQ(StrA, StrB) (!strcmp(StrA, StrB))
-
 /*
  * Okay listen up. Getopts suck. Especially the EFL one! I want Eovim to catch
  * some options, and let any other option alone. No reordering. So I describe
@@ -80,6 +77,8 @@ _show_help(void)
 
 typedef enum
 {
+   OPT_PARSE_ERROR      = -1,
+   OPT_UNKNOWN          = -2,
    OPT_FORBIDDEN        = 0,
    OPT_CONFIG           = 1,
    OPT_NVIM             = 3,
@@ -121,15 +120,46 @@ static const size_t _args_size = EINA_C_ARRAY_LENGTH(_args);
 
 
 static int
-_find_long_option(const char *arg)
+_find_long_option(const char *arg,
+                  const char **ret)
 {
+   /* Make sure that both '--arg=value' and '--arg value' are correctly
+    * handled. '--arg' will be considered as '--arg value' with no 'value'.
+    *
+    * If we find '=' in the argument, we will use the '--arg=value' form.
+    * Which means we EXPECT a value, which will be returned via 'ret'.
+    */
+   size_t arg_len;
+   const char *const eq = strchr(arg, '=');
+   if (eq)
+     {
+        arg_len = (size_t)(eq - arg) - 2; /* Remove the leading -- */
+        if (eq[1] == '\0')
+          {
+             ERR("'%s' provides no argument", arg);
+             return OPT_PARSE_ERROR;
+          }
+        /* Argument is just after the '=' */
+        *ret = eq + 1;
+     }
+   else
+     {
+        /* XXX I'd like to use strchrnul(3) to avoid doing another strlen
+         * but it is glibc only... */
+        arg_len = strlen(arg) - 2;
+        /* Argument is either not present or in the next argv */
+        *ret = NULL;
+     }
+
    /* Match the string after the leading "--".  E.g. "--option" shall match
-    * "option" */
+    * "option". */
    const char *const elem = &(arg[2]);
    for (size_t i = 0; i < _args_size; i++)
-     if (STREQ(elem, _args[i].long_opt))
+     if (! strncmp(elem, _args[i].long_opt, arg_len))
        return _args[i].short_opt;
-   return -1;
+
+   /* The argument did not interest eovim, maybe it will interest nvim */
+   return OPT_UNKNOWN;
 }
 
 static int
@@ -139,7 +169,9 @@ _find_short_option(const char *arg)
    for (size_t i = 0; i < _args_size; i++)
      if ((e_opt)(arg[1]) == _args[i].short_opt)
        return _args[i].short_opt;
-   return -1;
+
+   /* The argument did not interest eovim, maybe it will interest nvim */
+   return OPT_UNKNOWN;
 }
 
 static Eina_Bool
@@ -176,11 +208,18 @@ options_parse(int argc,
         const char *const it = argv[i];
         if (it[0] == '-') /* We have an option */
           {
+             const char *param = NULL;
              int opt;
              if (it[1] == '-') /* Long option */
-               opt = _find_long_option(it);
+               opt = _find_long_option(it, &param);
              else /* Short option */
                opt = _find_short_option(it);
+
+             /* GET_NEXT_ARG: if we got a parameter from the analysis of the
+              * option (e.g. --opt=param) then we get the parameter that was
+              * previously returned. Otherwise we consume the next command-line
+              * argument */
+#define GET_NEXT_ARG() param ? param : argv[++i]
 
              /* At this point we either have a >= 0 number, which is an eovim
               * option, or -1, which is an option to be forwarded to neovim */
@@ -195,22 +234,22 @@ options_parse(int argc,
 
                    /* Theme, grab the next argument */
                 case OPT_THEME:
-                   opts->theme = argv[i + 1];
+                   opts->theme = GET_NEXT_ARG();
                    break;
 
                    /* Nvim program, grab the next argument */
                 case OPT_NVIM:
-                   opts->nvim_prog = argv[i + 1];
+                   opts->nvim_prog = GET_NEXT_ARG();
                    break;
 
                    /* GUI config, grab the next argument */
                 case OPT_CONFIG:
-                   opts->theme = argv[i + 1];
+                   opts->theme = GET_NEXT_ARG();
                    break;
 
                    /* Geomtry, parse the next argument */
                 case OPT_GEOMETRY:
-                   if (! _parse_geometry(&opts->geometry, argv[i + 1]))
+                   if (! _parse_geometry(&opts->geometry, GET_NEXT_ARG()))
                      return OPTIONS_RESULT_QUIT;
                    break;
 
@@ -240,10 +279,19 @@ options_parse(int argc,
                    return OPTIONS_RESULT_QUIT;
 
                    /* Unhandled: forward to neovim */
-                default:
+                case OPT_UNKNOWN:
                    argv[fwd++] = argv[i];
                    break;
+
+                case OPT_PARSE_ERROR:
+                   ERR("Terminating due to parsing error");
+                   return OPTIONS_RESULT_ERROR;
+
+                default:
+                   CRI("Internal error 0x%02x was returned", opt);
+                   return OPTIONS_RESULT_ERROR;
                }
+#undef GET_NEXT_ARG
           }
         else
           {
