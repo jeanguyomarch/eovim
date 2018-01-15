@@ -12,11 +12,10 @@ matrix:
       env:
         - MATRIX_EVAL=""
 
-# Disable for now. Travis is too instable.
-#    - os: osx
-#      osx_image: xcode8
-#      env:
-#        - MATRIX_EVAL="brew install efl"
+    - os: osx
+      osx_image: xcode8
+      env:
+        - MATRIX_EVAL="brew update && brew install efl"
 
 
 before_install:
