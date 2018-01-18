@@ -44,11 +44,18 @@ you can start hacking around:
 - [Neovim][2] version 0.2.0 or greater (earlier versions have not been tested),
 - [CMake][5].
 
+If you are unsure what packages shall be installed, you can run the following
+helper script from the top source directory. It will tell you how to setup your
+environment to compile Eovim from sources.
+
+```bash
+./scripts/setup.py
+```
+
 After making sure you have installed the dependencies aforementioned, run the
 following installation procedure:
 
 ```bash
-./scripts/get-msgpack.sh # Optional, but advised.
 mkdir -p build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 cmake --build .
