@@ -65,6 +65,15 @@ _focus_in_cb(void *data,
    evas_object_focus_set(gui->termview, EINA_TRUE);
 }
 
+static void
+_focus_out_cb(void *data,
+              Evas_Object *obj EINA_UNUSED,
+              void *event EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   evas_object_focus_set(gui->termview, EINA_FALSE);
+}
+
 static Evas_Object *
 _layout_item_add(Evas_Object *parent,
                  const char *group)
@@ -187,6 +196,7 @@ gui_add(s_gui *gui,
                                   _tabs_shown_cb, nvim);
    elm_win_resize_object_add(gui->win, gui->layout);
    evas_object_smart_callback_add(gui->win, "focus,in", _focus_in_cb, gui);
+   evas_object_smart_callback_add(gui->win, "focus,out", _focus_out_cb, gui);
 
    /* ========================================================================
     * Completion GUI objects
@@ -1360,4 +1370,42 @@ gui_tabs_add(s_gui *gui,
         gui->active_tab = id;
      }
    edje_object_part_box_append(gui->edje, "eovim.tabline", edje);
+}
+
+void
+gui_caps_lock_alert(s_gui *gui)
+{
+   if (! gui->capslock_warning)
+     {
+        /* Don't show the capslock alert in theme if deactivated */
+        const s_config *const cfg = gui->nvim->config;
+        if (cfg->alert_capslock)
+          elm_layout_signal_emit(gui->layout, "eovim,capslock,on", "eovim");
+
+        /* Tell neovim we activated caps lock */
+        nvim_helper_autocmd_do(gui->nvim, "EovimCapsLockOn");
+        gui->capslock_warning = EINA_TRUE;
+     }
+}
+
+void
+gui_caps_lock_dismiss(s_gui *gui)
+{
+   if (gui->capslock_warning)
+     {
+        /* Don't hide the capslock alert in theme if deactivated */
+        const s_config *const cfg = gui->nvim->config;
+        if (cfg->alert_capslock)
+          elm_layout_signal_emit(gui->layout, "eovim,capslock,off", "eovim");
+
+        /* Tell neovim we deactivated caps lock */
+        nvim_helper_autocmd_do(gui->nvim, "EovimCapsLockOff");
+        gui->capslock_warning = EINA_FALSE;
+     }
+}
+
+Eina_Bool
+gui_caps_lock_warning_get(const s_gui *gui)
+{
+   return gui->capslock_warning;
 }

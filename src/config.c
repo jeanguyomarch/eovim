@@ -36,7 +36,7 @@
  * existing configurations on the user side, and yield unexpected results.
  *
  *===========================================================================*/
-static const unsigned int _config_version = 6;
+static const unsigned int _config_version = 7;
 
 static Eet_Data_Descriptor *_edd = NULL;
 static const char _key[] = "eovim/config";
@@ -63,6 +63,7 @@ config_init(void)
    EDD_BASIC_ADD(font_name, EET_T_STRING);
    EDD_BASIC_ADD(mute_bell, EET_T_UCHAR);
    EDD_BASIC_ADD(key_react, EET_T_UCHAR);
+   EDD_BASIC_ADD(alert_capslock, EET_T_UCHAR);
    EDD_BASIC_ADD(ext_popup, EET_T_UCHAR);
    EDD_BASIC_ADD(ext_cmdline, EET_T_UCHAR);
    EDD_BASIC_ADD(ext_tabs, EET_T_UCHAR);
@@ -104,6 +105,13 @@ config_key_react_set(s_config *config,
                      Eina_Bool react)
 {
    config->key_react = !!react;
+}
+
+void
+config_caps_lock_alert_set(s_config *config,
+                           Eina_Bool alert)
+{
+   config->alert_capslock = !!alert;
 }
 
 void
@@ -169,6 +177,7 @@ _config_new(void)
    config->ext_popup = EINA_TRUE;
    config->ext_cmdline = EINA_TRUE;
    config->ext_tabs = EINA_TRUE;
+   config->alert_capslock = EINA_TRUE;
    config->plugins = NULL;
 
    return config;
@@ -260,6 +269,9 @@ config_load(const char *file)
               /* Fall through */
            case 5:
               cfg->ext_tabs = EINA_TRUE;
+              /* Fall through */
+           case 6:
+              cfg->alert_capslock = EINA_TRUE;
               /* Fall through */
            default:
               break;

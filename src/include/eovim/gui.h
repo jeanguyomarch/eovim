@@ -73,6 +73,9 @@ struct gui
     * useless calls to the theme or nested set issues */
    int busy_count;
 
+   /** True when the caps lock warning is on, False otherwise */
+   Eina_Bool capslock_warning;
+
    unsigned int active_tab; /**< Identifier of the active tab */
 };
 
@@ -129,5 +132,9 @@ void gui_tabs_reset(s_gui *gui);
 void gui_tabs_add(s_gui *gui, const char *name, unsigned int id, Eina_Bool active);
 void gui_tabs_show(s_gui *gui);
 void gui_tabs_hide(s_gui *gui);
+
+void gui_caps_lock_alert(s_gui *gui);
+void gui_caps_lock_dismiss(s_gui *gui);
+Eina_Bool gui_caps_lock_warning_get(const s_gui *gui);
 
 #endif /* ! __EOVIM_GUI_H__ */

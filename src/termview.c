@@ -23,6 +23,7 @@
 #include "contrib/contrib.h"
 #include "eovim/termview.h"
 #include "eovim/log.h"
+#include "eovim/gui.h"
 #include "eovim/main.h"
 #include "eovim/keymap.h"
 #include "eovim/config.h"
@@ -478,6 +479,26 @@ _termview_key_down_cb(void *data,
    char nvim_compose = '\0';
    char buf[32];
    const char *send;
+   const char caps[] = "Caps_Lock";
+   s_gui *const gui = &(sd->nvim->gui);
+
+   /* Did we press the Caps_Lock key? We can either have enabled or disabled
+    * caps lock. */
+   if (!strcmp(ev->key, caps)) /* Caps lock is pressed */
+     {
+        if (evas_key_lock_is_set(ev->locks, caps)) /* DISABLE */
+          {
+             /* If we press caps lock with prior caps locks, it means we
+              * just DISABLED the caps lock */
+             gui_caps_lock_dismiss(gui);
+          }
+        else /* ENABLE */
+          {
+             /* If we press caps lock without prior caps locks, it means we
+              * just ENABLED the caps lock */
+             gui_caps_lock_alert(gui);
+          }
+     }
 
    /* Try the composition. When this function returns EINA_TRUE, it already
     * worked out, nothing more to do. */
@@ -566,11 +587,23 @@ _termview_key_down_cb(void *data,
 
 static void
 _termview_focus_in_cb(void *data,
-                      Evas *e EINA_UNUSED,
+                      Evas *evas,
                       Evas_Object *obj EINA_UNUSED,
                       void *event EINA_UNUSED)
 {
    s_termview *const sd = data;
+   s_gui *const gui = &(sd->nvim->gui);
+
+   /* When entering back on the Eovim window, the user may have pressed
+    * Caps_Lock outside of Eovim's context. So we have to make sure when
+    * entering Eovim again, that we are on the same page with the input
+    * events. */
+   const Evas_Lock *const lock = evas_key_lock_get(evas);
+   if (evas_key_lock_is_set(lock, "Caps_Lock"))
+     gui_caps_lock_alert(gui);
+   else
+     gui_caps_lock_dismiss(gui);
+
    edje_object_signal_emit(sd->cursor, "focus,in", "eovim");
 }
 

@@ -52,4 +52,6 @@ void
 nvim_helper_version_decode(s_nvim *nvim,
                            f_version_decode func);
 
+void nvim_helper_autocmd_do(s_nvim *nvim, const char *event);
+
 #endif /* ! __EOVIM_NVIM_HELPER_H__ */

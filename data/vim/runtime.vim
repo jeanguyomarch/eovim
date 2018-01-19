@@ -6,3 +6,8 @@
 :      call writefile(msgpackdump([[2, "eovim", [[a:plugin, a:000]]]]), l:file, "ab")
 :   endif
 :endfunction
+
+:augroup EovimCapsLock
+:   autocmd User EovimCapsLockOn :
+:   autocmd User EovimCapsLockOff :
+:augroup END

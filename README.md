@@ -93,6 +93,28 @@ provided by Eovim. Details about plug-ins and how the built-in plug-ins work
 can be read in the README contained in the `plugins/` directory.
 
 
+# Vim Runtime
+
+Eovim adds its own overlay to Vim's runtime. It resides in
+`data/vim/runtime.vim`, and is installed with Eovim. It is sourced when Eovim
+starts. See the manual for details.
+
+## Caps Lock handling
+
+Eovim detects when Caps Lock are on and off. The default theme can display a
+visual hint if enabled. Neovim is also made aware of the toggling of Caps Lock
+via an `autocmd`. To add hooks in response to caps lock events, you must
+override the `EovimCapsLock` `augroup`:
+
+```vim
+:augroup EovimCapsLock
+:   autocmd!
+:   autocmd User EovimCapsLockOn <your handle when Caps Lick is ON>
+:   autocmd User EovimCapsLockOff <your handle when Caps Lick is OFF>
+:augroup END
+```
+
+
 # Hacking
 
 Eovim uses some environment variables that can influence its runtime. Some are

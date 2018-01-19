@@ -39,6 +39,7 @@ struct config
    Eina_Bool ext_cmdline;
    Eina_Bool ext_tabs;
    Eina_Bool true_colors;
+   Eina_Bool alert_capslock;
 
    /* Internals */
    char *path;
@@ -52,6 +53,7 @@ void config_font_size_set(s_config *config, unsigned int font_size);
 void config_font_name_set(s_config *config, Eina_Stringshare *font_name);
 void config_bell_mute_set(s_config *config, Eina_Bool mute);
 void config_key_react_set(s_config *config, Eina_Bool react);
+void config_caps_lock_alert_set(s_config *config, Eina_Bool alert);
 void config_ext_popup_set(s_config *config, Eina_Bool pop);
 void config_ext_cmdline_set(s_config *config, Eina_Bool cmd);
 void config_ext_tabs_set(s_config *config, Eina_Bool tabs);

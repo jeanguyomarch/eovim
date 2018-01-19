@@ -157,3 +157,24 @@ nvim_helper_version_decode(s_nvim *nvim,
    nvim_api_command_output(nvim, vim_cmd, sizeof(vim_cmd) - 1,
                            _version_decode, func);
 }
+
+void
+nvim_helper_autocmd_do(s_nvim *nvim,
+                       const char *event)
+{
+   /* Compose the vim command that will trigger an autocmd for the User event,
+    * with our custom args */
+   char buf[512];
+   const int bytes = snprintf(buf, sizeof(buf), ":doautocmd User %s", event);
+   if (EINA_UNLIKELY(bytes < 0))
+     {
+        CRI("Failed to write data in stack buffer");
+        return;
+     }
+
+   /* Make neovim execute this */
+   const Eina_Bool ok = nvim_api_command(nvim, buf, (unsigned int)bytes);
+   if (EINA_UNLIKELY(! ok))
+     ERR("Failed to execute autocmd via: '%s'", buf);
+
+}

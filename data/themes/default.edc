@@ -85,6 +85,7 @@ collections {
          image: "vertical_separated_bar_glow.png" COMP;
          image: "inset_shadow.png" COMP;
          image: "tab_other_m.png" COMP;
+         image: "caps_lock_warning.png" COMP;
       }
       sounds {
          sample { name: "bell" LOSSY 64;
@@ -191,6 +192,49 @@ collections {
             }
             program { signal: "mouse,clicked,1"; source: "config_icon";
                action: SIGNAL_EMIT "config,open" "eovim";
+            }
+         }
+
+         /* CAPS LOCK WARNING.
+          * ------------------------------------------------------------------
+          *
+          * Pulses a bright red light when caps lock is on.
+          * Invisible when caps lock is off.
+          */
+         image { "caps_lock_warning";
+            desc { "default";
+               image.normal: "caps_lock_warning.png";
+               aspect: 1 1;
+               align: 0.5 0.5;
+               rel2.relative: 0.0 0.0;
+               visible: 0;
+            }
+            desc { "alert_pulse_0";
+               inherit: "default";
+               visible: 1;
+               min: 75 75;
+            }
+            desc { "alert_pulse_1";
+               inherit: "alert_pulse_0";
+               visible: 1;
+               min: 125 125;
+            }
+
+            program { signal: "eovim,capslock,off"; source: "eovim";
+               action: STATE_SET "default";
+               target: "caps_lock_warning";
+            }
+            program { signal: "eovim,capslock,on"; source: "eovim"; name: "alert_loop";
+               action: STATE_SET "alert_pulse_0";
+               target: "caps_lock_warning";
+               transition: ACCELERATE 0.2;
+               after: "alert_loop_next";
+            }
+            program { name: "alert_loop_next";
+               action: STATE_SET "alert_pulse_1";
+               target: "caps_lock_warning";
+               transition: ACCELERATE 0.5;
+               after: "alert_loop";
             }
          }
 
