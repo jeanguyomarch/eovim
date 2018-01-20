@@ -12,6 +12,7 @@ matrix:
       env:
         - MATRIX_EVAL=""
 
+  exclude: # macOS builds fail randomly because of travis itself
     - os: osx
       osx_image: xcode8
       env:
