@@ -456,16 +456,11 @@ _plug_toggle(void *data,
 
 
 static void
-_page_change_cb(void *data EINA_UNUSED,
-                Evas_Object *obj EINA_UNUSED,
-                void *info)
+_flip_to(void *data,
+         Evas_Object *obj EINA_UNUSED,
+         void *info EINA_UNUSED)
 {
-   /* Promote the naviframe page item, that is stored as a data of the
-    * item selected in the segmentcontrol */
-
-   const Elm_Object_Item *const sec_item = info;
-   Elm_Object_Item *const item = elm_object_item_data_get(sec_item);
-
+   Elm_Object_Item *const item = data;
    elm_naviframe_item_promote(item);
 }
 
@@ -653,15 +648,6 @@ _plugins_prefs_new(s_gui *gui)
    return box;
 }
 
-static Elm_Object_Item *
-_push_nav_item(s_gui *gui, Evas_Object *contents)
-{
-   Elm_Object_Item *const p = elm_naviframe_item_push(
-      gui->prefs.nav, NULL, NULL, NULL, contents, NULL);
-   elm_naviframe_item_title_enabled_set(p, EINA_FALSE, EINA_FALSE);
-   return p;
-}
-
 void
 prefs_show(s_gui *gui)
 {
@@ -669,15 +655,8 @@ prefs_show(s_gui *gui)
 
    /* Create the main box that holds the prefs together */
    Evas_Object *const box = _prefs_box_new(gui->layout);
+   elm_box_horizontal_set(box, EINA_TRUE);
    gui->prefs.box = box;
-
-   /* Add a segment control that keeps track of all the pages */
-   Evas_Object *const sec = elm_segment_control_add(box);
-   evas_object_size_hint_weight_set(sec, EVAS_HINT_EXPAND, 0.0);
-   evas_object_size_hint_align_set(sec, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_smart_callback_add(sec, "changed", _page_change_cb, gui);
-   evas_object_show(sec);
-   elm_box_pack_start(box, sec);
 
    /* Naviframe: the widget that will manage prefs pages */
    Evas_Object *const nav = elm_naviframe_add(box);
@@ -687,25 +666,37 @@ prefs_show(s_gui *gui)
    elm_box_pack_end(box, nav);
    gui->prefs.nav = nav;
 
+   /* Add a toolbar that keeps track of all the pages */
+   Evas_Object *const tb = elm_toolbar_add(box);
+   elm_toolbar_select_mode_set(tb, ELM_OBJECT_SELECT_MODE_ALWAYS);
+   elm_toolbar_menu_parent_set(tb, box);
+   elm_toolbar_homogeneous_set(tb, EINA_TRUE);
+   elm_toolbar_horizontal_set(tb, EINA_FALSE);
+   elm_object_style_set(tb, "item_horizontal");
+   evas_object_size_hint_weight_set(tb, 0.0, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(tb, 0.5, EVAS_HINT_FILL);
+   elm_box_pack_start(box, tb);
+   evas_object_show(tb);
+
    /* Create the pages */
-   Elm_Object_Item *const p1 = _push_nav_item(gui, _theme_prefs_new(gui));
-   Elm_Object_Item *const p2 = _push_nav_item(gui, _font_prefs_new(gui));
-   Elm_Object_Item *const p3 = _push_nav_item(gui, _nvim_prefs_new(gui));
-   Elm_Object_Item *const p4 = _push_nav_item(gui, _plugins_prefs_new(gui));
+   Elm_Object_Item *const p1 =
+      elm_naviframe_item_simple_push(nav, _theme_prefs_new(gui));
+   Elm_Object_Item *const p2 =
+      elm_naviframe_item_simple_push(nav, _font_prefs_new(gui));
+   Elm_Object_Item *const p3 =
+      elm_naviframe_item_simple_push(nav, _nvim_prefs_new(gui));
+   Elm_Object_Item *const p4 =
+      elm_naviframe_item_simple_push(nav, _plugins_prefs_new(gui));
+
+   char buf[1024];
+   snprintf(buf, sizeof(buf), "%s/images/neovim.png",
+            main_in_tree_is() ? SOURCE_DATA_DIR : elm_app_data_dir_get());
 
    /* Associate one item data in the segment control to each page */
-   Elm_Object_Item *it, *it_init;
-   it_init = elm_segment_control_item_add(sec, NULL, "Theme");
-   elm_object_item_data_set(it_init, p1);
-   it = elm_segment_control_item_add(sec, NULL, "Font");
-   elm_object_item_data_set(it, p2);
-   it = elm_segment_control_item_add(sec, NULL, "Neovim");
-   elm_object_item_data_set(it, p3);
-   it = elm_segment_control_item_add(sec, NULL, "Plug-Ins");
-   elm_object_item_data_set(it, p4);
-
-   /* We select theme by default */
-   elm_segment_control_item_selected_set(it_init, EINA_TRUE);
+   elm_toolbar_item_append(tb, "preferences-desktop-theme", "Theme", _flip_to, p1);
+   elm_toolbar_item_append(tb, "preferences-desktop-font", "Font", _flip_to, p2);
+   elm_toolbar_item_append(tb, buf, "Neovim", _flip_to, p3);
+   elm_toolbar_item_append(tb, "preferences-profile", "Plug-Ins", _flip_to, p4);
 
    /* Update edje and fire up the popup */
    elm_layout_content_set(gui->layout, "eovim.config.box", box);
