@@ -109,8 +109,8 @@ override the `EovimCapsLock` `augroup`:
 ```vim
 :augroup EovimCapsLock
 :   autocmd!
-:   autocmd User EovimCapsLockOn <your handle when Caps Lick is ON>
-:   autocmd User EovimCapsLockOff <your handle when Caps Lick is OFF>
+:   autocmd User EovimCapsLockOn <your handle when Caps Lock is ON>
+:   autocmd User EovimCapsLockOff <your handle when Caps Lock is OFF>
 :augroup END
 ```
 
