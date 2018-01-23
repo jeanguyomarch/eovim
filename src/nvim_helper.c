@@ -42,28 +42,43 @@ _hl_group_color_get(s_nvim *nvim,
    s_hl_group hl_group;
    memset(&hl_group, 0, sizeof(hl_group));
 
-   /* At this point, we have received a string, that starts with a \n. I don't
-    * know, that's just the way it is. I don't want it, so I exclude it for
-    * later processing.
-    * There are two possible size values:
-    *   - 1 (if no background color was set)
-    *   - 8 (if there is a background color)
+   /* At this point, we have received a string, that starts with a \n for some
+    * neovim version. I don't know, that's just the way it is. I don't want it,
+    * so I exclude it for later processing.
+    * There are different possible size values:
+    *   - 1 (if no background color was set, and there is a leading \n)
+    *   - 0 (if no background color was set, and there is no leading \n)
+    *   - 8 (if there is a background color and a leading \n)
+    *   - 7 (if there is a background color and no leading \n)
     */
    const msgpack_object_str *const obj = &(result->via.str);
-   if (obj->size == 1)
+   const char *msg = obj->ptr;
+   switch (obj->size)
      {
-        /* Do nothing, stop here */
-        return;
-     }
-   else if (obj->size == 8)
-     {
-        sscanf(obj->ptr, "\n#%02hhx%02hhx%02hhx",
-               &hl_group.bg.r, &hl_group.bg.g, &hl_group.bg.b);
-        hl_group.bg.used = EINA_TRUE;
-     }
-   else
-     {
-        ERR("The message's size: %u, is inexpected", obj->size);
+      case 1:
+         if (obj->ptr[0] != '\n') goto error;
+         /* Fall through */
+      case 0:
+         /* Do nothing, stop here */
+         return;
+
+         /* In some versions of Neovim, an additional initial \n may be passed
+          * in the response. In such case, strip it. */
+      case 8:
+         if (obj->ptr[0] != '\n') goto error;
+         else msg = &(obj->ptr[1]);
+         /* Fall through */
+      case 7:
+         sscanf(msg, "#%02hhx%02hhx%02hhx",
+                &hl_group.bg.r, &hl_group.bg.g, &hl_group.bg.b);
+         hl_group.bg.used = EINA_TRUE;
+         break;
+
+error:default:
+        ERR("The message's size: %u, is inexpected. Hexdump below:", obj->size);
+        for (unsigned int i = 0; i < obj->size; i++)
+           fprintf(stderr, " %02x", obj->ptr[i]);
+        fprintf(stderr, "\n");
         return;
      }
 
