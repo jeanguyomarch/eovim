@@ -8,15 +8,12 @@ if (PROJECT_VERSION_TWEAK)
       execute_process(
          COMMAND           "${GIT}" rev-parse --short HEAD
          WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-         OUTPUT_VARIABLE   GIT_SHORT_HASH
+         OUTPUT_VARIABLE   EOVIM_GIT_HASH
          RESULT_VARIABLE   GIT_STATUS
-         ERROR_QUIET)
+         ERROR_QUIET
+         OUTPUT_STRIP_TRAILING_WHITESPACE)
       if (GIT_STATUS EQUAL 0)
-         # Git adds a newline, that needs to be nuked.
-         # XXX Windows?? How about your godammit \r\n?
-         string(REPLACE "\n" "" GIT_SHORT_HASH "${GIT_SHORT_HASH}")
-         set(EOVIM_GIT_HASH "${GIT_SHORT_HASH}")
+         message(STATUS "Short git hash: ${EOVIM_GIT_HASH}")
       endif ()
-
    endif ()
 endif ()
