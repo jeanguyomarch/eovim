@@ -18,7 +18,7 @@ set_target_properties(libeovim PROPERTIES
    # Place libeovim in another directory than plugins/, as in tree execution
    # will consider libeovim as a plugin, due to its .so extension on Linux
    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
-install(TARGETS libeovim LIBRARY DESTINATION lib)
+install(TARGETS libeovim LIBRARY DESTINATION ${LIB_INSTALL_DIR})
 
 ##############################################################################
 # Built-in plugins

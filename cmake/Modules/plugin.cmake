@@ -24,5 +24,5 @@ function (add_plugin Plugin)
    add_nazi_compiler_warnings(${Plugin})
    set_target_properties(${Plugin} PROPERTIES PREFIX "")
 
-   install(TARGETS ${Plugin} LIBRARY DESTINATION lib/eovim)
+   install(TARGETS ${Plugin} LIBRARY DESTINATION ${LIB_INSTALL_DIR}/eovim)
 endfunction ()

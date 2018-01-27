@@ -23,6 +23,12 @@ else ()
    set(LIB_SUFFIX "")
 endif ()
 
+# Set the directory where libraries will be installed (e.g. /usr/lib64, ...)
+# This is overridable by users via -DLIb_INSTALL_DIR=alternate-lib-dir
+set(LIB_INSTALL_DIR "lib${LIB_SUFFIX}"
+   CACHE STRING
+   "Set the installation prefix of libraries (relative the prefix installation)")
+
 # Shared objects (loadable modules) have different extensions from one platform
 # to another.  OSX and Linux use .so, whereas Windows uses .dll.  There may be
 # more, that I'm not aware of.

@@ -60,10 +60,19 @@ mkdir -p build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 cmake --build .
 cmake --build . --target install # Possibly as root (i.e. via sudo)
+ldconfig # On Linux only, possibly as root (i.e. via sudo)
 ```
 
 If we want to run `eovim` without installing it, please refer to the
 **Hacking** section.
+
+Note that unless `-DWITH_OPTIONS=OFF` is passed to cmake, eovim will install
+libraries. Hence, the need to run `ldconfig` after installing Eovim. Libraries
+are by default installed in the **prefix** directory passed to cmake (by default
+`/usr/local`) in a subdirectory that can be either `lib32/`, `lib64/` or `lib/`
+dependending on how the target architecture is detected. This subdirectory can
+be forced by passing `-DLIB_INSTALL_DIR=alteratnate-lib-dir` to cmake.
+
 
 # Usage
 
