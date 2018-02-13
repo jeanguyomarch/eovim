@@ -808,9 +808,8 @@ gui_completion_show(s_gui *gui,
    int win_w, win_h;
    evas_object_geometry_get(gui->win, NULL, NULL, &win_w, &win_h);
 
-   /* We will not make the popup larger than 90% of the window's width,
-    * not larger than 60% of the window's height */
-   const int max_width = (int)((float)win_w * 0.9f);
+   /* We will not make the popup larger than 60% of the window's height */
+   const int max_width = tv_width;
    const int max_height = (int)((float)win_h * 0.6f);
    int width = MIN(ideal_width, max_width);
    int height = MIN(ideal_height, max_height);
@@ -852,7 +851,11 @@ gui_completion_show(s_gui *gui,
 
    /* If the width is too big to fit, we reduce it */
    if (px + width > tv_width)
-      width = tv_width - px - w_offset;
+     {
+        px = tv_width - width + w_offset;
+        if (px < 0) px = w_offset;
+        width = tv_width - px - w_offset;
+     }
 
    /* Show the completion panel: we move it where the completion was, show it,
     * set make sure the **visible** part of the genlist fits it height,
