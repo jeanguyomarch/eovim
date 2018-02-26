@@ -380,7 +380,27 @@ _nvim_received_error_cb(void *data EINA_UNUSED,
 }
 
 static void
-_nvim_runtime_load(s_nvim *nvim)
+_nvim_runtime_load(s_nvim *nvim,
+                   const char *filename)
+{
+   INF("Loading runtime file: '%s'", filename);
+
+   Eina_Strbuf *const buf = eina_strbuf_new();
+   if (EINA_UNLIKELY(! buf))
+     {
+        CRI("Failed to allocate string buffer");
+        return;
+     }
+   eina_strbuf_append_printf(buf, ":source %s", filename);
+
+   /* Send it to neovim */
+   nvim_api_command(nvim, eina_strbuf_string_get(buf),
+                    (unsigned int)eina_strbuf_length_get(buf));
+   eina_strbuf_free(buf);
+}
+
+static void
+_nvim_builtin_runtime_load(s_nvim *nvim)
 {
    Eina_Strbuf *const buf = eina_strbuf_new();
    if (EINA_UNLIKELY(! buf))
@@ -395,30 +415,24 @@ _nvim_runtime_load(s_nvim *nvim)
       : elm_app_data_dir_get();
    eina_strbuf_append_printf(buf, "%s/vim/runtime.vim", dir);
 
-   /* Load the runtime file in memory */
-   const char *const filename = eina_strbuf_string_get(buf);
-   Eina_File *const file = eina_file_open(filename, EINA_FALSE);
-   if (EINA_UNLIKELY(! file))
-     {
-        CRI("Failed to create file from '%s'", filename);
-        goto end;
-     }
-   char *const map = eina_file_map_all(file, EINA_FILE_POPULATE);
-   if (EINA_UNLIKELY(! map))
-     {
-        CRI("Failed to map file '%s'", filename);
-        goto close_file;
-     }
-
-   /* Send it to neovim */
-   nvim_api_command(nvim, map, (unsigned int)strlen(map));
-
-   /* Release everything */
-   eina_file_map_free(file, map);
-close_file:
-   eina_file_close(file);
-end:
+   _nvim_runtime_load(nvim, eina_strbuf_string_get(buf));
    eina_strbuf_free(buf);
+}
+
+static void
+_nvim_eovimrc_load(s_nvim *nvim)
+{
+   const char *const path = nvim_eovimrc_path_get(nvim);
+
+   /* If the eovimrc was provided through the command-line (nvim->opts->eovimrc
+    * not NULL), then we shall raise an error if the file does not exist.
+    * Otherwise, we load the default file. */
+   if (ecore_file_exists(path))
+     {
+        _nvim_runtime_load(nvim, path);
+     }
+   else if (nvim->opts->eovimrc)
+     ERR("Cannot load eovimrc '%s' because the file does not exist", path);
 }
 
 static void
@@ -649,9 +663,10 @@ nvim_new(const s_options *opts,
    DBG("Running %s", eina_strbuf_string_get(cmdline));
    eina_strbuf_free(cmdline);
    nvim_api_ui_attach(nvim, opts->geometry.w, opts->geometry.h);
-   nvim_helper_version_decode(nvim, _version_decode_cb);
    nvim_api_var_integer_set(nvim, "eovim_running", 1);
-   _nvim_runtime_load(nvim);
+   nvim_helper_version_decode(nvim, _version_decode_cb);
+   _nvim_builtin_runtime_load(nvim);
+   _nvim_eovimrc_load(nvim);
 
    /* Create the GUI window */
    if (EINA_UNLIKELY(! gui_add(&nvim->gui, nvim)))
@@ -721,4 +736,14 @@ Eina_Bool
 nvim_mouse_enabled_get(const s_nvim *nvim)
 {
    return nvim->mouse_enabled;
+}
+
+const char *
+nvim_eovimrc_path_get(const s_nvim *nvim)
+{
+   /* If the eovimrc option was provided, we use this one. Otherwise, we
+    * default to the user config */
+   return (nvim->opts->eovimrc)
+      ? nvim->opts->eovimrc
+      : nvim->config->eovimrc;
 }

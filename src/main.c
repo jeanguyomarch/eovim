@@ -229,6 +229,7 @@ modules_shutdown:
 log_unregister:
    eina_log_domain_unregister(_eovim_log_domain);
 end:
+   options_reset(&opts);
    return return_code;
 }
 ELM_MAIN()

@@ -30,6 +30,9 @@ window).
 Provide an alternate GUI configuration, where \fIpath\fR is the path to an
 eovim configuration.
 .TP
+\fB\-\-eovimrc\fR \fIpath\fR, \fB\-C\fR \fIpath\fR
+Provide an alternate initial eovimrc configuration file.
+.TP
 \fB\-F\fR, \fB\-\-fullscreen\fR
 Start Eovim in a full-screen window
 .TP
@@ -65,6 +68,11 @@ Eovim creates this autocmd group to handle the autocmd User events
 \fIEovimCapsLockOn\fR and \fIEovimCapsLockOff\fR. They can are called when
 Caps Lock is respectively set and unset.
 
+
+.SH FILES
+.TP
+\fB~/.config/nvim/eovimrc.vim\fR is sourced when eovim starts to allow the
+execution of eovim-specific initialization code.
 
 
 .SH AUTHORS

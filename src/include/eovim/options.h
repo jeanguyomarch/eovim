@@ -33,6 +33,8 @@ typedef struct
    const char *nvim_prog;
    const char *theme;
 
+   Eina_Stringshare *eovimrc;
+
    Eina_Bool no_plugins;
    Eina_Bool fullscreen;
    Eina_Bool maximized; /**< Eovim will run in a maximized window */
@@ -48,5 +50,6 @@ typedef enum
 
 e_options_result options_parse(int argc, const char *argv[], s_options *opts);
 void options_defaults_set(s_options *opts);
+void options_reset(const s_options *opts);
 
 #endif /* ! __EOVIM_OPTIONS_H__ */

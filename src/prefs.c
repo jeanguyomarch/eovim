@@ -567,13 +567,14 @@ _ext_cmdline_changed_cb(void *data,
 }
 
 static Evas_Object *
-_nvim_prefs_new(s_gui *gui)
+_nvim_prefs_plug_add(s_gui *gui,
+                     Evas_Object *parent)
 {
    const s_config *const config = gui->nvim->config;
    int row = 0;
 
    /* Frame container */
-   Evas_Object *const f = _frame_add(gui->prefs.nav, "Neovim Plug Settings");
+   Evas_Object *const f = _frame_add(parent, "Neovim Plug Settings");
    Evas_Object *const table = elm_table_add(f);
    elm_table_align_set(table, 0.5, 0.0);
    evas_object_show(table);
@@ -602,17 +603,82 @@ _nvim_prefs_new(s_gui *gui)
    elm_check_state_set(cmdline, config->ext_cmdline);
    evas_object_show(cmdline);
 
-
-   /* Message */
-   Evas_Object *const info = elm_label_add(table);
-   elm_object_text_set(info, "<br><warning><big>"
-                       "You must restart Eovim to take into account your "
-                       "modifications on this page.</big/</warning>");
-   elm_table_pack(table, info, 0, row, 2, 1);
-   evas_object_show(info);
-
    elm_object_content_set(f, table);
    return f;
+}
+
+static Evas_Object *
+_nvim_prefs_msg_add(Evas_Object *parent)
+{
+   Evas_Object *const f = _frame_add(parent, "Special Note");
+
+   /* Message */
+   Evas_Object *const info = elm_label_add(f);
+   elm_object_text_set(info, "<warning><big>"
+                       "You must restart Eovim to take into account your "
+                       "modifications on this page.</big/</warning>");
+   evas_object_show(info);
+   elm_object_content_set(f, info);
+
+   return f;
+}
+
+static void
+_eovimrc_update(s_nvim *nvim,
+                const char *file)
+{
+   Eina_Stringshare *const eovimrc = eina_stringshare_add(file);
+   config_eovimrc_set(nvim->config, eovimrc);
+}
+
+static void
+_eovimrc_chosen_cb(void         *data,
+                    Evas_Object *obj EINA_UNUSED,
+                    void        *info)
+{
+   _eovimrc_update(data, info);
+}
+
+static void
+_eovimrc_changed_cb(void        *data,
+                    Evas_Object *obj,
+                    void        *info EINA_UNUSED)
+{
+   _eovimrc_update(data, elm_fileselector_path_get(obj));
+}
+
+static Evas_Object *
+_nvim_prefs_rc_add(s_gui *gui,
+                   Evas_Object *parent)
+{
+   const s_nvim *const nvim = gui->nvim;
+   Evas_Object *const f = _frame_add(parent, "Initial configuration file");
+
+   Evas_Object *const fs = elm_fileselector_entry_add(f);
+   elm_fileselector_path_set(fs, nvim_eovimrc_path_get(nvim));
+   elm_object_text_set(fs, "Select a file");
+   elm_object_content_set(f, fs);
+   evas_object_smart_callback_add(fs, "file,chosen", _eovimrc_chosen_cb, nvim);
+   evas_object_smart_callback_add(fs, "changed", _eovimrc_changed_cb, nvim);
+
+   return f;
+}
+
+static Evas_Object *
+_nvim_prefs_new(s_gui *gui)
+{
+   Evas_Object *const box = _prefs_box_new(gui->prefs.nav);
+
+   Evas_Object *const msg = _nvim_prefs_msg_add(box);
+   elm_box_pack_start(box, msg);
+
+   Evas_Object *const plug = _nvim_prefs_plug_add(gui, box);
+   elm_box_pack_end(box, plug);
+
+   Evas_Object *const rc = _nvim_prefs_rc_add(gui, box);
+   elm_box_pack_end(box, rc);
+
+   return box;
 }
 
 static Evas_Object *
