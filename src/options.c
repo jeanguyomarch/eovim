@@ -23,7 +23,6 @@
 #include "eovim/options.h"
 #include "eovim/version.h"
 #include "eovim/log.h"
-#include <getopt.h>
 
 
 static void
