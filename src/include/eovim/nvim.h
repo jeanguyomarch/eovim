@@ -51,7 +51,6 @@ struct nvim
    Ecore_Exe *exe;
    Eina_List *requests;
    Eina_Hash *modes;
-   Eina_Inlist *tabs;
 
    msgpack_unpacker unpacker;
    msgpack_sbuffer sbuffer;
