@@ -40,13 +40,6 @@ enum
    __HANDLERS_LAST /* Sentinel */
 };
 
-struct tab
-{
-   EINA_INLIST;
-   Eina_Stringshare *name;
-   unsigned int id;
-};
-
 static Ecore_Event_Handler *_event_handlers[__HANDLERS_LAST];
 static s_nvim *_nvim_instance = NULL;
 
