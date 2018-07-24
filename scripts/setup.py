@@ -174,8 +174,9 @@ def main(argv):
 
     # Invalid platform? Raise an error.
     if args.platform not in SETUP:
-        print("{}{}Platform '{}' is not supported. Please open a ticket:"
-              " https://github.com/jeanguyomarch/eovim/issues/new{}"
+        print("{}{}Platform '{}' is not supported by the setupt script. "
+              "Please open a ticket: https://github.com/jeanguyomarch/eovim/issues/new{}.\n"
+              "Meanwhile, please follow the README to install the dependencies."
               .format(COLORS["red"], COLORS["bold"], args.platform,
                       COLORS["reset"]), file=sys.stderr)
         sys.exit(3)
