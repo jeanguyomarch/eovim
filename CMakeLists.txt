@@ -137,7 +137,7 @@ target_include_directories(eovim
 )
 target_include_directories(eovim
    PRIVATE
-   "${SRC_DIR}/include"
+   "${CMAKE_SOURCE_DIR}/include"
    "${BUILD_INCLUDE_DIR}"
 )
 target_link_libraries(eovim

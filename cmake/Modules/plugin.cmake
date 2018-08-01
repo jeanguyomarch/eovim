@@ -1,5 +1,5 @@
 set(EOVIM_INCLUDE_DIRS
-   "${CMAKE_SOURCE_DIR}/src/include"
+   "${CMAKE_SOURCE_DIR}/include"
    "${CMAKE_BINARY_DIR}/include")
 
 function (add_plugin Plugin)
