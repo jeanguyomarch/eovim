@@ -67,6 +67,7 @@ MACOS_SETUP = {
         "brew install efl",
         "brew install cmake",
         "brew install wget",
+        "pip3 install --user jinja2",
         msgpack_cmd_get(),
     ]
 }
@@ -78,6 +79,7 @@ UBUNTU_SETUP = {
         "sudo apt install libefl-dev",
         "sudo apt install cmake",
         "sudo apt install wget",
+        "pip3 install --user jinja2",
         msgpack_cmd_get(),
     ]
 }

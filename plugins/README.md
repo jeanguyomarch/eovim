@@ -27,6 +27,33 @@ Where:
 
 The following sections describe the effect and use of the built-in plugins.
 
+Plug-ins code may be generated if a `plugin.json` file exists next to the
+sources. It makes initialization and parameters parsing much easier. It must
+conform to the following data model:
+
+```json
+{
+  "plugin": {
+    "name": "<plugin name>",
+    "params": [
+      "keyword-argument",
+      ...
+    ]
+  },
+  "stringshares": [
+    "optional stringshare name (will generate stringshare code)",
+    ...
+  ]
+}
+```
+
+Note that all the `stringshares` values and keywords arguments under the `key`
+parameter will yield to the generation of stringsharess. They will be named:
+`S_<uppercase>`.
+
+The generated files will be named `plugin_<plugin name>.c` and `plugin_<plugin
+name>.h`, and they will reside in the build directory of the `plugins/`
+directory.
 
 ## Sizing
 
@@ -71,7 +98,7 @@ buffer (the buffer will silently be discarded):
 
 ```vim
 function! EovimImageViewer ()
-   call Eovim("imageviewer", expand("%:p"))
+   call Eovim("imageviewer", {'file': expand("%:p")})
    bdelete
 endfunction
 

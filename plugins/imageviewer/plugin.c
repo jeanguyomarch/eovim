@@ -20,38 +20,12 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include "plugin_imageviewer.h"
 #include <Eovim.h>
 #include <Elementary.h>
 
-static int _imageviewer_log_dom = -1;
-
-#define DBG(...) EINA_LOG_DOM_DBG(_imageviewer_log_dom, __VA_ARGS__)
-#define INF(...) EINA_LOG_DOM_INFO(_imageviewer_log_dom, __VA_ARGS__)
-#define WRN(...) EINA_LOG_DOM_WARN(_imageviewer_log_dom, __VA_ARGS__)
-#define ERR(...) EINA_LOG_DOM_ERR(_imageviewer_log_dom, __VA_ARGS__)
-#define CRI(...) EINA_LOG_DOM_CRIT(_imageviewer_log_dom, __VA_ARGS__)
-
-static Eina_Bool
-eovim_imageviewer_init(void)
-{
-   /* Create a log domain for the plugin */
-   _imageviewer_log_dom =
-      eina_log_domain_register("eovim-imageviewer", EINA_COLOR_BLUE);
-   if (EINA_UNLIKELY(_imageviewer_log_dom < 0))
-     {
-        EINA_LOG_CRIT("Failed to create log domain for the imageviewer plugin");
-        return EINA_FALSE;
-     }
-   return EINA_TRUE;
-}
-EINA_MODULE_INIT(eovim_imageviewer_init);
-
-static void
-eovim_imageviewer_shutdown(void)
-{
-   eina_log_domain_unregister(_imageviewer_log_dom);
-}
-EINA_MODULE_SHUTDOWN(eovim_imageviewer_shutdown);
+EINA_MODULE_INIT(eovim_plugin_imageviewer_init);
+EINA_MODULE_SHUTDOWN(eovim_plugin_imageviewer_shutdown);
 
 static void
 _popup_close_cb(void *data,
@@ -114,23 +88,17 @@ static Eina_Bool
 eovim_imageviewer_eval(s_nvim *nvim,
                        const msgpack_object_array *args)
 {
-   ARRAY_CHECK_SIZE(args, 2, fail);
+  Eina_Hash *const params = eovim_plugin_imageviewer_parse(args);
+  if (EINA_UNLIKELY(! params))
+  { return EINA_FALSE; }
 
-   const msgpack_object *const args_obj = &(args->ptr[1]);
-   const msgpack_object_array *const args_arr =
-      EOVIM_MSGPACK_ARRAY_EXTRACT(args_obj, fail);
-   ARRAY_CHECK_SIZE(args_arr, 1, fail);
+  Eina_Bool status = EINA_TRUE;
+  Eina_Stringshare *const file = eina_hash_find(params, S_FILE);
+  if (file)
+  { status = _preview_add(nvim, file); }
 
-   const msgpack_object *const file_obj = &(args_arr->ptr[0]);
-   Eina_Stringshare *const file =
-      EOVIM_MSGPACK_STRING_EXTRACT(file_obj, fail);
-
-   const Eina_Bool ret = _preview_add(nvim, file);
-   eina_stringshare_del(file);
-
-   return ret;
-fail:
-   return EINA_FALSE;
+  eina_hash_free(params);
+  return status;
 }
 EOVIM_PLUGIN_SYMBOL(eovim_imageviewer_eval);
 

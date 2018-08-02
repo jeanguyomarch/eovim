@@ -1,0 +1,9 @@
+{
+  "plugin": {
+    "name": "imageviewer",
+    "params": [
+      "file"
+    ]
+  }
+}
+

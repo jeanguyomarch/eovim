@@ -157,7 +157,7 @@ add_nazi_compiler_warnings(eovim)
 target_compile_definitions(eovim
    PRIVATE
    PACKAGE_BIN_DIR=\"${CMAKE_INSTALL_PREFIX}/bin\"
-   PACKAGE_LIB_DIR=\"${CMAKE_INSTALL_PREFIX}/lib\"
+   PACKAGE_LIB_DIR=\"${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}\"
    PACKAGE_DATA_DIR=\"${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}\"
    SOURCE_DATA_DIR=\"${CMAKE_SOURCE_DIR}/data\"
    BUILD_DATA_DIR=\"${CMAKE_BINARY_DIR}\"
@@ -202,11 +202,11 @@ if (WITH_PLUGINS)
 
    # Install Eovim's headers: Eovim.h and the headers it includes.
    install(FILES
-      "${CMAKE_SOURCE_DIR}/src/include/Eovim.h"
+      "${CMAKE_SOURCE_DIR}/include/Eovim.h"
       DESTINATION include/eovim-0)
    install(FILES
-      "${CMAKE_SOURCE_DIR}/src/include/eovim/types.h"
-      "${CMAKE_SOURCE_DIR}/src/include/eovim/msgpack_helper.h"
+      "${CMAKE_SOURCE_DIR}/include/eovim/types.h"
+      "${CMAKE_SOURCE_DIR}/include/eovim/msgpack_helper.h"
       "${BUILD_INCLUDE_DIR}/eovim/version.h"
       DESTINATION include/eovim-0/eovim)
    add_subdirectory(plugins)

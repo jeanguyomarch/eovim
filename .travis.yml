@@ -9,6 +9,7 @@ matrix:
             - sourceline: 'ppa:niko2040/e19'
           packages:
             - libefl-dev
+            - python3-jinja2
       env:
         - MATRIX_EVAL=""
 

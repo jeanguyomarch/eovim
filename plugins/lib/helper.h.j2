@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Jean Guyomarc'h
+ * Copyright (c) 2018 Jean Guyomarc'h
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -20,24 +20,23 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "eovim/nvim.h"
-#include "Eovim.h"
+#include <Eina.h>
+#include <msgpack.h>
 
-EAPI Evas_Object *
-eovim_window_get(s_nvim *nvim)
-{
-   return nvim->gui.win;
-}
+#define EOVIM_PLUGIN_LOG_DOM EOVIM_PLUGIN_{{ plugin.name }}_log
+extern int EOVIM_PLUGIN_LOG_DOM;
 
-EAPI Evas_Object *
-eovim_termview_get(s_nvim *nvim)
-{
-   return nvim->gui.termview;
-}
+#define DBG(...) EINA_LOG_DOM_DBG(EOVIM_PLUGIN_LOG_DOM, __VA_ARGS__)
+#define INF(...) EINA_LOG_DOM_INFO(EOVIM_PLUGIN_LOG_DOM, __VA_ARGS__)
+#define WRN(...) EINA_LOG_DOM_WARN(EOVIM_PLUGIN_LOG_DOM, __VA_ARGS__)
+#define ERR(...) EINA_LOG_DOM_ERR(EOVIM_PLUGIN_LOG_DOM, __VA_ARGS__)
+#define CRI(...) EINA_LOG_DOM_CRIT(EOVIM_PLUGIN_LOG_DOM, __VA_ARGS__)
 
-#ifdef EOVIM_WITH_TESTS
-EAPI void
-eovim_tests_end_notify(s_nvim *nvim)
-{
-}
-#endif
+EAPI Eina_Bool eovim_plugin_{{ plugin.name }}_init(void);
+EAPI void eovim_plugin_{{ plugin.name }}_shutdown(void);
+EAPI Eina_Hash *eovim_plugin_{{ plugin.name }}_parse(const msgpack_object_array *args);
+
+/* Stringshares -------------------------------------------------------------*/
+{%- for stringshare in stringshares %}
+extern Eina_Stringshare *S_{{ stringshare.name }};
+{%- endfor %}

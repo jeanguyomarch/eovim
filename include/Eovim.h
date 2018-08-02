@@ -20,8 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __EOVIM_PUBLIC_PLUGINS_API___EOVIM_H__
-#define __EOVIM_PUBLIC_PLUGINS_API___EOVIM_H__
+#ifndef EOVIM_PUBLIC_PLUGINS_API___EOVIM_H__
+#define EOVIM_PUBLIC_PLUGINS_API___EOVIM_H__
 
 #include <eovim/types.h>
 #include <eovim/version.h>
@@ -72,4 +72,4 @@ EAPI Evas_Object *eovim_termview_get(s_nvim *nvim)
 #define EOVIM_PLUGIN_SYMBOL(Sym) \
    EXPORTAPI const f_event_cb __eovim_plugin_symbol = &(Sym)
 
-#endif /* ! __EOVIM_PUBLIC_PLUGINS_API___EOVIM_H__ */
+#endif /* ! EOVIM_PUBLIC_PLUGINS_API___EOVIM_H__ */
