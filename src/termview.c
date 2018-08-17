@@ -27,7 +27,6 @@
 #include "eovim/main.h"
 #include "eovim/keymap.h"
 #include "eovim/config.h"
-#include "eovim/mode.h"
 #include "eovim/nvim_helper.h"
 #include "eovim/nvim_api.h"
 #include "eovim/nvim.h"

@@ -69,4 +69,20 @@ struct version
    char extra[32];
 };
 
+struct mode
+{
+   Eina_Stringshare *name; /**< Name of the mode */
+   e_cursor_shape cursor_shape; /**< Shape of the cursor */
+   unsigned int cell_percentage;
+      /**< Percentage of the cell that the cursor occupies */
+   unsigned int blinkon; /**< Delay during which the cursor is displayed */
+   unsigned int blinkoff; /**< Delay during which the cursor is hidden */
+   unsigned int blinkwait; /**< Delay for transitionning ON <-> OFF */
+   unsigned int hl_id;
+   unsigned int id_lm;
+   char short_name[1];
+     /**< Short name... I don't remember what this is... but it is a string
+      * embedded at the end of this struct (not just a single char) */
+};
+
 #endif /* ! __EOVIM_TYPES_H__ */

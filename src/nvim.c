@@ -28,7 +28,6 @@
 #include "eovim/nvim_event.h"
 #include "eovim/nvim_helper.h"
 #include "eovim/log.h"
-#include "eovim/mode.h"
 #include "eovim/main.h"
 
 enum
@@ -629,14 +628,6 @@ nvim_new(const s_options *opts,
    msgpack_packer_init(&nvim->packer, &nvim->sbuffer, msgpack_sbuffer_write);
    msgpack_unpacker_init(&nvim->unpacker, 2048);
 
-   /* Create the hash map that will contain the modes */
-   nvim->modes = eina_hash_stringshared_new(EINA_FREE_CB(mode_free));
-   if (EINA_UNLIKELY(! nvim->modes))
-     {
-        CRI("Failed to create Eina_Hash");
-        goto del_config;
-     }
-
    /* Initialize the virtual interface to safe values (non-NULL pointers) */
    _virtual_interface_init(nvim);
 
@@ -650,7 +641,7 @@ nvim_new(const s_options *opts,
    if (EINA_UNLIKELY(! nvim->exe))
      {
         CRI("Failed to execute nvim instance");
-        goto del_hash;
+        goto del_config;
      }
    _nvim_instance = nvim;
    DBG("Running %s", eina_strbuf_string_get(cmdline));
@@ -674,8 +665,6 @@ nvim_new(const s_options *opts,
 
 del_process:
    ecore_exe_kill(nvim->exe);
-del_hash:
-   eina_hash_free(nvim->modes);
 del_config:
    config_free(nvim->config);
 del_ustrbuf:
@@ -696,26 +685,11 @@ nvim_free(s_nvim *nvim)
      {
         msgpack_sbuffer_destroy(&nvim->sbuffer);
         msgpack_unpacker_destroy(&nvim->unpacker);
-        eina_hash_free(nvim->modes);
         config_free(nvim->config);
         eina_ustrbuf_free(nvim->decode);
         free(nvim);
         _nvim_instance = NULL;
      }
-}
-
-const s_mode *
-nvim_named_mode_get(const s_nvim *nvim,
-                    Eina_Stringshare *name)
-{
-   return eina_hash_find(nvim->modes, name);
-}
-
-Eina_Bool
-nvim_mode_add(s_nvim *nvim,
-              s_mode *mode)
-{
-   return eina_hash_add(nvim->modes, mode->name, mode);
 }
 
 void

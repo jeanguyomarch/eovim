@@ -25,44 +25,48 @@
 #include "eovim/nvim_event.h"
 #include "eovim/msgpack_helper.h"
 #include "eovim/gui.h"
-#include "eovim/mode.h"
+#include "event/event.h"
 
-typedef enum
+/* Lookup table of stringshared keywords. At init time, it points to const
+ * strings. After init, all entries will point to the associated stringshares
+ */
+Eina_Stringshare *nvim_event_keywords[__KW_LAST] =
 {
-   /* Highlight keywords */
-   KW_FOREGROUND,
-   KW_BACKGROUND,
-   KW_SPECIAL,
-   KW_REVERSE,
-   KW_ITALIC,
-   KW_BOLD,
-   KW_UNDERLINE,
-   KW_UNDERCURL,
-
-   /* Mode info set keywords */
-   KW_CURSOR_SHAPE,
-   KW_CELL_PERCENTAGE,
-   KW_BLINKWAIT,
-   KW_BLINKON,
-   KW_BLINKOFF,
-   KW_HL_ID,
-   KW_ID_LM,
-   KW_NAME,
-   KW_SHORT_NAME,
-   KW_MOUSE_SHAPE,
-
-   KW_MODE_NORMAL,
-
-   __KW_LAST,
-
-   /* Aliases */
-   KW_HIGHLIGHT_START = KW_FOREGROUND,
-   KW_HIGHLIGHT_END = KW_UNDERCURL,
-   KW_MODE_INFO_START = KW_CURSOR_SHAPE,
-   KW_MODE_INFO_END = KW_MOUSE_SHAPE,
-   KW_MODES_START = KW_MODE_NORMAL,
-   KW_MODES_END = KW_MODE_NORMAL,
-} e_kw;
+  [KW_FOREGROUND] = "foreground",
+  [KW_BACKGROUND] = "background",
+  [KW_SPECIAL] = "special",
+  [KW_REVERSE] = "reverse",
+  [KW_ITALIC] = "italic",
+  [KW_BOLD] = "bold",
+  [KW_UNDERLINE] = "underline",
+  [KW_UNDERCURL] = "undercurl",
+  [KW_CURSOR_SHAPE] = "cursor_shape",
+  [KW_CELL_PERCENTAGE] = "cell_percentage",
+  [KW_BLINKWAIT] = "blinkwait",
+  [KW_BLINKON] = "blinkon",
+  [KW_BLINKOFF] = "blinkoff",
+  [KW_HL_ID] = "hl_id",
+  [KW_ID_LM] = "id_lm",
+  [KW_NAME] = "name",
+  [KW_SHORT_NAME] = "short_name",
+  [KW_MOUSE_SHAPE] = "mouse_shape",
+  [KW_MODE_NORMAL] = "normal",
+  [KW_ARABICSHAPE] = "arabicshape",
+  [KW_AMBIWIDTH] = "ambiwidth",
+  [KW_EMOJI] = "emoji",
+  [KW_GUIFONT] = "guifont",
+  [KW_GUIFONTSET] = "guifontset",
+  [KW_GUIFONTWIDE] = "guifontwide",
+  [KW_LINESPACE] = "linespace",
+  [KW_SHOWTABLINE] = "showtabline",
+  [KW_TERMGUICOLORS] = "termguicolors",
+  [KW_EXT_POPUPMENU] = "ext_popupmenu",
+  [KW_EXT_TABLINE] = "ext_tabline",
+  [KW_EXT_CMDLINE] = "ext_cmdline",
+  [KW_EXT_WILDMENU] = "ext_wildmenu",
+  [KW_EXT_NEWGRID] = "ext_newgrid",
+  [KW_EXT_HLSTATE] = "ext_hlstate",
+};
 
 typedef struct
 {
@@ -82,98 +86,6 @@ typedef enum
  * (for now) very little number of methods (around two). It is much faster to
  * search sequentially among arrays of few cells than a map of two. */
 static s_method _methods[__E_METHOD_LAST];
-
-/* Cache of stringshared keywords */
-static Eina_Stringshare *_keywords[__KW_LAST];
-#define KW(Name) _keywords[Name]
-
-/*
- * When checking the count of args, we have to subtract 1 from the total
- * args count of the object, as the first argument is the command name
- * itself.
- */
-#define CHECK_BASE_ARGS_COUNT(Args, Op, Count) \
-   if (EINA_UNLIKELY(! ((Args)->size - 1 Op (Count)))) { \
-      CRI("Invalid argument count. (%u %s %u) is false", \
-          (Args)->size - 1, # Op, (Count)); \
-      return EINA_FALSE; \
-   }
-
-#define CHECK_ARGS_COUNT(Args, Op, Count) \
-   if (EINA_UNLIKELY(! ((Args)->size Op (Count)))) { \
-      CRI("Invalid argument count. (%u %s %u) is false", \
-          (Args)->size, # Op, (Count)); \
-      return EINA_FALSE; \
-   }
-
-#define GET_ARG(Args, Index, Type, Get) \
-   if (EINA_UNLIKELY(! _arg_ ## Type ## _get((Args), (Index), (Get)))) { \
-      return EINA_FALSE; \
-   }
-
-#define ARRAY_OF_ARGS_EXTRACT(Args, Ret) \
-   const msgpack_object_array *const Ret = _array_of_args_extract(Args); \
-   if (EINA_UNLIKELY(! Ret)) { return EINA_FALSE; }
-
-#define CHECK_TYPE(Obj, Type, ...) \
-   if (EINA_UNLIKELY((Obj)->type != Type)) { \
-      CRI("Expected type 0x%x. Got 0x%x", Type, (Obj)->type); \
-      return __VA_ARGS__; \
-   }
-
-
-static const msgpack_object_array *
-_array_of_args_extract(const msgpack_object_array *args)
-{
-   const msgpack_object *const obj = &(args->ptr[1]);
-   CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, NULL);
-   return &(obj->via.array);
-}
-
-static Eina_Bool
-_arg_t_int_get(const msgpack_object_array *args,
-               unsigned int index,
-               t_int *arg)
-{
-   const msgpack_object *const obj = &(args->ptr[index]);
-   if (EINA_UNLIKELY((obj->type != MSGPACK_OBJECT_POSITIVE_INTEGER) &&
-                     (obj->type != MSGPACK_OBJECT_NEGATIVE_INTEGER)))
-     {
-        CRI("Expected an integer type for argument %u. Got 0x%x",
-            index, obj->type);
-        return EINA_FALSE;
-     }
-   *arg = obj->via.i64;
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-_arg_stringshare_get(const msgpack_object_array *args,
-                     unsigned int index,
-                     Eina_Stringshare **arg)
-{
-   const msgpack_object *const obj = &(args->ptr[index]);
-   CHECK_TYPE(obj, MSGPACK_OBJECT_STR, EINA_FALSE);
-   const msgpack_object_str *const str = &(obj->via.str);
-   *arg = eina_stringshare_add_length(str->ptr, str->size);
-   if (EINA_UNLIKELY(! *arg))
-     {
-        CRI("Failed to create stringshare");
-        return EINA_FALSE;
-     }
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-_arg_bool_get(const msgpack_object_array *args,
-              unsigned int index,
-              Eina_Bool *arg)
-{
-   const msgpack_object *const obj = &(args->ptr[index]);
-   CHECK_TYPE(obj, MSGPACK_OBJECT_BOOLEAN, EINA_FALSE);
-   *arg = obj->via.boolean;
-   return EINA_TRUE;
-}
 
 
 static Eina_Bool
@@ -226,138 +138,6 @@ nvim_event_cursor_goto(s_nvim *nvim,
 }
 
 static Eina_Bool
-_mode_info_set(s_nvim *nvim,
-               const msgpack_object_array *params)
-{
-   /* First arg: boolean */
-   Eina_Bool cursor_style_enabled;
-   GET_ARG(params, 0, bool, &cursor_style_enabled);
-   /* Second arg: an array that contains ONE map */
-   ARRAY_OF_ARGS_EXTRACT(params, kw_params);
-   CHECK_ARGS_COUNT(params, >=, 1);
-
-   /* Go through all the arguments. They are expected to be maps */
-   for (unsigned int i = 0; i < kw_params->size; i++)
-     {
-        const msgpack_object *o = &(kw_params->ptr[i]);
-        CHECK_TYPE(o, MSGPACK_OBJECT_MAP, EINA_FALSE);
-        const msgpack_object_map *const map = &(o->via.map);
-
-        /* We will store for each map, pointers to the values */
-        const msgpack_object *objs[KW_MODE_INFO_END - KW_MODE_INFO_START + 1];
-        memset(objs, 0, sizeof(objs));
-
-        /* For each element in the map */
-        for (unsigned int j = 0; j < map->size; j++)
-          {
-             /* Get the key as a string object */
-             const msgpack_object_kv *const kv = &(map->ptr[j]);
-             const msgpack_object *const key = &(kv->key);
-             if (EINA_UNLIKELY(key->type != MSGPACK_OBJECT_STR))
-               {
-                  CRI("Key is expected to be a string. Got type 0x%x", key->type);
-                  continue; /* Pass on */
-               }
-             const msgpack_object_str *const key_str = &(key->via.str);
-
-             /* Create a stringshare from the key */
-             Eina_Stringshare *const key_shr = eina_stringshare_add_length(
-                key_str->ptr, key_str->size
-             );
-             if (EINA_UNLIKELY(! key_shr))
-               {
-                  CRI("Failed to create stringshare");
-                  continue; /* Pass on */
-               }
-
-             /* Go through all the known keywords to fill the 'objs' structure
-              * We are actually creating an other map from this one for easier
-              * access */
-             for (unsigned int k = KW_MODE_INFO_START, x = 0; k <= KW_MODE_INFO_END; k++, x++)
-               {
-                  if (key_shr == KW(k))
-                    {
-                       objs[x] = &(kv->val);
-                       break;
-                    }
-               }
-             eina_stringshare_del(key_shr);
-          }
-
-#define _GET_OBJ(Kw) objs[(Kw) - KW_MODE_INFO_START]
-
-        /* Now that we have filled the 'objs' structure, handle the mode */
-        Eina_Stringshare *const name = eina_stringshare_add_length(
-           _GET_OBJ(KW_NAME)->via.str.ptr, _GET_OBJ(KW_NAME)->via.str.size
-        );
-        s_mode *mode = (s_mode *)nvim_named_mode_get(nvim, name);
-        if (! mode)
-          {
-             const msgpack_object_str *const sname = &(_GET_OBJ(KW_SHORT_NAME)->via.str);
-             mode = mode_new(name, sname->ptr, sname->size);
-             nvim_mode_add(nvim, mode);
-          }
-        eina_stringshare_del(name);
-
-#define _GET_INT(Kw, Set)                                                     \
-   if ((o = _GET_OBJ(Kw))) {                                                      \
-        if (EINA_UNLIKELY((o->type != MSGPACK_OBJECT_POSITIVE_INTEGER) &&     \
-                          (o->type != MSGPACK_OBJECT_NEGATIVE_INTEGER)))      \
-          CRI("Expected an integer type. Got 0x%x", o->type);                 \
-        else Set = (unsigned int)o->via.i64;                                  \
-   }
-
-        if ((o = _GET_OBJ(KW_CURSOR_SHAPE)))
-          {
-            if (EINA_UNLIKELY(o->type != MSGPACK_OBJECT_STR))
-              CRI("Expected a string type. Got 0x%x", o->type);
-            else
-              {
-                 Eina_Stringshare *const shr = eina_stringshare_add_length(
-                    o->via.str.ptr, o->via.str.size
-                 );
-                 if (EINA_UNLIKELY(! shr))
-                   CRI("Failed to create stringshare");
-                 else
-                   {
-                      mode->cursor_shape = mode_cursor_shape_convert(shr);
-                      eina_stringshare_del(shr);
-                   }
-              }
-          }
-
-        _GET_INT(KW_BLINKWAIT, mode->blinkwait);
-        _GET_INT(KW_BLINKON, mode->blinkon);
-        _GET_INT(KW_BLINKOFF, mode->blinkoff);
-        _GET_INT(KW_HL_ID, mode->hl_id);
-        _GET_INT(KW_ID_LM, mode->id_lm);
-        _GET_INT(KW_CELL_PERCENTAGE, mode->cell_percentage);
-     }
-
-#undef _GET_INT
-#undef _GET_OBJ
-
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_mode_info_set(s_nvim *nvim,
-                         const msgpack_object_array *args)
-{
-   Eina_Bool ret = EINA_TRUE;
-   for (unsigned int i = 1; i < args->size; i++)
-     {
-        const msgpack_object *const obj = &(args->ptr[i]);
-        CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
-        const msgpack_object_array *const params = &(obj->via.array);
-        CHECK_ARGS_COUNT(params, ==, 2);
-
-        ret &= _mode_info_set(nvim, params);
-     }
-   return ret;
-}
-
-static Eina_Bool
 nvim_event_update_menu(s_nvim *nvim EINA_UNUSED,
                        const msgpack_object_array *args EINA_UNUSED)
 {
@@ -394,29 +174,6 @@ nvim_event_mouse_off(s_nvim *nvim,
                      const msgpack_object_array *args EINA_UNUSED)
 {
    nvim_mouse_enabled_set(nvim, EINA_FALSE);
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_mode_change(s_nvim *nvim,
-                       const msgpack_object_array *args)
-{
-   for (unsigned int i = 1; i < args->size; i++)
-     {
-        const msgpack_object *const obj = &(args->ptr[i]);
-        CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
-
-        ARRAY_OF_ARGS_EXTRACT(args, params);
-        CHECK_ARGS_COUNT(params, ==, 2);
-
-        Eina_Stringshare *name;
-        t_int index;
-        GET_ARG(params, 1, t_int, &index);
-        GET_ARG(params, 0, stringshare, &name);
-
-        gui_mode_update(&nvim->gui, name);
-        eina_stringshare_del(name);
-     }
    return EINA_TRUE;
 }
 
@@ -927,194 +684,6 @@ fail:
    return EINA_FALSE;
 }
 
-static Eina_Bool
-nvim_event_cmdline_show(s_nvim *nvim,
-                        const msgpack_object_array *args)
-{
-   Eina_Bool ret = EINA_FALSE;
-   CHECK_BASE_ARGS_COUNT(args, ==, 1);
-   ARRAY_OF_ARGS_EXTRACT(args, params);
-   CHECK_ARGS_COUNT(params, ==, 6);
-
-   /*
-    * The arguments of cmdline_show are:
-    *
-    * [0]: content
-    * [1]: cursor position (int)
-    * [2]: first character (string)
-    * [3]: prompt (string)
-    * [4]: indentation (int)
-    * [5]: level (int)
-    */
-   const msgpack_object_array *const content =
-      EOVIM_MSGPACK_ARRAY_EXTRACT(&params->ptr[0], fail);
-   const int64_t pos =
-      EOVIM_MSGPACK_INT64_EXTRACT(&params->ptr[1], fail);
-   Eina_Stringshare *const firstc =
-      EOVIM_MSGPACK_STRING_EXTRACT(&params->ptr[2], fail);
-   Eina_Stringshare *const prompt =
-      EOVIM_MSGPACK_STRING_EXTRACT(&params->ptr[3], del_firstc);
-   const int64_t indent =
-      EOVIM_MSGPACK_INT64_EXTRACT(&params->ptr[4], del_prompt);
-   //const int64_t level =
-   //   EOVIM_MSGPACK_INT64_EXTRACT(&params->ptr[5], del_prompt);
-
-   /* Create the string buffer, which will hold the content of the cmdline */
-   Eina_Strbuf *const buf = eina_strbuf_new();
-   if (EINA_UNLIKELY(! buf))
-     {
-        CRI("Failed to allocate memory");
-        return EINA_FALSE;
-     }
-
-   /* Add to the content of the command-line the number of spaces the text
-    * should be indented of */
-   for (size_t i = 0; i < (size_t)indent; i++)
-     eina_strbuf_append_char(buf, ' ');
-
-   for (unsigned int i = 0; i < content->size; i++)
-     {
-        const msgpack_object_array *const cont =
-           EOVIM_MSGPACK_ARRAY_EXTRACT(&content->ptr[i], del_buf);
-
-        /* The map will contain highlight attributes */
-        //const msgpack_object_map *const map =
-        //   EOVIM_MSGPACK_MAP_EXTRACT(&cont->ptr[0], del_buf);
-
-        /* Extract the content of the command-line */
-        const msgpack_object *const cont_o = &(cont->ptr[1]);
-        EOVIM_MSGPACK_STRING_CHECK(cont_o, del_buf);
-        const msgpack_object_str *const str = &(cont_o->via.str);
-        eina_strbuf_append_length(buf, str->ptr, str->size);
-     }
-
-   gui_cmdline_show(&nvim->gui, eina_strbuf_string_get(buf), prompt, firstc);
-
-   /* Set the cursor position within the command-line */
-   gui_cmdline_cursor_pos_set(&nvim->gui, (size_t)pos);
-
-   ret = EINA_TRUE;
-del_buf:
-   eina_strbuf_free(buf);
-del_prompt:
-   eina_stringshare_del(prompt);
-del_firstc:
-   eina_stringshare_del(firstc);
-fail:
-   return ret;
-}
-
-static Eina_Bool
-nvim_event_cmdline_pos(s_nvim *nvim,
-                       const msgpack_object_array *args)
-{
-   CHECK_BASE_ARGS_COUNT(args, ==, 1);
-   ARRAY_OF_ARGS_EXTRACT(args, params);
-   CHECK_ARGS_COUNT(params, ==, 2);
-
-   /* First argument if the position, second is the level. Level is not
-    * handled for now.
-    */
-   const int64_t pos =
-      EOVIM_MSGPACK_INT64_EXTRACT(&params->ptr[0], fail);
-   //const int64_t level =
-   //   EOVIM_MSGPACK_INT64_EXTRACT(&params->ptr[1], fail);
-
-   gui_cmdline_cursor_pos_set(&nvim->gui, (size_t)pos);
-   return EINA_TRUE;
-fail:
-   return EINA_FALSE;
-}
-
-static Eina_Bool
-nvim_event_cmdline_special_char(s_nvim *nvim EINA_UNUSED,
-                                const msgpack_object_array *args EINA_UNUSED)
-{
-   CRI("unimplemented");
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_cmdline_hide(s_nvim *nvim,
-                        const msgpack_object_array *args EINA_UNUSED)
-{
-   gui_cmdline_hide(&nvim->gui);
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_cmdline_block_show(s_nvim *nvim EINA_UNUSED,
-                              const msgpack_object_array *args EINA_UNUSED)
-{
-   CRI("Blocks in cmdline is currently not supported. Sorry.");
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_cmdline_block_append(s_nvim *nvim EINA_UNUSED,
-                                const msgpack_object_array *args EINA_UNUSED)
-{
-   CRI("Blocks in cmdline is currently not supported. Sorry.");
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_cmdline_block_hide(s_nvim *nvim EINA_UNUSED,
-                              const msgpack_object_array *args EINA_UNUSED)
-{
-   CRI("Blocks in cmdline is currently not supported. Sorry.");
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_wildmenu_show(s_nvim *nvim,
-                         const msgpack_object_array *args)
-{
-   CHECK_BASE_ARGS_COUNT(args, ==, 1);
-   ARRAY_OF_ARGS_EXTRACT(args, params);
-   CHECK_ARGS_COUNT(params, ==, 1);
-   s_gui *const gui = &nvim->gui;
-
-   /* Go through all the items to be added to the wildmenu, and populate the
-    * UI interface */
-   const msgpack_object_array *const content =
-      EOVIM_MSGPACK_ARRAY_EXTRACT(&params->ptr[0], fail);
-   for (unsigned int i = 0; i < content->size; i++)
-     {
-        Eina_Stringshare *const item =
-           EOVIM_MSGPACK_STRING_EXTRACT(&(content->ptr[i]), fail);
-        gui_wildmenu_append(gui, item);
-     }
-   gui_wildmenu_show(gui);
-
-   return EINA_TRUE;
-fail:
-   return EINA_FALSE;
-}
-
-static Eina_Bool
-nvim_event_wildmenu_hide(s_nvim *nvim,
-                         const msgpack_object_array *args EINA_UNUSED)
-{
-   gui_wildmenu_clear(&nvim->gui);
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_wildmenu_select(s_nvim *nvim,
-                           const msgpack_object_array *args)
-{
-   CHECK_BASE_ARGS_COUNT(args, ==, 1);
-   ARRAY_OF_ARGS_EXTRACT(args, params);
-   CHECK_ARGS_COUNT(params, ==, 1);
-
-   const int64_t index = EOVIM_MSGPACK_INT64_EXTRACT(&params->ptr[0], fail);
-   gui_wildmenu_select(&nvim->gui, index);
-   return EINA_TRUE;
-fail:
-   return EINA_FALSE;
-}
-
 Eina_Bool
 nvim_event_dispatch(s_nvim *nvim,
                     Eina_Stringshare *method_name,
@@ -1124,7 +693,7 @@ nvim_event_dispatch(s_nvim *nvim,
    /* Go sequentially through the list of methods we know about, so we can
     * find out the callbacks table for that method, to try to find what matches
     * 'command'. */
-   for (unsigned int i = 0; i < EINA_C_ARRAY_LENGTH(_methods); i++)
+   for (size_t i = 0u; i < EINA_C_ARRAY_LENGTH(_methods); i++)
      {
         const s_method *const method = &(_methods[i]);
         if (method->name == method_name) /* Fond the method */
@@ -1145,7 +714,7 @@ nvim_event_dispatch(s_nvim *nvim,
      }
 
    /* At this point, we didn't find the method. */
-   CRI("Unknown method '%s'", method_name);
+   ERR("Unknown method '%s'", method_name);
    return EINA_FALSE;
 }
 
@@ -1193,8 +762,8 @@ fail:
 }
 
 static Eina_Hash *
-_method_callbacs_table_build(const s_method_ctor *ctors,
-                             unsigned int ctors_count)
+_method_callbacks_table_build(const s_method_ctor *ctors,
+                              unsigned int ctors_count)
 {
    /* Generate a hash table that will contain the callbacks to be called for
     * each event sent by neovim. */
@@ -1288,7 +857,7 @@ _method_redraw_init(e_method method_id)
 
    /* Build the callbacks table of the method */
    method->callbacks =
-      _method_callbacs_table_build(ctors, EINA_C_ARRAY_LENGTH(ctors));
+      _method_callbacks_table_build(ctors, EINA_C_ARRAY_LENGTH(ctors));
    if (EINA_UNLIKELY(! method->callbacks))
      {
         CRI("Failed to create table of callbacks");
@@ -1347,32 +916,11 @@ nvim_event_plugin_register(const char *command,
 Eina_Bool
 nvim_event_init(void)
 {
-   const char *const keywords[] = {
-      [KW_FOREGROUND] = "foreground",
-      [KW_BACKGROUND] = "background",
-      [KW_SPECIAL] = "special",
-      [KW_REVERSE] = "reverse",
-      [KW_ITALIC] = "italic",
-      [KW_BOLD] = "bold",
-      [KW_UNDERLINE] = "underline",
-      [KW_UNDERCURL] = "undercurl",
-      [KW_CURSOR_SHAPE] = "cursor_shape",
-      [KW_CELL_PERCENTAGE] = "cell_percentage",
-      [KW_BLINKWAIT] = "blinkwait",
-      [KW_BLINKON] = "blinkon",
-      [KW_BLINKOFF] = "blinkoff",
-      [KW_HL_ID] = "hl_id",
-      [KW_ID_LM] = "id_lm",
-      [KW_NAME] = "name",
-      [KW_SHORT_NAME] = "short_name",
-      [KW_MOUSE_SHAPE] = "mouse_shape",
-      [KW_MODE_NORMAL] = "normal",
-   };
    int i;
    for (i = 0; i < __KW_LAST; i++)
      {
-        _keywords[i] = eina_stringshare_add(keywords[i]);
-        if (EINA_UNLIKELY(! _keywords[i]))
+        nvim_event_keywords[i] = eina_stringshare_add(nvim_event_keywords[i]);
+        if (EINA_UNLIKELY(! nvim_event_keywords[i]))
           {
              CRI("Failed to create stringshare");
              goto fail;
@@ -1393,22 +941,32 @@ nvim_event_init(void)
         goto del_methods;
      }
 
+   /* Initialize the internals of 'mode_info_set' */
+   if (EINA_UNLIKELY(! mode_init()))
+     {
+        CRI("Failed to initialize mode internals");
+        goto del_methods;
+     }
+
    return EINA_TRUE;
 
+mode_deinit:
+   mode_shutdown();
 del_methods:
-   for (unsigned int j = 0; j < EINA_C_ARRAY_LENGTH(_methods); j++)
+   for (size_t j = 0u; j < EINA_C_ARRAY_LENGTH(_methods); j++)
      _method_free(&(_methods[j]));
 fail:
    for (i--; i >= 0; i--)
-     eina_stringshare_del(_keywords[i]);
+     eina_stringshare_del(nvim_event_keywords[i]);
    return EINA_FALSE;
 }
 
 void
 nvim_event_shutdown(void)
 {
+   mode_shutdown();
    for (unsigned int i = 0; i < __KW_LAST; i++)
-     eina_stringshare_del(_keywords[i]);
+     eina_stringshare_del(nvim_event_keywords[i]);
    for (unsigned int i = 0; i < EINA_C_ARRAY_LENGTH(_methods); i++)
      _method_free(&(_methods[i]));
 }

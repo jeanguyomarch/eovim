@@ -23,7 +23,6 @@
 #include "eovim/types.h"
 #include "eovim/gui.h"
 #include "eovim/nvim.h"
-#include "eovim/mode.h"
 #include "eovim/main.h"
 #include "eovim/log.h"
 #include "eovim/nvim_api.h"
@@ -996,10 +995,8 @@ gui_maximized_set(s_gui *gui,
 }
 
 void
-gui_mode_update(s_gui *gui,
-                Eina_Stringshare *name)
+gui_mode_update(s_gui *gui, const s_mode *mode)
 {
-   const s_mode *const mode = nvim_named_mode_get(gui->nvim, name);
    termview_cursor_mode_set(gui->termview, mode);
 }
 

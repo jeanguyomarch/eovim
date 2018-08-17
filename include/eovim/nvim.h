@@ -50,7 +50,6 @@ struct nvim
 
    Ecore_Exe *exe;
    Eina_List *requests;
-   Eina_Hash *modes;
 
    msgpack_unpacker unpacker;
    msgpack_sbuffer sbuffer;

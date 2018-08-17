@@ -22,7 +22,6 @@
 
 #include "eovim/keymap.h"
 #include "eovim/config.h"
-#include "eovim/mode.h"
 #include "eovim/nvim.h"
 #include "eovim/nvim_api.h"
 #include "eovim/nvim_event.h"
@@ -53,7 +52,6 @@ static const s_module _modules[] =
 
    MODULE(config),
    MODULE(keymap),
-   MODULE(mode),
    MODULE(nvim_api),
    MODULE(nvim_event),
    MODULE(plugin),
