@@ -208,7 +208,7 @@ _unfinished_resizing_is(const s_termview *sd)
 {
    /* If neovim cols/rows are different from the termview cols/rows, we are
     * resizing the UI, and we must avoid processing old neovim data */
-   return ((sd->nvim_rows != sd->rows) && (sd->nvim_cols != sd->cols));
+   return ((sd->nvim_rows != sd->rows) || (sd->nvim_cols != sd->cols));
 }
 
 static void

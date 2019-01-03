@@ -345,7 +345,6 @@ gui_resize(s_gui *gui,
    const int w = (int)(cols * cell_w);
    const int h = (int)(rows * cell_h);
    evas_object_resize(gui->win, w, h);
-   evas_object_size_hint_min_set(gui->termview, w, h);
 }
 
 void
