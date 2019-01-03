@@ -684,6 +684,7 @@ fail:
    return EINA_FALSE;
 }
 
+
 Eina_Bool
 nvim_event_dispatch(s_nvim *nvim,
                     Eina_Stringshare *method_name,
@@ -704,7 +705,7 @@ nvim_event_dispatch(s_nvim *nvim,
              const f_event_cb cb = eina_hash_find(method->callbacks, command);
              if (EINA_UNLIKELY(! cb))
                {
-                  CRI("Failed to get callback for command '%s' of method '%s'",
+                  WRN("Failed to get callback for command '%s' of method '%s'",
                       command, method_name);
                   return EINA_FALSE;
                }
@@ -714,7 +715,7 @@ nvim_event_dispatch(s_nvim *nvim,
      }
 
    /* At this point, we didn't find the method. */
-   ERR("Unknown method '%s'", method_name);
+   WRN("Unknown method '%s'", method_name);
    return EINA_FALSE;
 }
 
