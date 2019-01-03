@@ -128,7 +128,7 @@ _ext_wildmenu_set(s_nvim *nvim EINA_UNUSED, const msgpack_object *value EINA_UNU
 }
 
 static Eina_Bool
-_ext_newgrid_set(s_nvim *nvim EINA_UNUSED, const msgpack_object *value EINA_UNUSED)
+_ext_linegrid_set(s_nvim *nvim EINA_UNUSED, const msgpack_object *value EINA_UNUSED)
 {
    /* XXX unimplemented for now */
    return EINA_TRUE;
@@ -236,7 +236,7 @@ option_set_init(void)
       OPT(KW_EXT_TABLINE, _ext_tabline_set),
       OPT(KW_EXT_CMDLINE, _ext_cmdline_set),
       OPT(KW_EXT_WILDMENU, _ext_wildmenu_set),
-      OPT(KW_EXT_NEWGRID, _ext_newgrid_set),
+      OPT(KW_EXT_LINEGRID, _ext_linegrid_set),
       OPT(KW_EXT_HLSTATE, _ext_hlstate_set),
    };
    for (size_t i = 0u; i < EINA_C_ARRAY_LENGTH(opts); i++)

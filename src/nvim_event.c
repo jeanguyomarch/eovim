@@ -64,7 +64,7 @@ Eina_Stringshare *nvim_event_keywords[__KW_LAST] =
   [KW_EXT_TABLINE] = "ext_tabline",
   [KW_EXT_CMDLINE] = "ext_cmdline",
   [KW_EXT_WILDMENU] = "ext_wildmenu",
-  [KW_EXT_NEWGRID] = "ext_newgrid",
+  [KW_EXT_LINEGRID] = "ext_linegrid",
   [KW_EXT_HLSTATE] = "ext_hlstate",
 };
 
