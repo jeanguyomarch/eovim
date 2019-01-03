@@ -579,7 +579,8 @@ nvim_new(const s_options *opts,
         goto fail;
      }
    ok = eina_strbuf_append_printf(cmdline, "\"%s\"", opts->nvim_prog);
-   ok &= eina_strbuf_append(cmdline, " --embed --headless");
+   ok &= eina_strbuf_append(cmdline, " --embed");
+
    if (opts->no_plugins) ok &= eina_strbuf_append(cmdline, " --noplugin");
 
    for (const char *arg = *args; arg != NULL; arg = *(++args))
