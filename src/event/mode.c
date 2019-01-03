@@ -63,10 +63,14 @@ _mode_cursor_shape_convert(Eina_Stringshare *shape_name)
    /* Try to match every possible shape. On match, return the index in the
     * table, which is the e_cursor_shape value. */
    for (size_t i = 0u; i < EINA_C_ARRAY_LENGTH(_shapes); i++)
-     if (shape_name == _shapes[i]) { return i; }
+     if (shape_name == _shapes[i])
+       {
+          if (EINA_LIKELY(i < (size_t)__CURSOR_SHAPE_LAST))
+            return (e_cursor_shape)i;
+       }
 
    /* Nothing found?! Fallback to block */
-   ERR("Failed to find a cursor shape for '%s'", shape_name);
+   ERR("Failed to find a valid cursor shape for '%s'", shape_name);
    return CURSOR_SHAPE_BLOCK;
 }
 

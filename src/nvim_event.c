@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Jean Guyomarc'h
+ * Copyright (c) 2017-2019 Jean Guyomarc'h
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -451,8 +451,8 @@ nvim_event_suspend(s_nvim *nvim EINA_UNUSED,
 }
 
 static Eina_Bool
-nvim_event_set_title(s_nvim *nvim EINA_UNUSED,
-                     const msgpack_object_array *args EINA_UNUSED)
+nvim_event_set_title(s_nvim *nvim,
+                     const msgpack_object_array *args)
 {
    CHECK_BASE_ARGS_COUNT(args, ==, 1);
    ARRAY_OF_ARGS_EXTRACT(args, params);
@@ -844,6 +844,7 @@ _method_redraw_init(e_method method_id)
       CB_CTOR("wildmenu_show", nvim_event_wildmenu_show),
       CB_CTOR("wildmenu_hide", nvim_event_wildmenu_hide),
       CB_CTOR("wildmenu_select", nvim_event_wildmenu_select),
+      CB_CTOR("option_set", nvim_event_option_set),
    };
 
    /* Register the name of the method as a stringshare */
@@ -948,6 +949,13 @@ nvim_event_init(void)
         goto del_methods;
      }
 
+   /* Initialize the internals of option_set */
+   if (EINA_UNLIKELY(! option_set_init()))
+     {
+        CRI("Failed to initialize 'option_set'");
+        goto mode_deinit;
+     }
+
    return EINA_TRUE;
 
 mode_deinit:
@@ -965,6 +973,7 @@ void
 nvim_event_shutdown(void)
 {
    mode_shutdown();
+   option_set_shutdown();
    for (unsigned int i = 0; i < __KW_LAST; i++)
      eina_stringshare_del(nvim_event_keywords[i]);
    for (unsigned int i = 0; i < EINA_C_ARRAY_LENGTH(_methods); i++)

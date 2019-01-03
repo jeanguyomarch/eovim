@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Jean Guyomarc'h
+ * Copyright (c) 2018-2019 Jean Guyomarc'h
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -20,6 +20,12 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+/**
+ * @file event.h
+ *
+ * This is an internal header that is shared among the event source
+ * files, but cannot (should not) be accessed from other modules.
+ */
 #ifndef EOVIM_EVENT_H__
 #define EOVIM_EVENT_H__
 
@@ -28,13 +34,6 @@
 #include "eovim/nvim_event.h"
 #include "eovim/msgpack_helper.h"
 #include "eovim/log.h"
-
-/**
- * @file event.h
- *
- * This is an internal header that is shared among the event source
- * files, but cannot (should not) be accessed from other modules.
- */
 
 typedef enum
 {

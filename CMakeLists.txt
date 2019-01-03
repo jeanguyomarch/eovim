@@ -111,6 +111,7 @@ add_executable(eovim
    "${SRC_DIR}/prefs.c"
    "${SRC_DIR}/termview.c"
    "${SRC_DIR}/nvim_event.c"
+   "${SRC_DIR}/event/option_set.c"
    "${SRC_DIR}/event/mode.c"
    "${SRC_DIR}/event/cmdline.c"
    "${SRC_DIR}/nvim_api.c"

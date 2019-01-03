@@ -45,6 +45,7 @@ typedef enum
    CURSOR_SHAPE_BLOCK           = 0,
    CURSOR_SHAPE_HORIZONTAL      = 1,
    CURSOR_SHAPE_VERTICAL        = 2,
+   __CURSOR_SHAPE_LAST /* Sentinel */
 } e_cursor_shape;
 
 struct completion

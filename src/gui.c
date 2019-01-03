@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Jean Guyomarc'h
+ * Copyright (c) 2017-2019 Jean Guyomarc'h
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -523,7 +523,7 @@ _compl_content_get(void *data,
                    const char *part)
 {
    const s_completion *const compl = data;
-   const s_nvim *const nvim = _nvim_get(obj);
+   s_nvim *const nvim = _nvim_get(obj);
    s_gui *const gui = (s_gui *)(&nvim->gui);
    const s_config *const cfg = nvim->config;
    Evas_Object *o;

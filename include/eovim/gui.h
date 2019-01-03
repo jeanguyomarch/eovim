@@ -79,6 +79,61 @@ struct gui
    unsigned int active_tab; /**< Identifier of the active tab */
 };
 
+/**
+ * This enumeration is *DIRECTLY* mapped on the vim values of the 'showtabline'
+ * parameter: https://neovim.io/doc/user/options.html#'showtabline'
+ */
+typedef enum
+{
+   GUI_TABLINE_NEVER = 0, /**< Never show the tabline */
+   GUI_TABLINE_AT_LEAST_TWO = 1,
+     /**< Show the tabline if at least two tabs are open */
+   GUI_TABLINE_ALWAYS = 2, /**< Always show the tabline */
+} e_gui_tabline;
+
+/**
+ * This enumeration is mapped to the possible values of the 'ambiwidth' VIM
+ * parameter: https://neovim.io/doc/user/options.html#'ambiwidth'.
+ * This tells VIM what to do with characters with ambiguous width classes.
+ *
+ * - "single": same width as US-characters
+ * - "double": twice the width of ASCII characters
+ */
+typedef enum
+{
+   GUI_AMBIWIDTH_SINGLE, /**< Same width as US-characters */
+   GUI_AMBIWIDTH_DOUBLE, /**< Twice the width of ASCII */
+} e_gui_ambiwidth;
+
+/**
+ * This strutured type contains all the UI options that NVIM sends through the
+ * 'options_set' message of the 'redraw' method.
+ */
+typedef struct
+{
+   const char *guifont;
+     /**< https://neovim.io/doc/user/options.html#'guifont' */
+   const char *guifontset;
+     /**< https://neovim.io/doc/user/options.html#'guifontset' */
+   const char *guifontwide;
+     /**< https://neovim.io/doc/user/options.html#'guifontwide' */
+   e_gui_tabline show_tabline;
+     /**< Options to show the tabline */
+   e_gui_ambiwidth ambiwidth;
+     /**< Ambiguous width options */
+   int linespace;
+     /**< Spacing between two lines */
+   Eina_Bool ext_cmdline; /**< State of the cmdline */
+   Eina_Bool ext_popupmenu; /**< State of the popupmenu */
+   Eina_Bool ext_tabline; /**< State of the tabline */
+   Eina_Bool ext_wildmenu; /**< State of the wildmenu */
+   Eina_Bool termguicolors; /**< State of the GUI colors */
+   Eina_Bool arabicshape;
+     /**< https://neovim.io/doc/user/options.html#'arabicshape' */
+   Eina_Bool emoji;
+     /**< https://neovim.io/doc/user/options.html#'emoji' */
+} s_gui_option;
+
 Eina_Bool gui_init(void);
 void gui_shutdown(void);
 
