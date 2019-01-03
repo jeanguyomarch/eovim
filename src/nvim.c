@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Jean Guyomarc'h
+ * Copyright (c) 2017-2019 Jean Guyomarc'h
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -58,7 +58,7 @@ _handle_request_response(s_nvim *nvim,
                          const msgpack_object_array *args)
 {
    /* 2nd arg should be an integer */
-   if (args->ptr[1].type != MSGPACK_OBJECT_POSITIVE_INTEGER)
+   if (EINA_UNLIKELY(args->ptr[1].type != MSGPACK_OBJECT_POSITIVE_INTEGER))
      {
         ERR("Second argument in response is expected to be an integer");
         goto fail;
@@ -305,27 +305,27 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
      {
         const msgpack_unpack_return ret = msgpack_unpacker_next(unpacker, &result);
         if (ret == MSGPACK_UNPACK_CONTINUE) { break; }
-        else if (ret != MSGPACK_UNPACK_SUCCESS)
+        else if (EINA_UNLIKELY(ret != MSGPACK_UNPACK_SUCCESS))
           {
              ERR("Error while unpacking data from neovim (0x%x)", ret);
              goto end_unpack;
           }
-        msgpack_object obj = result.data;
+        const msgpack_object *const obj = &(result.data);
 
 #if 0 /* Uncomment to roughly dump the received messages */
-        msgpack_object_print(stderr, obj);
+        msgpack_object_print(stderr, *obj);
         fprintf(stderr, "\n--------\n");
 #endif
 
-        if (EINA_UNLIKELY(obj.type != MSGPACK_OBJECT_ARRAY))
+        if (EINA_UNLIKELY(obj->type != MSGPACK_OBJECT_ARRAY))
           {
-             ERR("Unexpected msgpack type 0x%x", obj.type);
+             ERR("Unexpected msgpack type 0x%x", obj->type);
              goto end_unpack;
           }
 
-        const msgpack_object_array *const args = &obj.via.array;
-        const unsigned int response_args_count = 4;
-        const unsigned int notif_args_count = 3;
+        const msgpack_object_array *const args = &(obj->via.array);
+        const unsigned int response_args_count = 4u;
+        const unsigned int notif_args_count = 3u;
         if ((args->size != response_args_count) &&
             (args->size != notif_args_count))
           {
@@ -387,7 +387,8 @@ _nvim_runtime_load(s_nvim *nvim,
 
    /* Send it to neovim */
    nvim_api_command(nvim, eina_strbuf_string_get(buf),
-                    (unsigned int)eina_strbuf_length_get(buf));
+                    (unsigned int)eina_strbuf_length_get(buf),
+                    NULL, NULL);
    eina_strbuf_free(buf);
 }
 
@@ -446,38 +447,153 @@ _virtual_interface_setup(s_nvim *nvim)
      nvim->hl_group_decode = nvim_helper_highlight_group_decode;
 }
 
-static void
-_version_decode_cb(s_nvim *nvim,
-                   const s_version *version)
+static unsigned int
+_version_fragment_decode(const msgpack_object *version)
 {
-   char vstr[64];
+  /* A version shall be a positive integer that shall be contained within an
+   * 'unsigned int' */
+  if (EINA_UNLIKELY(version->type != MSGPACK_OBJECT_POSITIVE_INTEGER))
+  {
+    ERR("Version argument is expected to be a positive integer.");
+    return 0u; /* Fallback to zero... */
+  }
+  assert(version->via.i64 >= 0);
+  if (EINA_UNLIKELY(version->via.i64 > UINT_MAX))
+  {
+    ERR("Version is greater than %u, which is forbidden", UINT_MAX);
+    return UINT_MAX; /* Truncating */
+  }
+  return (unsigned int)version->via.i64;
+}
 
-   memcpy(&nvim->version, version, sizeof(s_version));
-   snprintf(vstr, sizeof(vstr), "%u.%u.%u%c%s",
-            version->major, version->minor, version->patch,
-            version->extra[0] == '\0' ? '\0' : '-',
-            version->extra);
 
-   INF("Running Neovim version %s", vstr);
-   if ((NVIM_VERSION_MAJOR(nvim) == 0) && (NVIM_VERSION_MINOR(nvim) < 2))
-     {
-        gui_die(&nvim->gui,
-                "You are running neovim %s, which is unsupported. "
-                "Please consider upgrading Neovim.", vstr);
-     }
-   /* We are now sure that we are running at least 0.2.0. */
+static inline int
+_msgpack_strncmp(const msgpack_object_str *str, const char *with, size_t len)
+{
+  return strncmp(str->ptr, with, MIN(str->size, len));
+}
+#define _MSGPACK_STRCMP(MsgPackStr, StaticStr) \
+  _msgpack_strncmp(MsgPackStr, "" StaticStr "", sizeof(StaticStr) - 1u)
 
-   /* From neovim 0.2.1, the command-line can be externalized */
-   if (NVIM_VERSION_PATCH(nvim) >= 1)
-     {
-        /* Cmdline and wildmenu are going by pair */
-        nvim_api_ui_ext_cmdline_set(nvim, nvim->config->ext_cmdline);
-        nvim_api_ui_ext_wildmenu_set(nvim, nvim->config->ext_cmdline);
-     }
+static void
+_version_decode(s_nvim *nvim, const msgpack_object *args)
+{
+  /* A version shall be a dictionary containing the following parameters:
+   *
+   * {
+   *   "major": X,
+   *   "minor": Y,
+   *   "patch": Z
+   *   "api_level": A,
+   *   "api_compatible": B,
+   *   "api_prerelease": T/F,
+   * }
+   *
+   * For now, we are only interested by 'major', 'minor' and 'patch'.
+   */
+  if (EINA_UNLIKELY(args->type != MSGPACK_OBJECT_MAP))
+  {
+    ERR("A dictionary was expected. Got type 0x%x", args->type);
+    return;
+  }
+  const msgpack_object_map *const map = &(args->via.map);
+  for (uint32_t i = 0u; i < map->size; i++)
+  {
+    const msgpack_object_kv *const kv = &(map->ptr[i]);
+    if (EINA_UNLIKELY(kv->key.type != MSGPACK_OBJECT_STR))
+    {
+      ERR("Dictionary key is expected to be of type string");
+      continue;
+    }
+    const msgpack_object_str *const key = &(kv->key.via.str);
+    if (0 == _MSGPACK_STRCMP(key, "major"))
+    { nvim->version.major = _version_fragment_decode(&(kv->val)); }
+    else if (0 == _MSGPACK_STRCMP(key, "minor"))
+    { nvim->version.minor = _version_fragment_decode(&(kv->val)); }
+    else if (0 == _MSGPACK_STRCMP(key, "patch"))
+    { nvim->version.patch = _version_fragment_decode(&(kv->val)); }
+  }
+}
 
-   /* Now that we know Neovim's version, setup the virtual interface, that will
-    * prevent compatibilty issues */
-   _virtual_interface_setup(nvim);
+static void
+_api_decode_cb(s_nvim *nvim, void *data EINA_UNUSED, const msgpack_object *result)
+{
+  /* We expect two arguments:
+   * 1) the channel ID. we don't care.
+   * 2) a dictionary containing meta information - that's what we want
+   */
+  if (EINA_UNLIKELY(result->type != MSGPACK_OBJECT_ARRAY))
+  {
+    ERR("An array is expected. Got type 0x%x", result->type);
+    return;
+  }
+  const msgpack_object_array *const args = &(result->via.array);
+  if (EINA_UNLIKELY(args->size != 2u))
+  {
+    ERR("An array of two arguments is expected. Got %"PRIu32, args->size);
+    return;
+  }
+  if (EINA_UNLIKELY(args->ptr[1].type != MSGPACK_OBJECT_MAP))
+  {
+    ERR("The second argument is expected to be a map.");
+    return;
+  }
+  const msgpack_object_map *const map = &(args->ptr[1].via.map);
+
+  /* Now that we have the map containing the API information, go through it to
+   * extract what we need. Currently, we are only interested in the "version"
+   * attribute */
+  for (uint32_t i = 0u; i < map->size; i++)
+  {
+    const msgpack_object_kv *const kv = &(map->ptr[i]);
+    if (EINA_UNLIKELY(kv->key.type != MSGPACK_OBJECT_STR))
+    {
+      ERR("Key is expected to be of type string. Got type 0x%x", kv->key.type);
+      continue;
+    }
+    const msgpack_object_str *const key = &(kv->key.via.str);
+
+    /* Decode the "version" arguments */
+    if (0 == _MSGPACK_STRCMP(key, "version"))
+    { _version_decode(nvim, &(kv->val)); }
+  }
+
+  /****************************************************************************
+  * Now that we have decoded the API information, use them!
+  *****************************************************************************/
+
+  INF("Running Neovim version %u.%u.%u",
+      nvim->version.major, nvim->version.minor, nvim->version.patch);
+  if (EINA_UNLIKELY((nvim->version.major == 0) && (nvim->version.minor < 2)))
+  {
+    gui_die(&nvim->gui,
+            "You are running neovim %u.%u.%u, which is unsupported. "
+            "Please consider upgrading Neovim.",
+            nvim->version.major, nvim->version.minor, nvim->version.patch);
+  }
+  /* We are now sure that we are running at least 0.2.0. *********************/
+
+  /* From neovim 0.2.1, the command-line can be externalized */
+  if (NVIM_VERSION_PATCH(nvim) >= 1)
+  {
+    /* Cmdline and wildmenu are going by pair */
+    nvim_api_ui_ext_cmdline_set(nvim, nvim->config->ext_cmdline);
+    nvim_api_ui_ext_wildmenu_set(nvim, nvim->config->ext_cmdline);
+  }
+
+  /* Now that we know Neovim's version, setup the virtual interface, that will
+   * prevent compatibilty issues */
+  _virtual_interface_setup(nvim);
+}
+
+static void
+_vimenter_cb(s_nvim *nvim,
+             void *data EINA_UNUSED,
+             const msgpack_object *result EINA_UNUSED)
+{
+  _nvim_builtin_runtime_load(nvim);
+  _nvim_eovimrc_load(nvim);
+  nvim_api_var_integer_set(nvim, "eovim_running", 1);
 }
 
 static void
@@ -647,11 +763,10 @@ nvim_new(const s_options *opts,
    _nvim_instance = nvim;
    DBG("Running %s", eina_strbuf_string_get(cmdline));
    eina_strbuf_free(cmdline);
+
+   nvim_api_get_api_info(nvim, _api_decode_cb, NULL);
+   nvim_helper_autocmd_vimenter_exec(nvim, _vimenter_cb, NULL);
    nvim_api_ui_attach(nvim, opts->geometry.w, opts->geometry.h);
-   nvim_api_var_integer_set(nvim, "eovim_running", 1);
-   nvim_helper_version_decode(nvim, _version_decode_cb);
-   _nvim_builtin_runtime_load(nvim);
-   _nvim_eovimrc_load(nvim);
 
    /* Create the GUI window */
    if (EINA_UNLIKELY(! gui_add(&nvim->gui, nvim)))

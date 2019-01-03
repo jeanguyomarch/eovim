@@ -95,9 +95,8 @@ _request_send(s_nvim *nvim,
               s_request *req)
 {
    /* Finally, send that to the slave neovim process */
-   const Eina_Bool ok = ecore_exe_send(
-      nvim->exe, nvim->sbuffer.data, (int)nvim->sbuffer.size
-   );
+   const Eina_Bool ok =
+     ecore_exe_send(nvim->exe, nvim->sbuffer.data, (int)nvim->sbuffer.size);
    if (EINA_UNLIKELY(! ok))
      {
         CRI("Failed to send %zu bytes to neovim", nvim->sbuffer.size);
@@ -159,39 +158,58 @@ nvim_api_ui_attach(s_nvim *nvim,
    msgpack_pack_int64(pk, width);
    msgpack_pack_int64(pk, height);
 
-   /* Pack the options. There are 2: rgb, ext_popupmenu and ext_tabline */
+   /* Pack the options. There are 3: rgb, ext_popupmenu and ext_tabline */
    msgpack_pack_map(pk, 3);
 
    /* Pack the RGB option (boolean) */
-     {
-        const char key[] = "rgb";
-        const size_t len = sizeof(key) - 1;
-        msgpack_pack_str(pk, len);
-        msgpack_pack_str_body(pk, key, len);
-        if (cfg->true_colors) msgpack_pack_true(pk);
-        else msgpack_pack_false(pk);
-        nvim->true_colors = cfg->true_colors;
-     }
+   {
+      const char key[] = "rgb";
+      const size_t len = sizeof(key) - 1;
+      msgpack_pack_str(pk, len);
+      msgpack_pack_str_body(pk, key, len);
+      if (cfg->true_colors) msgpack_pack_true(pk);
+      else msgpack_pack_false(pk);
+      nvim->true_colors = cfg->true_colors;
+   }
 
    /* Pack the External popupmemnu */
-     {
-        const char key[] = "ext_popupmenu";
-        const size_t len = sizeof(key) - 1;
-        msgpack_pack_str(pk, len);
-        msgpack_pack_str_body(pk, key, len);
-        if (cfg->ext_popup) msgpack_pack_true(pk);
-        else msgpack_pack_false(pk);
-     }
+   {
+      const char key[] = "ext_popupmenu";
+      const size_t len = sizeof(key) - 1;
+      msgpack_pack_str(pk, len);
+      msgpack_pack_str_body(pk, key, len);
+      if (cfg->ext_popup) msgpack_pack_true(pk);
+      else msgpack_pack_false(pk);
+   }
 
    /* Pack the External tabline */
+   {
+      const char key[] = "ext_tabline";
+      const size_t len = sizeof(key) - 1;
+      msgpack_pack_str(pk, len);
+      msgpack_pack_str_body(pk, key, len);
+      if (cfg->ext_tabs) msgpack_pack_true(pk);
+      else msgpack_pack_false(pk);
+   }
+
+   return _request_send(nvim, req);
+}
+
+Eina_Bool
+nvim_api_get_api_info(s_nvim *nvim, f_nvim_api_cb cb, void *data)
+{
+   const char api[] = "nvim_get_api_info";
+   s_request *const req = _request_new(nvim, api, sizeof(api) - 1);
+   if (EINA_UNLIKELY(! req))
      {
-        const char key[] = "ext_tabline";
-        const size_t len = sizeof(key) - 1;
-        msgpack_pack_str(pk, len);
-        msgpack_pack_str_body(pk, key, len);
-        if (cfg->ext_tabs) msgpack_pack_true(pk);
-        else msgpack_pack_false(pk);
+        CRI("Failed to create request");
+        return EINA_FALSE;
      }
+   req->cb.func = cb;
+   req->cb.data = data;
+
+   msgpack_packer *const pk = &nvim->packer;
+   msgpack_pack_array(pk, 0);
 
    return _request_send(nvim, req);
 }
@@ -269,7 +287,7 @@ nvim_api_ui_try_resize(s_nvim *nvim,
 Eina_Bool
 nvim_api_eval(s_nvim *nvim,
               const char *input,
-              unsigned int input_size,
+              size_t input_size,
               f_nvim_api_cb func,
               void *func_data)
 {
@@ -295,7 +313,7 @@ nvim_api_eval(s_nvim *nvim,
 Eina_Bool
 nvim_api_command_output(s_nvim *nvim,
                         const char *input,
-                        unsigned int input_size,
+                        size_t input_size,
                         f_nvim_api_cb func,
                         void *func_data)
 {
@@ -320,8 +338,8 @@ nvim_api_command_output(s_nvim *nvim,
 
 Eina_Bool
 nvim_api_command(s_nvim *nvim,
-                 const char *input,
-                 unsigned int input_size)
+                 const char *input, size_t input_size,
+                 f_nvim_api_cb func, void *func_data)
 {
    const char api[] = "nvim_command";
    s_request *const req = _request_new(nvim, api, sizeof(api) - 1);
@@ -330,6 +348,9 @@ nvim_api_command(s_nvim *nvim,
         CRI("Failed to create request");
         return EINA_FALSE;
      }
+   req->cb.func = func;
+   req->cb.data = func_data;
+
    DBG("Running nvim command: %s", input);
 
    msgpack_packer *const pk = &nvim->packer;
@@ -366,7 +387,7 @@ nvim_api_var_integer_set(s_nvim *nvim,
 Eina_Bool
 nvim_api_input(s_nvim *nvim,
                const char *input,
-               unsigned int input_size)
+               size_t input_size)
 {
    const char api[] = "nvim_input";
    s_request *const req = _request_new(nvim, api, sizeof(api) - 1);

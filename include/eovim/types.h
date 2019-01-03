@@ -39,6 +39,7 @@ typedef struct prefs s_prefs;
 typedef struct completion s_completion;
 typedef struct geometry s_geometry;
 typedef Eina_Bool (*f_event_cb)(s_nvim *nvim, const msgpack_object_array *args);
+typedef void (*f_nvim_api_cb)(s_nvim *nvim, void *data, const msgpack_object *result);
 
 typedef enum
 {
@@ -67,7 +68,6 @@ struct version
    unsigned int major;
    unsigned int minor;
    unsigned int patch;
-   char extra[32];
 };
 
 struct mode

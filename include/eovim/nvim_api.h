@@ -27,27 +27,24 @@
 #include <Eina.h>
 #include <msgpack.h>
 
-typedef void (*f_nvim_api_cb)(s_nvim *nvim, void *data, const msgpack_object *result);
-
 Eina_Bool nvim_api_ui_attach(s_nvim *nvim, unsigned int width, unsigned int height);
+Eina_Bool nvim_api_get_api_info(s_nvim *nvim, f_nvim_api_cb cb, void *data);
 Eina_Bool nvim_api_ui_try_resize(s_nvim *nvim, unsigned int width, unsigned height);
 Eina_Bool nvim_api_ui_ext_cmdline_set(s_nvim *nvim, Eina_Bool externalize);
 Eina_Bool nvim_api_ui_ext_wildmenu_set(s_nvim *nvim, Eina_Bool externalize);
-Eina_Bool nvim_api_input(s_nvim *nvim, const char *input, unsigned int input_size);
+Eina_Bool nvim_api_input(s_nvim *nvim, const char *input, size_t input_size);
 
-Eina_Bool nvim_api_eval(s_nvim *nvim, const char *input, unsigned int input_size,
+Eina_Bool nvim_api_eval(s_nvim *nvim, const char *input, size_t input_size,
                         f_nvim_api_cb func, void *func_data);
 Eina_Bool
 nvim_api_command_output(s_nvim *nvim,
-                        const char *input,
-                        unsigned int input_size,
-                        f_nvim_api_cb func,
-                        void *func_data);
+                        const char *input, size_t input_size,
+                        f_nvim_api_cb func, void *func_data);
 
 Eina_Bool
 nvim_api_command(s_nvim *nvim,
-                 const char *input,
-                 unsigned int input_size);
+                 const char *input, size_t input_size,
+                 f_nvim_api_cb func, void *func_data);
 
 Eina_List *nvim_api_request_find(const s_nvim *nvim, uint32_t req_id);
 void nvim_api_request_free(s_nvim *nvim, Eina_List *req_item);

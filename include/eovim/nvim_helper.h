@@ -36,7 +36,6 @@ typedef struct
 } s_hl_group;
 
 typedef void (*f_highlight_group_decode)(s_nvim *nvim, const s_hl_group *hl_group);
-typedef void (*f_version_decode)(s_nvim *nvim, const s_version *version);
 
 void
 nvim_helper_highlight_group_decode(s_nvim *nvim,
@@ -48,10 +47,8 @@ nvim_helper_highlight_group_decode_noop(s_nvim *nvim,
                                         unsigned int group,
                                         f_highlight_group_decode func);
 
-void
-nvim_helper_version_decode(s_nvim *nvim,
-                           f_version_decode func);
 
 void nvim_helper_autocmd_do(s_nvim *nvim, const char *event);
+void nvim_helper_autocmd_vimenter_exec(s_nvim *nvim, f_nvim_api_cb func, void *func_data);
 
 #endif /* ! __EOVIM_NVIM_HELPER_H__ */

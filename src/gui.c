@@ -144,7 +144,7 @@ _win_close_cb(void *data,
     */
    s_nvim *const nvim = data;
    const char cmd[] = ":quitall!";
-   nvim_api_command(nvim, cmd, sizeof(cmd) - 1);
+   nvim_api_command(nvim, cmd, sizeof(cmd) - 1, NULL, NULL);
 }
 
 Eina_Bool
@@ -1264,7 +1264,7 @@ _tab_close_cb(void *data,
    s_gui *const gui = data;
    s_nvim *const nvim = gui->nvim;
    const char cmd[] = ":tabclose";
-   nvim_api_command(nvim, cmd, sizeof(cmd) - 1);
+   nvim_api_command(nvim, cmd, sizeof(cmd) - 1, NULL, NULL);
 }
 
 static void
@@ -1318,7 +1318,7 @@ _tab_activate_cb(void *data,
       (diff < 0) ? '+' : '-',
       (diff < 0) ? -diff : diff
    );
-   nvim_api_command(gui->nvim, cmd, (unsigned)bytes);
+   nvim_api_command(gui->nvim, cmd, (size_t)bytes, NULL, NULL);
 }
 
 void
