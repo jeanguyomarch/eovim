@@ -535,7 +535,7 @@ _termview_key_down_cb(void *data,
         switch (key[0])
         {
          case 'V':
-            elm_cnp_selection_get(sd->textgrid,
+            elm_cnp_selection_get(gui->win,
                                   ELM_SEL_TYPE_CLIPBOARD, ELM_SEL_FORMAT_TEXT,
                                   _paste_cb, sd);
             break;
