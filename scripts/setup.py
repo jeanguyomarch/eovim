@@ -84,6 +84,16 @@ UBUNTU_SETUP = {
     ]
 }
 
+FEDORA_SETUP = {
+    Key.CMD: [
+        "sudo dnf install efl-devel",
+        "sudo dnf install cmake",
+        "sudo dnf install wget",
+        msgpack_cmd_get(),
+    ]
+}
+
+
 # For testing purposes
 #DUMMY_SETUP = {
 #    Key.CMD: [
@@ -97,6 +107,7 @@ UBUNTU_SETUP = {
 SETUP = {
     'Darwin': MACOS_SETUP,
     'Ubuntu': UBUNTU_SETUP,
+    'Fedora': FEDORA_SETUP,
     #'Dummy': DUMMY_SETUP, # To test
 }
 
