@@ -144,19 +144,6 @@ directory):
 env EOVIM_IN_TREE=1 EINA_LOG_BACKTRACE=0 EINA_LOG_LEVELS="eovim:3" ./eovim
 ```
 
-# Tests
-
-Tests are disabled by default, but can be enabled by passing `-DWITH_TESTS=ON`.
-Beware, tests require additional setup and dependencies:
-
-- run `scripts/get-test-data.sh` from the top source directory,
-- make sure you have [Exactness][6] installed,
-- after building, you should *install* eovim as well.
-
-Running `make test` will run the test suite.  Details about how the tests work
-are explained in `tests/README.md`.
-
-
 # License
 
 Eovim is MIT-licensed. See the `LICENSE` file for details. Files in

@@ -38,7 +38,6 @@ else ()
    set(MODULE_EXT ".so")
 endif ()
 
-option(WITH_TESTS "Compile eovim for testing purposes" OFF)
 option(WITH_PLUGINS "Compile eovim with plug-ins support" ON)
 
 set(CMAKE_MODULE_PATH
@@ -216,11 +215,6 @@ if (WITH_PLUGINS)
    # When plugins are enabled, eovim must be linked against its plugins runtime
    # library: libeovim.
    target_link_libraries(eovim libeovim)
-endif ()
-
-if (WITH_TESTS)
-   enable_testing()
-   add_subdirectory(tests)
 endif ()
 
 

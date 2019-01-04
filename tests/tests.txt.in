@@ -1,2 +1,0 @@
-test_minimal @EOVIM_BASE_CMD_STR@
-test_readme @EOVIM_BASE_CMD_STR@ @CMAKE_SOURCE_DIR@/README.md
