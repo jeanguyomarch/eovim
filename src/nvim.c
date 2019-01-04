@@ -234,6 +234,14 @@ _nvim_added_cb(void *data EINA_UNUSED,
                int   type EINA_UNUSED,
                void *event)
 {
+#ifndef EFL_VERSION_1_22
+   /* EFL versions 1.21 (and maybe 1.20 as well ??) have a bug. When coming out
+    * of sleep/hibernation, a spurious event was sent, causing
+    * ECORE_EXE_EVENT_ADD to be triggered with a NULL event, which is supposed
+    * to be always set. This test prevent this spurious event to crash eovim */
+   if (EINA_UNLIKELY(! event)) { return ECORE_CALLBACK_PASS_ON; }
+#endif
+
    const Ecore_Exe_Event_Add *const info = event;
    INF("Process with PID %i was created", ecore_exe_pid_get(info->exe));
    return ECORE_CALLBACK_PASS_ON;
