@@ -5,6 +5,27 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.1.3] - 2019-01-04
+
+### Added
+
+- Source a dedicated vimscript file at startup
+  (`$XDG_CONFIG_HOME/nvim/eovimrc.vim`).
+- Add the `-M` (`--maximized`) command-line option.
+- Caps lock auto-detection.
+
+### Changed
+
+- Neovim is not called with `--headless` anymore.
+- Unimplemented APIs are notified as warnings, not as errors.
+- EFL 1.19 or greater is now required.
+
+### Fixed
+
+- Resizing limits are not necessary anymore.
+- Invalid memory accesses with EFL 1.20 and EFL.1.21.
+- Spurious crashes because of the EFL backtrace.
+
 
 ## [0.1.2] - 2017-12-31
 
@@ -75,6 +96,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Initial theme (default).
 
 
-[Unreleased]: https://github.com/jeanguyomarch/eovim/compare/v0.1.2...master
+[Unreleased]: https://github.com/jeanguyomarch/eovim/compare/v0.1.3...master
 [0.1.1]: https://github.com/jeanguyomarch/eovim/compare/v0.1.0...v0.1.1
 [0.1.2]: https://github.com/jeanguyomarch/eovim/compare/v0.1.1...v0.1.2
+[0.1.3]: https://github.com/jeanguyomarch/eovim/compare/v0.1.2...v0.1.3

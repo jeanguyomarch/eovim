@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.0.2)
 # When a tweak revision (i.e. 99) is added to normal semver (1), Eovim
 # considers it is in a development stage. It will automatically add the (short)
 # git hash of Eovim to its version, if the sources are from a git repository.
-project(eovim LANGUAGES C VERSION 0.1.2.99)
+project(eovim LANGUAGES C VERSION 0.1.3)
 
 include(CheckTypeSize)
 
