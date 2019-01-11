@@ -214,6 +214,7 @@ static Eina_Bool
 nvim_event_scroll(s_nvim *nvim,
                   const msgpack_object_array *args)
 {
+   CHECK_BASE_ARGS_COUNT(args, >=, 1);
    /*
     * It appears that in some cases (when the sh*tty command popup opens,
     * because a message is open in another castle), the scroll command changes,
