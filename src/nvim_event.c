@@ -181,17 +181,31 @@ static Eina_Bool
 nvim_event_set_scroll_region(s_nvim *nvim,
                              const msgpack_object_array *args)
 {
-   CHECK_BASE_ARGS_COUNT(args, ==, 1);
-   ARRAY_OF_ARGS_EXTRACT(args, params);
-   CHECK_ARGS_COUNT(params, ==, 4);
+   CHECK_BASE_ARGS_COUNT(args, >=, 1);
 
-   t_int top, bot, left, right;
-   GET_ARG(params, 0, t_int, &top);
-   GET_ARG(params, 1, t_int, &bot);
-   GET_ARG(params, 2, t_int, &left);
-   GET_ARG(params, 3, t_int, &right);
+   /* XXX It appears that under certain circumstantes, set_scroll_region can
+    * receive multiple arguments:
+    *
+    *   ["set_scroll_region", [0, 39, 0, 118], [0, 39, 0, 118]]
+    *
+    * This is not part of the specification, but happens anyway. So be ready to
+    * handle that case.
+    */
+   for (uint32_t i = 1u; i < args->size; i++)
+   {
+     const msgpack_object *const obj = &(args->ptr[i]);
+     CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
+     const msgpack_object_array *const params = &(obj->via.array);
+     CHECK_ARGS_COUNT(params, ==, 4);
 
-   gui_scroll_region_set(&nvim->gui, (int)top, (int)bot, (int)left, (int)right);
+     t_int top, bot, left, right;
+     GET_ARG(params, 0, t_int, &top);
+     GET_ARG(params, 1, t_int, &bot);
+     GET_ARG(params, 2, t_int, &left);
+     GET_ARG(params, 3, t_int, &right);
+
+     gui_scroll_region_set(&nvim->gui, (int)top, (int)bot, (int)left, (int)right);
+   }
 
    return EINA_TRUE;
 }
