@@ -107,9 +107,7 @@ _request_send(s_nvim *nvim,
    return EINA_TRUE;
 }
 
-Eina_List *
-nvim_api_request_find(const s_nvim *nvim,
-                      uint32_t req_id)
+Eina_List *nvim_api_request_find(const s_nvim *nvim, uint32_t req_id)
 {
    const s_request *req;
    Eina_List *it;
