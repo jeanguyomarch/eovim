@@ -211,7 +211,15 @@ _handle_notification(s_nvim *nvim,
              CRI("Failed to create stringshare from command object");
              continue; /* Try next element */
           }
-        nvim_event_dispatch(nvim, method, command, cmd);
+        const Eina_Bool ok = nvim_event_dispatch(nvim, method, command, cmd);
+        if (EINA_UNLIKELY((! ok) &&
+             (eina_log_domain_level_get("eovim") >= EINA_LOG_LEVEL_WARN)))
+        {
+          WRN("Command '%s' failed with input object:", command);
+          fprintf(stderr, " -=> ");
+          msgpack_object_print(stderr, *arg);
+          fprintf(stderr, "\n");
+        }
         eina_stringshare_del(command);
      }
 
