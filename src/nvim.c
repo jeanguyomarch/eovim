@@ -26,6 +26,7 @@
 #include "eovim/config.h"
 #include "eovim/nvim_api.h"
 #include "eovim/nvim_event.h"
+#include "eovim/nvim_request.h"
 #include "eovim/nvim_helper.h"
 #include "eovim/log.h"
 #include "eovim/main.h"
@@ -51,6 +52,51 @@ _nvim_get(void)
 {
    /* We handle only one neovim instance */
    return _nvim_instance;
+}
+
+static Eina_Bool
+_handle_request(s_nvim *nvim, const msgpack_object_array *args)
+{
+   /* Retrieve the request identifier ****************************************/
+   if (EINA_UNLIKELY(args->ptr[1].type != MSGPACK_OBJECT_POSITIVE_INTEGER))
+     {
+        ERR("Second argument in request is expected to be an integer");
+        return EINA_FALSE;
+     }
+   const uint64_t long_req_id = args->ptr[1].via.u64;
+   if (EINA_UNLIKELY(long_req_id > UINT32_MAX))
+     {
+        ERR("Request ID '%" PRIu64 " is too big", long_req_id);
+        return EINA_FALSE;
+     }
+   const uint32_t req_id = (uint32_t)long_req_id;
+
+   /* Retrieve the request arguments *****************************************/
+   if (EINA_UNLIKELY(args->ptr[3].type != MSGPACK_OBJECT_ARRAY))
+     {
+        ERR("Fourth argument in request is expected to be an array");
+        return EINA_FALSE;
+     }
+   const msgpack_object_array *const req_args = &(args->ptr[3].via.array);
+
+   /* Retrieve the request name **********************************************/
+   if (EINA_UNLIKELY(args->ptr[2].type != MSGPACK_OBJECT_STR))
+     {
+        ERR("Third argument in request is expected to be a string");
+        return EINA_FALSE;
+     }
+   const msgpack_object_str *const str = &(args->ptr[2].via.str);
+   Eina_Stringshare *const request =
+     eina_stringshare_add_length(str->ptr, str->size);
+   if (EINA_UNLIKELY(! request))
+     {
+        ERR("Failed to create stringshare");
+        return EINA_FALSE;
+     }
+
+   const Eina_Bool ok = nvim_request_process(nvim, request, req_args, req_id);
+   eina_stringshare_del(request);
+   return ok;
 }
 
 static Eina_Bool
@@ -289,6 +335,7 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
                        int   type EINA_UNUSED,
                        void *event)
 {
+   /* See https://github.com/msgpack-rpc/msgpack-rpc/blob/master/spec.md */
    const Ecore_Exe_Event_Data *const info = event;
    s_nvim *const nvim = _nvim_get();
    msgpack_unpacker *const unpacker = &nvim->unpacker;
@@ -356,11 +403,15 @@ _nvim_received_data_cb(void *data EINA_UNUSED,
           }
         switch (args->ptr[0].via.u64)
           {
-           case 1:
+           case 0: /* msgpack-rpc request */
+              _handle_request(nvim, args);
+              break;
+
+           case 1: /* msgpack-rpc response */
               _handle_request_response(nvim, args);
               break;
 
-           case 2:
+           case 2: /* msgpack-rpc notification */
               _handle_notification(nvim, args);
               break;
 
@@ -822,6 +873,23 @@ nvim_free(s_nvim *nvim)
         free(nvim);
         _nvim_instance = NULL;
      }
+}
+
+Eina_Bool nvim_flush(s_nvim *nvim)
+{
+   /* Send the data present in the msgpack buffer */
+   const Eina_Bool ok =
+     ecore_exe_send(nvim->exe, nvim->sbuffer.data, (int)nvim->sbuffer.size);
+
+   /* Now that the data is gone (hopefully), clear the buffer */
+   msgpack_sbuffer_clear(&nvim->sbuffer);
+   if (EINA_UNLIKELY(! ok))
+     {
+        CRI("Failed to send %zu bytes to neovim", nvim->sbuffer.size);
+        return EINA_FALSE;
+     }
+   DBG("Sent %zu bytes to neovim", nvim->sbuffer.size);
+   return EINA_TRUE;
 }
 
 void

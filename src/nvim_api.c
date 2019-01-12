@@ -55,8 +55,13 @@ _request_new(s_nvim *nvim,
    req->uid = nvim_next_uid_get(nvim);
    DBG("Preparing request '%s' with id %"PRIu32, rpc_name, req->uid);
 
-   /* Clear the serialization buffer before pushing a new request */
-   msgpack_sbuffer_clear(&nvim->sbuffer);
+   /* The buffer MUST be empty before preparing another request. If this is not
+    * the case, something went very wrong! Discard the buffer and keep going */
+   if (EINA_UNLIKELY(nvim->sbuffer.size != 0u))
+     {
+        ERR("The buffer is not empty. I've messed up somewhere");
+        msgpack_sbuffer_clear(&nvim->sbuffer);
+     }
 
    /* Keep the request around */
    nvim->requests = eina_list_append(nvim->requests, req);
@@ -91,19 +96,14 @@ _request_cleanup(s_nvim *nvim,
 }
 
 static Eina_Bool
-_request_send(s_nvim *nvim,
-              s_request *req)
+_request_send(s_nvim *nvim, s_request *req)
 {
    /* Finally, send that to the slave neovim process */
-   const Eina_Bool ok =
-     ecore_exe_send(nvim->exe, nvim->sbuffer.data, (int)nvim->sbuffer.size);
-   if (EINA_UNLIKELY(! ok))
+   if (EINA_UNLIKELY(! nvim_flush(nvim)))
      {
-        CRI("Failed to send %zu bytes to neovim", nvim->sbuffer.size);
         _request_cleanup(nvim, req);
         return EINA_FALSE;
      }
-   DBG("Sent %zu bytes to neovim", nvim->sbuffer.size);
    return EINA_TRUE;
 }
 

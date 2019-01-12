@@ -52,6 +52,8 @@ struct nvim
    Eina_List *requests;
 
    msgpack_unpacker unpacker;
+
+   /* The following msgpack structures must be handled on the main loop only */
    msgpack_sbuffer sbuffer;
    msgpack_packer packer;
    uint32_t request_id;
@@ -75,5 +77,14 @@ const s_mode *nvim_named_mode_get(const s_nvim *nvim, Eina_Stringshare *name);
 void nvim_mouse_enabled_set(s_nvim *nvim, Eina_Bool enable);
 Eina_Bool nvim_mouse_enabled_get(const s_nvim *nvim);
 Eina_Stringshare *nvim_eovimrc_path_get(const s_nvim *nvim);
+
+/**
+ * Flush the msgpack buffer to the neovim instance, by writing to its standard
+ * input
+ *
+ * @param[in] nvim The neovim handle
+ * @return EINA_TRUE on success, EINA_FALSE on failure.
+ */
+Eina_Bool nvim_flush(s_nvim *nvim);
 
 #endif /* ! __EOVIM_NVIM_H__ */
