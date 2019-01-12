@@ -41,6 +41,16 @@
     NVIM_VERSION_MINOR(Nvim) == (Minor) && \
     NVIM_VERSION_PATCH(Nvim) == (Patch))
 
+/* Used for indexing event_handlers */
+typedef enum
+{
+   NVIM_HANDLER_ADD   = 0,
+   NVIM_HANDLER_DEL   = 1,
+   NVIM_HANDLER_DATA  = 2,
+   NVIM_HANDLER_ERROR = 3,
+   NVIM_HANDLERS_LAST /* Sentinel */
+} e_nvim_handler;;
+
 struct nvim
 {
    s_gui gui;
@@ -49,6 +59,8 @@ struct nvim
    const s_options *opts;
 
    Ecore_Exe *exe;
+
+   Ecore_Event_Handler *event_handlers[NVIM_HANDLERS_LAST];
    Eina_List *requests;
 
    msgpack_unpacker unpacker;
@@ -66,8 +78,6 @@ struct nvim
 };
 
 
-Eina_Bool nvim_init(void);
-void nvim_shutdown(void);
 s_nvim *nvim_new(const s_options *opts, const char *const args[]);
 void nvim_free(s_nvim *nvim);
 uint32_t nvim_next_uid_get(s_nvim *nvim);

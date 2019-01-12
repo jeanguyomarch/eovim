@@ -31,18 +31,6 @@
 #include "eovim/log.h"
 #include "eovim/main.h"
 
-enum
-{
-   HANDLER_ADD,
-   HANDLER_DEL,
-   HANDLER_DATA,
-   HANDLER_ERROR,
-   __HANDLERS_LAST /* Sentinel */
-};
-
-static Ecore_Event_Handler *_event_handlers[__HANDLERS_LAST];
-static s_nvim *_nvim_instance = NULL;
-
 static void _api_decode_cb(s_nvim *nvim, void *data, const msgpack_object *result);
 
 /*============================================================================*
@@ -53,12 +41,6 @@ static void _ui_attached_cb(s_nvim *nvim, void *data EINA_UNUSED,
                             const msgpack_object *result EINA_UNUSED)
 {
   gui_ready_set(&nvim->gui);
-}
-
-static inline s_nvim *_nvim_get(void)
-{
-   /* We handle only one neovim instance */
-   return _nvim_instance;
 }
 
 static Eina_Bool
@@ -300,7 +282,7 @@ _vimenter_request_cb(s_nvim *nvim EINA_UNUSED,
  *============================================================================*/
 
 static Eina_Bool
-_nvim_added_cb(void *data EINA_UNUSED,
+_nvim_added_cb(void *data,
                int   type EINA_UNUSED,
                void *event)
 {
@@ -321,7 +303,7 @@ _nvim_added_cb(void *data EINA_UNUSED,
     * We can start attaching the UI on the fly.
     * See :help ui-startup for details.
     */
-   s_nvim *const nvim = _nvim_get();
+   s_nvim *const nvim = data;
    nvim_api_get_api_info(nvim, _api_decode_cb, NULL);
 
    nvim_helper_autocmd_vimenter_exec(nvim);
@@ -333,12 +315,12 @@ _nvim_added_cb(void *data EINA_UNUSED,
 }
 
 static Eina_Bool
-_nvim_deleted_cb(void *data EINA_UNUSED,
+_nvim_deleted_cb(void *data,
                  int   type EINA_UNUSED,
                  void *event)
 {
    const Ecore_Exe_Event_Del *const info = event;
-   s_nvim *const nvim = _nvim_get();
+   s_nvim *const nvim = data;
    const int pid = ecore_exe_pid_get(info->exe);
 
    /* We consider that neovim crashed if it receives an uncaught signal */
@@ -362,13 +344,13 @@ _nvim_deleted_cb(void *data EINA_UNUSED,
 }
 
 static Eina_Bool
-_nvim_received_data_cb(void *data EINA_UNUSED,
+_nvim_received_data_cb(void *data,
                        int   type EINA_UNUSED,
                        void *event)
 {
    /* See https://github.com/msgpack-rpc/msgpack-rpc/blob/master/spec.md */
    const Ecore_Exe_Event_Data *const info = event;
-   s_nvim *const nvim = _nvim_get();
+   s_nvim *const nvim = data;
    msgpack_unpacker *const unpacker = &nvim->unpacker;
    const size_t recv_size = (size_t)info->size;
 
@@ -701,42 +683,37 @@ _nvim_plugins_load(s_nvim *nvim)
      INF("Loaded %u plugins out of %u", loaded, expect);
 }
 
-/*============================================================================*
- *                                 Public API                                 *
- *============================================================================*/
-
-Eina_Bool
-nvim_init(void)
+static Eina_Bool _nvim_event_handlers_add(s_nvim *nvim)
 {
    struct {
       const int event;
       const Ecore_Event_Handler_Cb callback;
-   } const ctor[__HANDLERS_LAST] = {
-      [HANDLER_ADD] = {
+   } const ctor[NVIM_HANDLERS_LAST] = {
+      [NVIM_HANDLER_ADD] = {
          .event = ECORE_EXE_EVENT_ADD,
          .callback = _nvim_added_cb,
       },
-      [HANDLER_DEL] = {
+      [NVIM_HANDLER_DEL] = {
          .event = ECORE_EXE_EVENT_DEL,
          .callback = _nvim_deleted_cb,
       },
-      [HANDLER_DATA] = {
+      [NVIM_HANDLER_DATA] = {
          .event = ECORE_EXE_EVENT_DATA,
          .callback = _nvim_received_data_cb,
       },
-      [HANDLER_ERROR] = {
+      [NVIM_HANDLER_ERROR] = {
          .event = ECORE_EXE_EVENT_ERROR,
          .callback = _nvim_received_error_cb,
       },
    };
-   unsigned int i;
+   int i;
 
    /* Create the handlers for all incoming events for spawned nvim instances */
-   for (i = 0; i < EINA_C_ARRAY_LENGTH(_event_handlers); i++)
+   for (i = 0; i < NVIM_HANDLERS_LAST; i++)
      {
-        _event_handlers[i] = ecore_event_handler_add(ctor[i].event,
-                                                     ctor[i].callback, NULL);
-        if (EINA_UNLIKELY(! _event_handlers[i]))
+        nvim->event_handlers[i] =
+           ecore_event_handler_add(ctor[i].event, ctor[i].callback, nvim);
+        if (EINA_UNLIKELY(! nvim->event_handlers[i]))
           {
              CRI("Failed to create handler for event 0x%x", ctor[i].event);
              goto fail;
@@ -746,21 +723,26 @@ nvim_init(void)
    return EINA_TRUE;
 
 fail:
-   for (i--; (int)i >= 0; i--)
-     ecore_event_handler_del(_event_handlers[i]);
+   for (i--; i >= 0; i--)
+     ecore_event_handler_del(nvim->event_handlers[i]);
    return EINA_FALSE;
 }
 
-void
-nvim_shutdown(void)
+static void _nvim_event_handlers_del(s_nvim *nvim)
 {
-   for (unsigned int i = 0; i < EINA_C_ARRAY_LENGTH(_event_handlers); i++)
-     ecore_event_handler_del(_event_handlers[i]);
+   for (int i = 0; i < NVIM_HANDLERS_LAST; i++)
+     ecore_event_handler_del(nvim->event_handlers[i]);
 }
+
+
+/*============================================================================*
+ *                                 Public API                                 *
+ *============================================================================*/
 
 uint32_t
 nvim_next_uid_get(s_nvim *nvim)
 {
+   /* Overflow is not an error */
    return nvim->request_id++;
 }
 
@@ -807,6 +789,13 @@ nvim_new(const s_options *opts,
      }
    nvim->opts = opts;
 
+   /* Configure the event handlers */
+   if (EINA_UNLIKELY(! _nvim_event_handlers_add(nvim)))
+     {
+        CRI("Failed to setup event handlers");
+        goto del_mem;
+     }
+
    /* We will enable mouse handling by default. We do not receive the
     * information from neovim unless we change mode. This is annoying. */
    nvim->mouse_enabled = EINA_TRUE;
@@ -815,7 +804,7 @@ nvim_new(const s_options *opts,
    if (EINA_UNLIKELY(! nvim->decode))
      {
         CRI("Failed to create unicode string buffer");
-        goto del_mem;
+        goto del_events;
      }
 
    /* Create the config */
@@ -852,7 +841,6 @@ nvim_new(const s_options *opts,
         CRI("Failed to execute nvim instance");
         goto del_config;
      }
-   _nvim_instance = nvim;
    DBG("Running %s", eina_strbuf_string_get(cmdline));
    eina_strbuf_free(cmdline);
 
@@ -878,12 +866,13 @@ del_config:
    config_free(nvim->config);
 del_ustrbuf:
    eina_ustrbuf_free(nvim->decode);
+del_events:
+   _nvim_event_handlers_del(nvim);
 del_mem:
    free(nvim);
 del_strbuf:
    eina_strbuf_free(cmdline);
 fail:
-   _nvim_instance = NULL;
    return NULL;
 }
 
@@ -892,12 +881,12 @@ nvim_free(s_nvim *nvim)
 {
    if (nvim)
      {
+        _nvim_event_handlers_del(nvim);
         msgpack_sbuffer_destroy(&nvim->sbuffer);
         msgpack_unpacker_destroy(&nvim->unpacker);
         config_free(nvim->config);
         eina_ustrbuf_free(nvim->decode);
         free(nvim);
-        _nvim_instance = NULL;
      }
 }
 

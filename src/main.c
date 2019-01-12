@@ -60,7 +60,6 @@ static const s_module _modules[] =
    MODULE(prefs),
    MODULE(gui),
    MODULE(termview),
-   MODULE(nvim),
 
 #undef MODULE
 };
