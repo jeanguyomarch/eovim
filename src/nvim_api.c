@@ -138,8 +138,8 @@ void nvim_api_request_call(s_nvim *nvim,
 
 Eina_Bool
 nvim_api_ui_attach(s_nvim *nvim,
-                   unsigned int width,
-                   unsigned int height)
+                   unsigned int width, unsigned int height,
+                   f_nvim_api_cb func, void *func_data)
 {
    const char api[] = "nvim_ui_attach";
    s_request *const req = _request_new(nvim, api, sizeof(api) - 1);
@@ -148,6 +148,8 @@ nvim_api_ui_attach(s_nvim *nvim,
         CRI("Failed to create request");
         return EINA_FALSE;
      }
+   req->cb.func = func;
+   req->cb.data = func_data;
 
    const s_config *const cfg = nvim->config;
 

@@ -134,11 +134,11 @@ nvim_helper_autocmd_do(s_nvim *nvim,
 }
 
 void
-nvim_helper_autocmd_vimenter_exec(s_nvim *nvim, f_nvim_api_cb func, void *func_data)
+nvim_helper_autocmd_vimenter_exec(s_nvim *nvim)
 {
   const char cmd[] = "autocmd VimEnter * call rpcrequest(1, 'vimenter')";
   const Eina_Bool ok =
-    nvim_api_command(nvim, cmd, sizeof(cmd) - 1u, func, func_data);
+    nvim_api_command(nvim, cmd, sizeof(cmd) - 1u, NULL, NULL);
   if (EINA_UNLIKELY(! ok))
   { ERR("Failed to execute: %s", cmd); }
 }

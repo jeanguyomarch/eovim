@@ -43,6 +43,8 @@ enum
 static Ecore_Event_Handler *_event_handlers[__HANDLERS_LAST];
 static s_nvim *_nvim_instance = NULL;
 
+static void _api_decode_cb(s_nvim *nvim, void *data, const msgpack_object *result);
+
 /*============================================================================*
  *                                 Private API                                *
  *============================================================================*/
@@ -278,6 +280,15 @@ fail:
    return EINA_FALSE;
 }
 
+static Eina_Bool
+_vimenter_request_cb(s_nvim *nvim EINA_UNUSED,
+                     const msgpack_object_array *args EINA_UNUSED,
+                     msgpack_packer *pk)
+{
+  msgpack_pack_nil(pk); /* Error */
+  msgpack_pack_nil(pk); /* Result */
+  return EINA_TRUE;
+}
 
 /*============================================================================*
  *                       Nvim Processes Events Handlers                       *
@@ -298,6 +309,21 @@ _nvim_added_cb(void *data EINA_UNUSED,
 
    const Ecore_Exe_Event_Add *const info = event;
    INF("Process with PID %i was created", ecore_exe_pid_get(info->exe));
+
+   /* Okay, at this point the neovim process is running! Great! Now, we can
+    * start to retrieve the API information and trigger the vimenter autocmd.
+    *
+    * We can start attaching the UI on the fly.
+    * See :help ui-startup for details.
+    */
+   s_nvim *const nvim = _nvim_get();
+   nvim_api_get_api_info(nvim, _api_decode_cb, NULL);
+
+   nvim_helper_autocmd_vimenter_exec(nvim);
+   const s_geometry *const geo = &nvim->opts->geometry;
+   nvim_api_ui_attach(nvim, geo->w, geo->h, _ui_attached_cb, NULL);
+
+
    return ECORE_CALLBACK_PASS_ON;
 }
 
@@ -438,6 +464,7 @@ _nvim_received_error_cb(void *data EINA_UNUSED,
    return ECORE_CALLBACK_PASS_ON;
 }
 
+/* FIXME this is soooooo fragile */
 static void
 _nvim_runtime_load(s_nvim *nvim,
                    const char *filename)
@@ -654,16 +681,6 @@ _api_decode_cb(s_nvim *nvim, void *data EINA_UNUSED, const msgpack_object *resul
 }
 
 static void
-_vimenter_cb(s_nvim *nvim,
-             void *data EINA_UNUSED,
-             const msgpack_object *result EINA_UNUSED)
-{
-  _nvim_builtin_runtime_load(nvim);
-  _nvim_eovimrc_load(nvim);
-  nvim_api_var_integer_set(nvim, "eovim_running", 1);
-}
-
-static void
 _nvim_plugins_load(s_nvim *nvim)
 {
    const Eina_List *const cfg_plugins = nvim->config->plugins;
@@ -815,6 +832,9 @@ nvim_new(const s_options *opts,
    /* Initialize the virtual interface to safe values (non-NULL pointers) */
    _virtual_interface_init(nvim);
 
+   /* Add a callback to the vimenter request */
+   nvim_request_add("vimenter", _vimenter_request_cb);
+
    /* Create the neovim process */
    nvim->exe = ecore_exe_pipe_run(
       eina_strbuf_string_get(cmdline),
@@ -831,9 +851,10 @@ nvim_new(const s_options *opts,
    DBG("Running %s", eina_strbuf_string_get(cmdline));
    eina_strbuf_free(cmdline);
 
-   nvim_api_get_api_info(nvim, _api_decode_cb, NULL);
-   nvim_helper_autocmd_vimenter_exec(nvim, _vimenter_cb, NULL);
-   nvim_api_ui_attach(nvim, opts->geometry.w, opts->geometry.h);
+   /* FIXME These are sooo fragile. Rework that!!! */
+   _nvim_builtin_runtime_load(nvim);
+   _nvim_eovimrc_load(nvim);
+   nvim_api_var_integer_set(nvim, "eovim_running", 1);
 
    /* Create the GUI window */
    if (EINA_UNLIKELY(! gui_add(&nvim->gui, nvim)))
