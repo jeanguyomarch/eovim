@@ -430,12 +430,41 @@ collections {
                visible: 0;
             }
          }
+
+         rect { "overlay"; nomouse;
+            desc { "default";
+               color: 40 40 40 255;;
+            }
+            desc { "fade";
+               color: 40 40 40 0;
+            }
+            desc { "faded";
+               inherit: "fade";
+               visible: 0; /* Make sure it is killed */
+            }
+         }
       }
 
       programs {
          program { signal: "eovim,bell,ring"; source: "eovim";
             action: PLAY_SAMPLE "bell" 1.0 ALERT;
          }
+
+         /* [OVERLAY FADING] **************************************************
+          * When eovim starts, we push an overlay that covers the whole window.
+          * When neovim is successfully attached to the UI, we make the overlay
+          * fade away, so we can begin to use neovim. */
+         program { signal: "eovim,ready"; source: "eovim";
+            action: STATE_SET "fade";
+            target: "overlay";
+            transition: ACCELERATE 0.2;
+            after: "eovim_overlay_faded";
+         }
+         program { name: "eovim_overlay_faded";
+            action: STATE_SET "faded";
+            target: "overlay";
+         }
+         /* END OVERLAY FADING ***********************************************/
 
          program { signal: "eovim,cmdline,show"; source: "eovim";
             action: STATE_SET "default";

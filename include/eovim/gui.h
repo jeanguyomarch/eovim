@@ -192,6 +192,7 @@ void gui_caps_lock_alert(s_gui *gui);
 void gui_caps_lock_dismiss(s_gui *gui);
 Eina_Bool gui_caps_lock_warning_get(const s_gui *gui);
 
+void gui_ready_set(s_gui *gui);
 void gui_mode_update(s_gui *gui, const s_mode *mode);
 
 #endif /* ! __EOVIM_GUI_H__ */

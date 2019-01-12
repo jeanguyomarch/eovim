@@ -49,8 +49,13 @@ static void _api_decode_cb(s_nvim *nvim, void *data, const msgpack_object *resul
  *                                 Private API                                *
  *============================================================================*/
 
-static inline s_nvim *
-_nvim_get(void)
+static void _ui_attached_cb(s_nvim *nvim, void *data EINA_UNUSED,
+                            const msgpack_object *result EINA_UNUSED)
+{
+  gui_ready_set(&nvim->gui);
+}
+
+static inline s_nvim *_nvim_get(void)
 {
    /* We handle only one neovim instance */
    return _nvim_instance;

@@ -893,6 +893,11 @@ gui_bell_ring(s_gui *gui)
      elm_layout_signal_emit(gui->layout, "eovim,bell,ring", "eovim");
 }
 
+void gui_ready_set(s_gui *gui)
+{
+   elm_layout_signal_emit(gui->layout, "eovim,ready", "eovim");
+}
+
 static void
 _compl_item_del(void *data,
                 Evas_Object *obj EINA_UNUSED)
