@@ -61,7 +61,7 @@ struct nvim
    Ecore_Exe *exe;
 
    Ecore_Event_Handler *event_handlers[NVIM_HANDLERS_LAST];
-   Eina_List *requests;
+   Eina_Inlist *requests;
 
    msgpack_unpacker unpacker;
 

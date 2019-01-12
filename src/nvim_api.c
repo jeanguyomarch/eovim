@@ -29,6 +29,7 @@
 
 struct request
 {
+   EINA_INLIST;
    struct {
       f_nvim_api_cb func;
       void *data;
@@ -64,7 +65,7 @@ _request_new(s_nvim *nvim,
      }
 
    /* Keep the request around */
-   nvim->requests = eina_list_append(nvim->requests, req);
+   nvim->requests = eina_inlist_append(nvim->requests, EINA_INLIST_GET(req));
 
    msgpack_packer *const pk = &nvim->packer;
    /*
@@ -84,55 +85,40 @@ _request_new(s_nvim *nvim,
    return req;
 }
 
-static void
-_request_cleanup(s_nvim *nvim,
-                 s_request *req)
-{
-   Eina_List *const list = nvim_api_request_find(nvim, req->uid);
-   if (EINA_LIKELY(list != NULL))
-     {
-        nvim_api_request_free(nvim, list);
-     }
-}
-
 static Eina_Bool
 _request_send(s_nvim *nvim, s_request *req)
 {
    /* Finally, send that to the slave neovim process */
    if (EINA_UNLIKELY(! nvim_flush(nvim)))
      {
-        _request_cleanup(nvim, req);
+        nvim_api_request_free(nvim, req);
         return EINA_FALSE;
      }
    return EINA_TRUE;
 }
 
-Eina_List *nvim_api_request_find(const s_nvim *nvim, uint32_t req_id)
+s_request *nvim_api_request_find(const s_nvim *nvim, uint32_t req_id)
 {
-   const s_request *req;
-   Eina_List *it;
+   s_request *req;
 
-   EINA_LIST_FOREACH(nvim->requests, it, req)
-     {
-        if (req->uid == req_id) { return it; }
-     }
+   EINA_INLIST_FOREACH(nvim->requests, req)
+      if (req->uid == req_id)
+        return req;
    return NULL;
 }
 
 void
 nvim_api_request_free(s_nvim *nvim,
-                      Eina_List *req_item)
+                      s_request *req)
 {
-   s_request *const req = eina_list_data_get(req_item);
-   nvim->requests = eina_list_remove_list(nvim->requests, req_item);
+   nvim->requests = eina_inlist_remove(nvim->requests, EINA_INLIST_GET(req));
    eina_mempool_free(_mempool, req);
 }
 
 void nvim_api_request_call(s_nvim *nvim,
-                           const Eina_List *req_item,
+                           const s_request *req,
                            const msgpack_object *result)
 {
-   const s_request *const req = eina_list_data_get(req_item);
    if (req->cb.func) req->cb.func(nvim, req->cb.data, result);
 }
 

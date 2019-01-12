@@ -106,8 +106,8 @@ _handle_request_response(s_nvim *nvim,
 
    /* Get the request from the pending requests list. */
    const uint32_t req_id = (uint32_t)args->ptr[1].via.u64;
-   Eina_List *const req_item = nvim_api_request_find(nvim, req_id);
-   if (EINA_UNLIKELY(! req_item))
+   s_request *const req = nvim_api_request_find(nvim, req_id);
+   if (EINA_UNLIKELY(! req))
      {
         /* We probably should wait for the error message to be fetched back.
          * So we start by throwing an error, then we tell that the response
@@ -160,14 +160,14 @@ _handle_request_response(s_nvim *nvim,
 
    /* 4th argment, which contain the returned parameters */
    const msgpack_object *const result = &(args->ptr[3]);
-   nvim_api_request_call(nvim, req_item, result);
+   nvim_api_request_call(nvim, req, result);
 
    /* Now that we have found the request, we can remove it */
-   nvim_api_request_free(nvim, req_item);
+   nvim_api_request_free(nvim, req);
    return EINA_TRUE;
 
 fail_req:
-   nvim_api_request_free(nvim, req_item);
+   nvim_api_request_free(nvim, req);
 fail:
    return EINA_FALSE;
 }
