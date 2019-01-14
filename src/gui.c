@@ -344,6 +344,20 @@ gui_resize(s_gui *gui,
    const int w = (int)(cols * cell_w);
    const int h = (int)(rows * cell_h);
    evas_object_resize(gui->win, w, h);
+
+   /* XXX This is a bit of a hack. I'm not really sure why we have the issue,
+    * but there is a little "jitter" when resizing the window:
+    *   1) the window is resized to the expected size
+    *   2) it is resized back (on the X-axis) to "a bit less".
+    *
+    * This makes the --geometry parameter create a window that does not respect
+    * the initial size. I'm sure the problem is somewhere here, but I haven't
+    * found its root yet. So, as a quickfix (which will probably stay for a
+    * while...) prevent the window from being resized down until we have
+    * effectively resize the window. When done, we will remove this barrier
+    * (see gui_resized_confirm()).
+    */
+   evas_object_size_hint_min_set(gui->win, w, h);
 }
 
 void
@@ -352,6 +366,9 @@ gui_resized_confirm(s_gui *gui,
                     unsigned int rows)
 {
    termview_resized_confirm(gui->termview, cols, rows);
+
+   /* see gui_resize() */
+   evas_object_size_hint_min_set(gui->win, -1, -1);
 }
 
 void

@@ -697,7 +697,7 @@ _smart_resize(Evas_Object *obj,
 
    const unsigned int cols = (unsigned int)w / sd->cell_w;
    const unsigned int rows = (unsigned int)h / sd->cell_h;
-   DBG("resizing termview to %u,%u pixels, or %ux%x", w, h, cols,rows);
+   DBG("resizing termview to %u,%u pixels, or %ux%u", w, h, cols,rows);
 
    /* Don't resize if not needed */
    if ((cols == sd->cols) && (rows == sd->rows)) { return; }
