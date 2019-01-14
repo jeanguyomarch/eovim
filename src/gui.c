@@ -265,7 +265,6 @@ gui_add(s_gui *gui,
    evas_object_show(gui->termview);
    evas_object_show(gui->layout);
    evas_object_show(gui->win);
-   gui_resize(gui, nvim->opts->geometry.w, nvim->opts->geometry.h);
    return EINA_TRUE;
 
 fail:
