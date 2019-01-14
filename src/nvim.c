@@ -901,13 +901,14 @@ Eina_Bool nvim_flush(s_nvim *nvim)
      ecore_exe_send(nvim->exe, nvim->sbuffer.data, (int)nvim->sbuffer.size);
 
    /* Now that the data is gone (hopefully), clear the buffer */
-   msgpack_sbuffer_clear(&nvim->sbuffer);
    if (EINA_UNLIKELY(! ok))
      {
         CRI("Failed to send %zu bytes to neovim", nvim->sbuffer.size);
+        msgpack_sbuffer_clear(&nvim->sbuffer);
         return EINA_FALSE;
      }
    DBG("Sent %zu bytes to neovim", nvim->sbuffer.size);
+   msgpack_sbuffer_clear(&nvim->sbuffer);
    return EINA_TRUE;
 }
 
