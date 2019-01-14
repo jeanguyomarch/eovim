@@ -249,7 +249,7 @@ options_parse(int argc,
 
                    /* GUI config, grab the next argument */
                 case OPT_CONFIG:
-                   opts->theme = GET_NEXT_ARG();
+                   opts->config_path = GET_NEXT_ARG();
                    break;
 
                    /* Geomtry, parse the next argument */
