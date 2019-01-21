@@ -884,6 +884,8 @@ termview_eol_clear(Evas_Object *obj)
    s_termview *const sd = evas_object_smart_data_get(obj);
    Evas_Object *const grid = sd->textgrid;
 
+   if (EINA_UNLIKELY(_unfinished_resizing_is(sd))) { return; }
+
    /*
     * Remove all characters from the cursor until the end of the textgrid line
     */
