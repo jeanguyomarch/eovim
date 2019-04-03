@@ -51,8 +51,8 @@ group { "eovim/cmdline_info";
       public message(Msg_Type:type, id, ...) {
          if (id == THEME_MSG_CMDLINE_INFO) {
             /* Get the prompt (aka. first character) */
-            new info[8];
-            getsarg(2, info, 8);
+            new info[128];
+            getsarg(2, info, 128);
 
             /* Determine which color class shall be applied */
             new buf[32];

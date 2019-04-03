@@ -1023,12 +1023,19 @@ gui_mode_update(s_gui *gui, const s_mode *mode)
 void
 gui_cmdline_show(s_gui *gui,
                  const char *content,
-                 const char *prompt EINA_UNUSED,
+                 const char *prompt,
                  const char *firstc)
 {
+   EINA_SAFETY_ON_NULL_RETURN(firstc);
+
+   const Eina_Bool use_prompt = (firstc[0] == '\0');
+   const char *const prompt_signal = (use_prompt)
+     ? "eovim,cmdline,prompt,custom"
+     : "eovim,cmdline,prompt,builtin";
    const Edje_Message_String msg = {
-      .str = (char *)firstc,
+      .str = (char *) (use_prompt ? prompt : firstc),
    };
+
    termview_cursor_visibility_set(gui->termview, EINA_FALSE);
    edje_object_message_send(gui->edje, EDJE_MESSAGE_STRING,
                             THEME_MSG_CMDLINE_INFO, (void *)(&msg));
@@ -1037,6 +1044,7 @@ gui_cmdline_show(s_gui *gui,
                                        content);
 
    /* Show the completion panel */
+   elm_layout_signal_emit(gui->layout, prompt_signal, "eovim");
    elm_layout_signal_emit(gui->layout, "eovim,cmdline,show", "eovim");
 
    _wildmenu_resize(gui);

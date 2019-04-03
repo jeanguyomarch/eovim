@@ -356,12 +356,29 @@ collections {
           * Cmdline + Wildmenu Widget
           *===================================================================*/
          group { "eovim.cmdline_info"; source: "eovim/cmdline_info";
+            // The prompt will appear on the left of the cmdline text
             desc { "default";
                rel.to: "eovim.cmdline";
                rel2.relative: 0.0 1.0;
                align: 1.0 0.5;
                rel2.offset: 4 0;
                fixed: 1 1;
+            }
+            // The prompt will appear on top of the cmdline text
+            desc { "prompt";
+               rel.to: "eovim.cmdline";
+               rel2.relative: 1.0 0.0;
+               align: 0.5 1.0;
+               rel2.offset: 0 5; // ???
+            }
+
+            program { signal: "eovim,cmdline,prompt,custom"; source: "eovim";
+               action: STATE_SET "prompt";
+               target: "eovim.cmdline_info";
+            }
+            program { signal: "eovim,cmdline,prompt,builtin"; source: "eovim";
+               action: STATE_SET "default";
+               target: "eovim.cmdline_info";
             }
          }
 
