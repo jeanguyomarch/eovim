@@ -114,6 +114,7 @@ add_executable(eovim
    "${SRC_DIR}/event/mode.c"
    "${SRC_DIR}/event/cmdline.c"
    "${SRC_DIR}/nvim_api.c"
+   "${SRC_DIR}/nvim_completion.c"
    "${SRC_DIR}/nvim_helper.c"
    "${SRC_DIR}/nvim_request.c"
    "${SRC_DIR}/plugin.c"

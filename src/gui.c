@@ -22,6 +22,7 @@
 
 #include "eovim/types.h"
 #include "eovim/gui.h"
+#include "eovim/nvim_completion.h"
 #include "eovim/nvim.h"
 #include "eovim/main.h"
 #include "eovim/log.h"
@@ -661,14 +662,9 @@ _completion_sel_cb(void *data,
 }
 
 void
-gui_completion_prepare(s_gui *gui,
-                       size_t items,
-                       size_t max_word_len,
-                       size_t max_menu_len)
+gui_completion_prepare(s_gui *gui, size_t items)
 {
    gui->completion.items_count = items;
-   gui->completion.max_word_len = max_word_len;
-   gui->completion.max_type_len = max_menu_len;
 }
 
 void
@@ -745,10 +741,15 @@ gui_completion_selected_set(s_gui *gui,
 
 void
 gui_completion_show(s_gui *gui,
+                    size_t max_word_len,
+                    size_t max_menu_len,
                     int selected,
                     unsigned int x,
                     unsigned int y)
 {
+   gui->completion.max_word_len = max_word_len;
+   gui->completion.max_type_len = max_menu_len;
+
    /*
     * When showing the completion, we will also proceed to a resizing
     * operation, to make the completion pop-up fit the screen best.
@@ -919,12 +920,7 @@ _compl_item_del(void *data,
                 Evas_Object *obj EINA_UNUSED)
 {
    s_completion *const compl = data;
-
-   eina_stringshare_del(compl->word);
-   eina_stringshare_del(compl->kind);
-   eina_stringshare_del(compl->menu);
-   eina_stringshare_del(compl->info);
-   free(compl);
+   nvim_completion_free(compl);
 }
 
 static void

@@ -38,7 +38,7 @@ struct request
 };
 
 /* Mempool to allocate the requests */
-static Eina_Mempool *_mempool = NULL;
+static Eina_Mempool *_mempool;
 
 
 static s_request *

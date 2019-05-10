@@ -22,6 +22,7 @@
 
 #include "eovim/types.h"
 #include "eovim/nvim.h"
+#include "eovim/nvim_completion.h"
 #include "eovim/nvim_event.h"
 #include "eovim/msgpack_helper.h"
 #include "eovim/gui.h"
@@ -509,21 +510,11 @@ nvim_event_popupmenu_show(s_nvim *nvim,
    GET_ARG(params, 2, t_int, &row);
    GET_ARG(params, 3, t_int, &col);
 
-   /* Okay, now this gets annoying. We will proceed in two passes on the
-    * completion items. The gui uses a genlist, which is hardcore to use.
-    * When we append an item to the genlist, it is asynchroneously created,
-    * and without prior knowledge of all the compltion items, we canot
-    * properly size the genlist.
-    *
-    * So, we go through all the items once. We do all the type checks, and
-    * calculate the maximum length of the word and menu items.
-    * These maxima will be used to size the genlist later. Since all checks
-    * are done in the first pass, the second pass does not need to perform
-    * them again.
-    */
-   size_t max_len_word = 0;
-   size_t max_len_menu = 0;
-   for (unsigned int i = 0; i < data->size; i++)
+   gui_completion_prepare(gui, data->size);
+
+   size_t max_len_word = 0u;
+   size_t max_len_menu = 0u;
+   for (unsigned int i = 0u; i < data->size; i++)
      {
         CHECK_TYPE(&data->ptr[i], MSGPACK_OBJECT_ARRAY, EINA_FALSE);
         const msgpack_object_array *const completion = &(data->ptr[i].via.array);
@@ -534,35 +525,24 @@ nvim_event_popupmenu_show(s_nvim *nvim,
         EOVIM_MSGPACK_STRING_CHECK(&completion->ptr[2], fail); /* menu */
         EOVIM_MSGPACK_STRING_CHECK(&completion->ptr[3], fail); /* info */
 
-        max_len_word = MAX(max_len_word, completion->ptr[0].via.str.size);
-        max_len_menu = MAX(max_len_menu, completion->ptr[2].via.str.size);
-     }
-
-   gui_completion_prepare(gui, data->size, max_len_word, max_len_menu);
-
-   /* Second pass. Remember, no checks required. */
-   for (unsigned int i = 0; i < data->size; i++)
-     {
-        const msgpack_object_array *const completion = &(data->ptr[i].via.array);
-
-        s_completion *const compl = malloc(sizeof(s_completion));
-        if (EINA_UNLIKELY(! compl))
+        s_completion *const compl = nvim_completion_new(
+           completion->ptr[0].via.str.ptr, completion->ptr[0].via.str.size,
+           completion->ptr[1].via.str.ptr, completion->ptr[1].via.str.size,
+           completion->ptr[2].via.str.ptr, completion->ptr[2].via.str.size,
+           completion->ptr[3].via.str.ptr, completion->ptr[3].via.str.size
+        );
+        if (EINA_LIKELY(compl != NULL))
           {
-             CRI("Failed to allocate memory for completion");
-             return EINA_FALSE;
-          }
-#define STRINGSHARE_NEW(Obj) \
-   eina_stringshare_add_length((Obj).via.str.ptr, (Obj).via.str.size)
-        compl->word = STRINGSHARE_NEW(completion->ptr[0]);
-        compl->kind = STRINGSHARE_NEW(completion->ptr[1]);
-        compl->menu = STRINGSHARE_NEW(completion->ptr[2]);
-        compl->info = STRINGSHARE_NEW(completion->ptr[3]);
-#undef STRINGSHARE_GET
+             /* FIXME - This is obviously wrong... the count of bytes does not
+              * equal to the number of characters...  */
+             max_len_word = MAX(max_len_word, completion->ptr[0].via.str.size);
+             max_len_menu = MAX(max_len_menu, completion->ptr[2].via.str.size);
 
-        gui_completion_add(gui, compl);
+             gui_completion_add(gui, compl);
+          }
      }
 
-   gui_completion_show(gui, (int)selected,
+   gui_completion_show(gui, max_len_word, max_len_menu, (int)selected,
                        (unsigned int)col, (unsigned int)row);
 
    return EINA_TRUE;

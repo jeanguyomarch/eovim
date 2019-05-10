@@ -51,10 +51,12 @@ typedef enum
 
 struct completion
 {
-   Eina_Stringshare *word;
-   Eina_Stringshare *kind;
-   Eina_Stringshare *menu;
-   Eina_Stringshare *info;
+   const char *word;
+   const char *kind;
+   const char *menu;
+   const char *info;
+   /* Buffer containing the memory pointed to by word, kind, menu, info */
+   char mem[1];
 };
 
 struct geometry
