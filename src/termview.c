@@ -46,6 +46,7 @@ enum
 {
    THEME_MSG_BLINK_SET = 0,
    THEME_MSG_COLOR_SET = 1,
+   THEME_MSG_MAY_BLINK_SET = 2,
 };
 
 static Evas_Smart *_smart = NULL;
@@ -590,6 +591,7 @@ _termview_focus_in_cb(void *data,
                       Evas_Object *obj EINA_UNUSED,
                       void *event EINA_UNUSED)
 {
+   Edje_Message_Int msg = { .val = 1 }; /* may_blink := TRUE */
    s_termview *const sd = data;
    s_gui *const gui = &(sd->nvim->gui);
 
@@ -603,7 +605,10 @@ _termview_focus_in_cb(void *data,
    else
      gui_caps_lock_dismiss(gui);
 
+   edje_object_message_send(sd->cursor, EDJE_MESSAGE_INT,
+                            THEME_MSG_MAY_BLINK_SET, &msg);
    edje_object_signal_emit(sd->cursor, "focus,in", "eovim");
+   edje_object_signal_emit(sd->cursor, "eovim,blink,start", "eovim");
 }
 
 static void
@@ -612,7 +617,12 @@ _termview_focus_out_cb(void *data,
                       Evas_Object *obj EINA_UNUSED,
                       void *event EINA_UNUSED)
 {
+   Edje_Message_Int msg = { .val = 0 }; /* may_blink := FALSE */
+
    s_termview *const sd = data;
+   edje_object_message_send(sd->cursor, EDJE_MESSAGE_INT,
+                            THEME_MSG_MAY_BLINK_SET, &msg);
+   edje_object_signal_emit(sd->cursor, "eovim,blink,stop", "eovim");
    edje_object_signal_emit(sd->cursor, "focus,out", "eovim");
 }
 

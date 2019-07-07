@@ -7,6 +7,7 @@ group { "eovim/cursor";
    script {
       public g_blink_on, g_blink_off, g_blink_wait;
       public g_timer, g_anim;
+      public g_may_blink;
 
       public message(Msg_Type:type, id, ...) {
          if (id == 0) { /* blink set */
@@ -24,6 +25,8 @@ group { "eovim/cursor";
             set_color_class("cursor_dimmed", r, g, b, 40);
             set_color_class("cursor_dimmed2", r, g, b, 80);
             set_color_class("cursor_full", r, g, b, 255);
+         } else if (id == 2) { /* may blink set */
+            set_int(g_may_blink, getarg(2));
          }
       }
 
@@ -69,8 +72,11 @@ group { "eovim/cursor";
          set_tween_state(PART:"outline", pos, "default", 0.0, "focused", 0.0);
       }
       public blink_on() {
-         new anim_id = anim(0.2, "blink_on_anim", 0);
-         set_int(g_anim, anim_id);
+         new may_blink = get_int(g_may_blink);
+         if (may_blink) {
+           new anim_id = anim(0.2, "blink_on_anim", 0);
+           set_int(g_anim, anim_id);
+         }
 
          new Float:start_in = get_float(g_blink_off);
          new timer_id = timer(start_in, "blink_off", 0);
@@ -86,8 +92,11 @@ group { "eovim/cursor";
          set_tween_state(PART:"outline", pos, "focused", 0.0, "default", 0.0);
       }
       public blink_off() {
-         new anim_id = anim(0.4, "blink_off_anim", 0);
-         set_int(g_anim, anim_id);
+         new may_blink = get_int(g_may_blink);
+         if (may_blink) {
+           new anim_id = anim(0.4, "blink_off_anim", 0);
+           set_int(g_anim, anim_id);
+         }
 
          new Float:start_in = get_float(g_blink_on);
          new timer_id = timer(start_in, "blink_on", 0);
