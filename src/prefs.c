@@ -670,23 +670,68 @@ _plugins_prefs_new(s_gui *gui)
    return box;
 }
 
+static void
+_prefs_save_cb(void *const data,
+               Evas_Object *const obj EINA_UNUSED,
+               void *const info EINA_UNUSED)
+{
+   s_gui *const gui = data;
+   s_nvim *const nvim = gui->nvim;
+   elm_layout_signal_emit(gui->layout, "config,hide", "eovim");
+
+   config_save(nvim->config);
+
+   evas_object_hide(gui->prefs.win);
+   elm_object_focus_set(gui->layout, EINA_FALSE);
+   evas_object_focus_set(gui->termview, EINA_TRUE);
+}
+
+
 void
 prefs_show(s_gui *gui)
 {
-   if (gui->prefs.box) { return; }
+   /* Create the preferences window only if the user makes at least one request
+    * to consult preferences. Otherwise, they will never be built */
+   if (gui->prefs.win) goto show;
+
+   Evas_Object *const win = gui->prefs.win = elm_win_inwin_add(gui->win);
 
    /* Create the main box that holds the prefs together */
-   Evas_Object *const box = _prefs_box_new(gui->layout);
+   Evas_Object *const pbox = gui->prefs.box = _prefs_box_new(win);
+   elm_box_horizontal_set(pbox, EINA_FALSE);
+   elm_win_inwin_content_set(win, pbox);
+   elm_box_homogeneous_set(pbox, EINA_FALSE);
+   evas_object_show(pbox);
+
+   /* Box that holds the naviframe and the toolbar */
+   Evas_Object *const box = _prefs_box_new(pbox);
    elm_box_horizontal_set(box, EINA_TRUE);
-   gui->prefs.box = box;
+   elm_box_pack_start(pbox, box);
+   elm_box_homogeneous_set(box, EINA_FALSE);
+   evas_object_show(box);
+
+   /* Buttons box */
+   Evas_Object *const bbox = _prefs_box_new(pbox);
+   evas_object_size_hint_weight_set(bbox, 0.0, 0.0);
+   elm_box_homogeneous_set(bbox, EINA_FALSE);
+   elm_box_horizontal_set(bbox, EINA_TRUE);
+   elm_box_align_set(bbox, 0.5, 1.0);
+   elm_box_pack_end(pbox, bbox);
+   evas_object_show(bbox);
+
+   /* Button to save and close preferences */
+   Evas_Object *const bt = elm_button_add(bbox);
+   elm_object_text_set(bt, "Save and Close");
+   evas_object_smart_callback_add(bt, "clicked", _prefs_save_cb, gui);
+   elm_box_pack_end(bbox, bt);
+   evas_object_show(bt);
 
    /* Naviframe: the widget that will manage prefs pages */
-   Evas_Object *const nav = elm_naviframe_add(box);
+   Evas_Object *const nav = gui->prefs.nav = elm_naviframe_add(box);
    evas_object_size_hint_weight_set(nav, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(nav, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_show(nav);
    elm_box_pack_end(box, nav);
-   gui->prefs.nav = nav;
 
    /* Add a toolbar that keeps track of all the pages */
    Evas_Object *const tb = elm_toolbar_add(box);
@@ -720,19 +765,9 @@ prefs_show(s_gui *gui)
    elm_toolbar_item_append(tb, buf, "Neovim", _flip_to, p3);
    elm_toolbar_item_append(tb, "preferences-profile", "Plug-Ins", _flip_to, p4);
 
-   /* Update edje and fire up the popup */
-   elm_layout_content_set(gui->layout, "eovim.config.box", box);
-   elm_layout_signal_emit(gui->layout, "config,show", "eovim");
+show:
    evas_object_focus_set(gui->termview, EINA_FALSE);
-}
-
-void
-prefs_hide(s_gui *gui)
-{
-   elm_layout_signal_emit(gui->layout, "config,hide", "eovim");
-   elm_layout_content_unset(gui->layout, "eovim.config.box");
-   evas_object_del(gui->prefs.box);
-   gui->prefs.box = NULL;
+   evas_object_show(gui->prefs.win);
 }
 
 Eina_Bool

@@ -105,21 +105,6 @@ _prefs_show_cb(void *data,
    prefs_show(&nvim->gui);
 }
 
-static void
-_prefs_hide_cb(void *data,
-               Evas_Object *obj EINA_UNUSED,
-               const char *emission EINA_UNUSED,
-               const char *source EINA_UNUSED)
-{
-   s_nvim *const nvim = data;
-   s_gui *const gui = &nvim->gui;
-   prefs_hide(gui);
-   config_save(nvim->config);
-
-   elm_object_focus_set(gui->layout, EINA_FALSE);
-   evas_object_focus_set(gui->termview, EINA_TRUE);
-}
-
 void
 gui_size_recalculate(s_gui *gui)
 {
@@ -190,8 +175,6 @@ gui_add(s_gui *gui,
    gui->edje = elm_layout_edje_get(gui->layout);
    elm_layout_signal_callback_add(gui->layout, "config,open", "eovim",
                                   _prefs_show_cb, nvim);
-   elm_layout_signal_callback_add(gui->layout, "config,close", "eovim",
-                                  _prefs_hide_cb, nvim);
    elm_layout_signal_callback_add(gui->layout, "eovim,tabs,shown", "eovim",
                                   _tabs_shown_cb, nvim);
    elm_win_resize_object_add(gui->win, gui->layout);

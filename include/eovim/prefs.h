@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Jean Guyomarc'h
+ * Copyright (c) 2017-2019 Jean Guyomarc'h
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,12 +25,12 @@
 
 #include "eovim/types.h"
 #include <Evas.h>
-#include <Elementary.h>
 
 struct prefs
 {
    Evas_Object *nav;
-   Evas_Object *box;
+   Evas_Object *win; /* Inwin that contains 'box' */
+   Evas_Object *box; /* Box that contains the naviframe */
 };
 
 void prefs_hide(s_gui *gui);
