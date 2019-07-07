@@ -671,19 +671,28 @@ _plugins_prefs_new(s_gui *gui)
 }
 
 static void
-_prefs_save_cb(void *const data,
+_prefs_close_cb(void *const data,
                Evas_Object *const obj EINA_UNUSED,
                void *const info EINA_UNUSED)
 {
    s_gui *const gui = data;
-   s_nvim *const nvim = gui->nvim;
    elm_layout_signal_emit(gui->layout, "config,hide", "eovim");
-
-   config_save(nvim->config);
 
    evas_object_hide(gui->prefs.win);
    elm_object_focus_set(gui->layout, EINA_FALSE);
    evas_object_focus_set(gui->termview, EINA_TRUE);
+}
+
+static void
+_prefs_save_cb(void *const data,
+               Evas_Object *const obj,
+               void *const info)
+{
+   s_gui *const gui = data;
+   s_nvim *const nvim = gui->nvim;
+
+   _prefs_close_cb(gui, obj, info);
+   config_save(nvim->config);
 }
 
 
@@ -720,11 +729,22 @@ prefs_show(s_gui *gui)
    evas_object_show(bbox);
 
    /* Button to save and close preferences */
-   Evas_Object *const bt = elm_button_add(bbox);
-   elm_object_text_set(bt, "Save and Close");
-   evas_object_smart_callback_add(bt, "clicked", _prefs_save_cb, gui);
-   elm_box_pack_end(bbox, bt);
-   evas_object_show(bt);
+   {
+     Evas_Object *const bt = elm_button_add(bbox);
+     elm_object_text_set(bt, "Save and Close");
+     evas_object_smart_callback_add(bt, "clicked", _prefs_save_cb, gui);
+     elm_box_pack_end(bbox, bt);
+     evas_object_show(bt);
+   }
+
+   /* Button to close preferences (temporary config) */
+   {
+     Evas_Object *const bt = elm_button_add(bbox);
+     elm_object_text_set(bt, "Close");
+     evas_object_smart_callback_add(bt, "clicked", _prefs_close_cb, gui);
+     elm_box_pack_start(bbox, bt);
+     evas_object_show(bt);
+   }
 
    /* Naviframe: the widget that will manage prefs pages */
    Evas_Object *const nav = gui->prefs.nav = elm_naviframe_add(box);
