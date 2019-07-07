@@ -42,9 +42,6 @@ _show_help(void)
       "\n"
       "  -g, --geometry <WxH>    Set the initial dimensions of the window\n"
       "                          (e.g. 80x24 for a 80x24 cells window)\n"
-      "  --eovimrc, -C <file>    Override the default nvim.init file. If none\n"
-      "                          is provided, $XDG_CONFIG_HOME/nvim/eovim.vim\n"
-      "                          will be used (e.g. $HOME/.config/nvim/eovim.vim)\n"
       "  --config <file>         Provide an alternate GUI configuration\n"
       "  -F, --fullscreen        Run Eovim in fullscreen\n"
       "  -M, --maximized         Run Eovim in a maximized window\n"
@@ -91,7 +88,6 @@ typedef enum
    OPT_FULLSCREEN       = 'F',
    OPT_MAXIMIZED        = 'M',
    OPT_THEME            = 't',
-   OPT_EOVIMRC          = 'C',
    OPT_HELP             = 'h',
    OPT_VERSION          = 'V',
 } e_opt;
@@ -111,7 +107,6 @@ static const s_arg _args[] =
    ARG("nvim",          OPT_NVIM),
    ARG("geometry",      OPT_GEOMETRY),
    ARG("config",        OPT_CONFIG),
-   ARG("eovimrc",       OPT_EOVIMRC),
    ARG("fullscreen",    OPT_FULLSCREEN),
    ARG("maximized",     OPT_MAXIMIZED),
    ARG("theme",         OPT_THEME),
@@ -273,11 +268,6 @@ options_parse(int argc,
                    opts->maximized = EINA_TRUE;
                    break;
 
-                   /* Eovimrc, add the next argument */
-                case OPT_EOVIMRC:
-                   opts->eovimrc = eina_stringshare_add(GET_NEXT_ARG());
-                   break;
-
                    /* Help, print the help and stop */
                 case OPT_HELP:
                    _show_help();
@@ -329,10 +319,4 @@ options_defaults_set(s_options *opts)
 
    opts->theme = "default";
    opts->nvim_prog = "nvim";
-}
-
-void
-options_reset(const s_options *opts)
-{
-   if (opts->eovimrc) eina_stringshare_del(opts->eovimrc);
 }

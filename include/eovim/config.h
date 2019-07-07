@@ -32,7 +32,6 @@ struct config
    unsigned int version;
    unsigned int font_size;
    Eina_Stringshare *font_name;
-   Eina_Stringshare *eovimrc;
    Eina_List *plugins;
    Eina_Bool mute_bell;
    Eina_Bool key_react;
@@ -52,7 +51,6 @@ void config_free(s_config *config);
 void config_save(s_config *config);
 void config_font_size_set(s_config *config, unsigned int font_size);
 void config_font_name_set(s_config *config, Eina_Stringshare *font_name);
-void config_eovimrc_set(s_config *config, Eina_Stringshare *eovimrc);
 void config_bell_mute_set(s_config *config, Eina_Bool mute);
 void config_key_react_set(s_config *config, Eina_Bool react);
 void config_caps_lock_alert_set(s_config *config, Eina_Bool alert);
@@ -63,7 +61,5 @@ void config_true_colors_set(s_config *config, Eina_Bool true_colors);
 void config_plugin_add(s_config *config, const s_plugin *plugin);
 void config_plugin_del(s_config *config, const s_plugin *plugin);
 s_config *config_load(const char *filename);
-
-Eina_Stringshare *config_default_eovimrc_path_get(void);
 
 #endif /* ! __EOVIM_CONFIG_H__ */

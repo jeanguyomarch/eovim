@@ -623,47 +623,6 @@ _nvim_prefs_msg_add(Evas_Object *parent)
    return f;
 }
 
-static void
-_eovimrc_update(s_nvim *nvim,
-                const char *file)
-{
-   Eina_Stringshare *const eovimrc = eina_stringshare_add(file);
-   config_eovimrc_set(nvim->config, eovimrc);
-}
-
-static void
-_eovimrc_chosen_cb(void         *data,
-                    Evas_Object *obj EINA_UNUSED,
-                    void        *info)
-{
-   _eovimrc_update(data, info);
-}
-
-static void
-_eovimrc_changed_cb(void        *data,
-                    Evas_Object *obj,
-                    void        *info EINA_UNUSED)
-{
-   _eovimrc_update(data, elm_fileselector_path_get(obj));
-}
-
-static Evas_Object *
-_nvim_prefs_rc_add(s_gui *gui,
-                   Evas_Object *parent)
-{
-   const s_nvim *const nvim = gui->nvim;
-   Evas_Object *const f = _frame_add(parent, "Initial configuration file");
-
-   Evas_Object *const fs = elm_fileselector_entry_add(f);
-   elm_fileselector_path_set(fs, nvim_eovimrc_path_get(nvim));
-   elm_object_text_set(fs, "Select a file");
-   elm_object_content_set(f, fs);
-   evas_object_smart_callback_add(fs, "file,chosen", _eovimrc_chosen_cb, nvim);
-   evas_object_smart_callback_add(fs, "changed", _eovimrc_changed_cb, nvim);
-
-   return f;
-}
-
 static Evas_Object *
 _nvim_prefs_new(s_gui *gui)
 {
@@ -674,9 +633,6 @@ _nvim_prefs_new(s_gui *gui)
 
    Evas_Object *const plug = _nvim_prefs_plug_add(gui, box);
    elm_box_pack_end(box, plug);
-
-   Evas_Object *const rc = _nvim_prefs_rc_add(gui, box);
-   elm_box_pack_end(box, rc);
 
    return box;
 }

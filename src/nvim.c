@@ -494,22 +494,6 @@ _nvim_builtin_runtime_load(s_nvim *nvim)
 }
 
 static void
-_nvim_eovimrc_load(s_nvim *nvim)
-{
-   const char *const path = nvim_eovimrc_path_get(nvim);
-
-   /* If the eovimrc was provided through the command-line (nvim->opts->eovimrc
-    * not NULL), then we shall raise an error if the file does not exist.
-    * Otherwise, we load the default file. */
-   if (ecore_file_exists(path))
-     {
-        _nvim_runtime_load(nvim, path);
-     }
-   else if (nvim->opts->eovimrc)
-     ERR("Cannot load eovimrc '%s' because the file does not exist", path);
-}
-
-static void
 _virtual_interface_init(s_nvim *nvim)
 {
    nvim->hl_group_decode = nvim_helper_highlight_group_decode_noop;
@@ -846,7 +830,6 @@ nvim_new(const s_options *opts,
 
    /* FIXME These are sooo fragile. Rework that!!! */
    _nvim_builtin_runtime_load(nvim);
-   _nvim_eovimrc_load(nvim);
    nvim_api_var_integer_set(nvim, "eovim_running", 1);
 
    /* Create the GUI window */
@@ -923,14 +906,4 @@ Eina_Bool
 nvim_mouse_enabled_get(const s_nvim *nvim)
 {
    return nvim->mouse_enabled;
-}
-
-const char *
-nvim_eovimrc_path_get(const s_nvim *nvim)
-{
-   /* If the eovimrc option was provided, we use this one. Otherwise, we
-    * default to the user config */
-   return (nvim->opts->eovimrc)
-      ? nvim->opts->eovimrc
-      : nvim->config->eovimrc;
 }

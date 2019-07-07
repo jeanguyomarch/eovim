@@ -108,10 +108,6 @@ Eovim adds its own overlay to Vim's runtime. It resides in
 `data/vim/runtime.vim`, and is installed with Eovim. It is sourced when Eovim
 starts. See the manual for details.
 
-Additionnally, `~/.config/nvim/eovimrc.nvim` (can be overriden via the
-command-line option `-C` or via the GUI configuration) is sourced at eovim'
-startup, so eovim-specific initialization code can be written there.
-
 ## Caps Lock handling
 
 Eovim detects when Caps Lock are on and off. The default theme can display a

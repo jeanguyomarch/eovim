@@ -61,7 +61,6 @@ config_init(void)
    EDD_BASIC_ADD(version, EET_T_UINT);
    EDD_BASIC_ADD(font_size, EET_T_UINT);
    EDD_BASIC_ADD(font_name, EET_T_STRING);
-   EDD_BASIC_ADD(eovimrc, EET_T_STRING);
    EDD_BASIC_ADD(mute_bell, EET_T_UCHAR);
    EDD_BASIC_ADD(key_react, EET_T_UCHAR);
    EDD_BASIC_ADD(alert_capslock, EET_T_UCHAR);
@@ -92,13 +91,6 @@ config_font_name_set(s_config *config,
                      Eina_Stringshare *font_name)
 {
    eina_stringshare_replace(&config->font_name, font_name);
-}
-
-void
-config_eovimrc_set(s_config *config,
-                   Eina_Stringshare *eovimrc)
-{
-   eina_stringshare_replace(&config->eovimrc, eovimrc);
 }
 
 void
@@ -166,24 +158,6 @@ config_plugin_del(s_config *config,
    eina_stringshare_del(plugin->name);
 }
 
-Eina_Stringshare *
-config_default_eovimrc_path_get(void)
-{
-   char path[4096];
-
-   /* This function joins 'home' and 'suffix' */
-   const char *const home = efreet_config_home_get();
-   const int bytes =
-      snprintf(path, sizeof(path), "%s/nvim/eovimrc.nvim", home);
-   if (EINA_UNLIKELY(bytes <= 0))
-     {
-        ERR("Failed to compose default eovimrc path");
-        return NULL;
-     }
-
-   return eina_stringshare_add_length(path, (unsigned int)bytes);
-}
-
 static s_config *
 _config_new(void)
 {
@@ -197,7 +171,6 @@ _config_new(void)
    config->version = _config_version;
    config->font_name = eina_stringshare_add("Mono");
    config->font_size = 12;
-   config->eovimrc = config_default_eovimrc_path_get();
    config->mute_bell = EINA_FALSE;
    config->key_react = EINA_TRUE;
    config->true_colors = EINA_TRUE;
@@ -301,7 +274,6 @@ config_load(const char *file)
               cfg->alert_capslock = EINA_TRUE;
               /* Fall through */
            case 7:
-              cfg->eovimrc = config_default_eovimrc_path_get();
               /* Fall through */
            default:
               break;

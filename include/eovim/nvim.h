@@ -86,7 +86,6 @@ Eina_Bool nvim_mode_add(s_nvim *nvim, s_mode *mode);
 const s_mode *nvim_named_mode_get(const s_nvim *nvim, Eina_Stringshare *name);
 void nvim_mouse_enabled_set(s_nvim *nvim, Eina_Bool enable);
 Eina_Bool nvim_mouse_enabled_get(const s_nvim *nvim);
-Eina_Stringshare *nvim_eovimrc_path_get(const s_nvim *nvim);
 
 /**
  * Flush the msgpack buffer to the neovim instance, by writing to its standard
