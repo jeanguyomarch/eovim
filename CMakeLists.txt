@@ -66,6 +66,10 @@ include(cpack_config)
 
 find_package(Efl 1.19 REQUIRED COMPONENTS
   eina eet edje ecore-file ecore-input edje evas efreet elementary)
+find_program(EDJE_CC_EXECUTABLE edje_cc)
+if (NOT EDJE_CC_EXECUTABLE)
+  message(FATAL_ERROR "Failed to find edje_cc program")
+endif ()
 find_package(MsgPack REQUIRED)
 
 add_custom_command(
