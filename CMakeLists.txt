@@ -53,7 +53,6 @@ set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(THEMES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data/themes")
 set(BUILD_THEMES_DIR "${CMAKE_BINARY_DIR}/themes")
 set(BUILD_INCLUDE_DIR "${CMAKE_BINARY_DIR}/include")
-set(EFL_MIN_VERSION 1.19)
 
 file(MAKE_DIRECTORY "${BUILD_THEMES_DIR}")
 file(MAKE_DIRECTORY "${BUILD_INCLUDE_DIR}/eovim")
@@ -65,14 +64,8 @@ configure_file(
 # CPack configuration
 include(cpack_config)
 
-
-find_package(Eina ${EFL_MIN_VERSION} REQUIRED)
-find_package(Eet ${EFL_MIN_VERSION} REQUIRED)
-find_package(Evas ${EFL_MIN_VERSION} REQUIRED)
-find_package(Ecore ${EFL_MIN_VERSION} REQUIRED COMPONENTS File Input)
-find_package(Edje ${EFL_MIN_VERSION} REQUIRED)
-find_package(Efreet ${EFL_MIN_VERSION} REQUIRED)
-find_package(Elementary ${EFL_MIN_VERSION} REQUIRED)
+find_package(Efl 1.19 REQUIRED COMPONENTS
+  eina eet edje ecore-file ecore-input edje evas efreet elementary)
 find_package(MsgPack REQUIRED)
 
 add_custom_command(
@@ -127,15 +120,7 @@ set_source_files_properties(
 )
 target_include_directories(eovim
    SYSTEM PRIVATE
-   ${EINA_INCLUDE_DIRS}
-   ${EET_INCLUDE_DIRS}
-   ${EVAS_INCLUDE_DIRS}
-   ${EDJE_INCLUDE_DIRS}
-   ${ECORE_INCLUDE_DIRS}
-   ${ECORE_FILE_INCLUDE_DIRS}
-   ${ECORE_INPUT_INCLUDE_DIRS}
-   ${EFREET_INCLUDE_DIRS}
-   ${ELEMENTARY_INCLUDE_DIRS}
+   ${EFL_INCLUDE_DIRS}
    ${MSGPACK_INCLUDE_DIRS}
 )
 target_include_directories(eovim
@@ -144,15 +129,7 @@ target_include_directories(eovim
    "${BUILD_INCLUDE_DIR}"
 )
 target_link_libraries(eovim
-   ${EINA_LIBRARIES}
-   ${EET_LIBRARIES}
-   ${EVAS_LIBRARIES}
-   ${EDJE_LIBRARIES}
-   ${ECORE_LIBRARIES}
-   ${ECORE_FILE_LIBRARIES}
-   ${ECORE_INPUT_LIBRARIES}
-   ${EFREET_LIBRARIES}
-   ${ELEMENTARY_LIBRARIES}
+   ${EFL_LIBRARIES}
    ${MSGPACK_LIBRARIES}
 )
 add_dependencies(eovim themes)
