@@ -74,9 +74,8 @@ MACOS_SETUP = {
 
 UBUNTU_SETUP = {
     Key.CMD: [
-        "sudo add-apt-repository ppa:niko2040/e19",
         "sudo apt update",
-        "sudo apt install libefl-dev",
+        "sudo apt install libefl-all-dev",
         "sudo apt install cmake",
         "sudo apt install wget",
         "pip3 install --user jinja2",
