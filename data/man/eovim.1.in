@@ -56,7 +56,7 @@ Run \fBnvim \-\-help\fR to learn more about Neovim's options.
 \fBfunction\fR \fIEovim(...)\fR
 The communication channel for neovim to send events to the Eovim plug-ins.
 .IP
-\fBvariable\fR \fIeovim_running\fR
+\fBvariable\fR \fIg:eovim_running\fR
 This integer is defined and set to 1 when Eovim spawn an neovim, making it
 possible for the user to known whether neovim is run under Eovim or not.
 .IP
