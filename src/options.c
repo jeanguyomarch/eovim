@@ -49,7 +49,7 @@ _show_help(void)
       "  -h, --help              Display this message\n"
       "  -V, --version           Show Eovim's version\n"
       "\n"
-      "Additionnaly, eovim forwards options it has no knowledge of to Neovim.\n"
+      "Additionally, eovim forwards options it has no knowledge of to Neovim.\n"
       "Run nvim --help to learn more about Neovim's options.\n"
       ;
    puts(help);
