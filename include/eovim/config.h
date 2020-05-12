@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Jean Guyomarc'h
+ * Copyright (c) 2017-2020 Jean Guyomarc'h
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,8 +30,6 @@
 struct config
 {
    unsigned int version;
-   unsigned int font_size;
-   Eina_Stringshare *font_name;
    Eina_List *plugins;
    Eina_Bool mute_bell;
    Eina_Bool key_react;
@@ -49,8 +47,6 @@ Eina_Bool config_init(void);
 void config_shutdown(void);
 void config_free(s_config *config);
 void config_save(s_config *config);
-void config_font_size_set(s_config *config, unsigned int font_size);
-void config_font_name_set(s_config *config, Eina_Stringshare *font_name);
 void config_bell_mute_set(s_config *config, Eina_Bool mute);
 void config_key_react_set(s_config *config, Eina_Bool react);
 void config_caps_lock_alert_set(s_config *config, Eina_Bool alert);

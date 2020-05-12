@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Jean Guyomarc'h
+ * Copyright (c) 2017-2020 Jean Guyomarc'h
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -36,7 +36,7 @@
  * existing configurations on the user side, and yield unexpected results.
  *
  *===========================================================================*/
-static const unsigned int _config_version = 8;
+static const unsigned int _config_version = 9u;
 
 static Eet_Data_Descriptor *_edd = NULL;
 static const char _key[] = "eovim/config";
@@ -59,8 +59,6 @@ config_init(void)
     * ===================================================================== */
 
    EDD_BASIC_ADD(version, EET_T_UINT);
-   EDD_BASIC_ADD(font_size, EET_T_UINT);
-   EDD_BASIC_ADD(font_name, EET_T_STRING);
    EDD_BASIC_ADD(mute_bell, EET_T_UCHAR);
    EDD_BASIC_ADD(key_react, EET_T_UCHAR);
    EDD_BASIC_ADD(alert_capslock, EET_T_UCHAR);
@@ -77,20 +75,6 @@ void
 config_shutdown(void)
 {
    eet_data_descriptor_free(_edd);
-}
-
-void
-config_font_size_set(s_config *config,
-                     unsigned int font_size)
-{
-   config->font_size = font_size;
-}
-
-void
-config_font_name_set(s_config *config,
-                     Eina_Stringshare *font_name)
-{
-   eina_stringshare_replace(&config->font_name, font_name);
 }
 
 void
@@ -169,8 +153,6 @@ _config_new(void)
      }
 
    config->version = _config_version;
-   config->font_name = eina_stringshare_add("Mono");
-   config->font_size = 12;
    config->mute_bell = EINA_FALSE;
    config->key_react = EINA_TRUE;
    config->true_colors = EINA_TRUE;
@@ -238,7 +220,6 @@ config_load(const char *file)
              CRI("Configuration is corrupted.");
              goto new_config; /* Try to create a default config */
           }
-        cfg->font_name = eina_stringshare_add(cfg->font_name);
         cfg->path = path;
 
         /* We load strings from the config. Create stringshares from them */
@@ -274,6 +255,8 @@ config_load(const char *file)
               cfg->alert_capslock = EINA_TRUE;
               /* Fall through */
            case 7:
+              /* Fall through */
+           case 8:
               /* Fall through */
            default:
               break;
@@ -324,7 +307,6 @@ config_free(s_config *config)
    Eina_Stringshare *plugin;
    EINA_LIST_FREE(config->plugins, plugin)
      eina_stringshare_del(plugin);
-   eina_stringshare_del(config->font_name);
    free(config->path);
    free(config);
 }

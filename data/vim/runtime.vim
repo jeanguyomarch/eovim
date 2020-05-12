@@ -7,7 +7,8 @@
 :   endif
 :endfunction
 
-:augroup EovimCapsLock
+:augroup Eovim
+:   autocmd User EovimReady :
 :   autocmd User EovimCapsLockOn :
 :   autocmd User EovimCapsLockOff :
 :augroup END
