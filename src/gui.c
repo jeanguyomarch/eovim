@@ -139,7 +139,6 @@ gui_add(s_gui *gui,
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(gui, EINA_FALSE);
 
-   const s_config *const config = nvim->config;
    const char *const edje_file = main_edje_file_get();
    Evas_Object *o;
    gui->nvim = nvim;
@@ -209,7 +208,7 @@ gui_add(s_gui *gui,
     * ===================================================================== */
 
    gui->termview = termview_add(gui->layout, nvim);
-   termview_font_set(gui->termview, config->font_name, config->font_size);
+   termview_font_set(gui->termview, "Sans Mono", 14);
    elm_layout_content_set(gui->layout, "eovim.main.view", gui->termview);
 
    /* ========================================================================
@@ -415,13 +414,14 @@ gui_update_bg(s_gui *gui,
      }
 }
 
+/* TODO: special colors */
 void
 gui_update_sp(s_gui *gui EINA_UNUSED,
               t_int color)
 {
    if (color >= 0)
      {
-        CRI("Unimplemented");
+        DBG("Unimplemented");
      }
 }
 
@@ -490,12 +490,12 @@ gui_bg_color_set(s_gui *gui,
 
 static inline Evas_Object *
 _compl_text_set(Evas_Object *layout,
-                const s_config *cfg,
+                const s_gui *gui,
                 const char *text)
 {
    Evas_Object *const edje = elm_layout_edje_get(layout);
    edje_object_text_class_set(edje, "completion_text",
-                              cfg->font_name, (int)cfg->font_size);
+                              gui->font.name, (int)gui->font.size);
    elm_layout_text_set(layout, "text", text);
    return edje;
 }
@@ -524,7 +524,6 @@ _compl_content_get(void *data,
    const s_completion *const compl = data;
    s_nvim *const nvim = _nvim_get(obj);
    s_gui *const gui = (s_gui *)(&nvim->gui);
-   const s_config *const cfg = nvim->config;
    Evas_Object *o;
 
    if (! eina_streq(part, "elm.swallow.content")) { return NULL; }
@@ -556,7 +555,7 @@ _compl_content_get(void *data,
    if (compl->kind[0] != '\0')
      {
         Evas_Object *const kind = _layout_item_add(table, "eovim/completion/kind");
-        Evas_Object *const kind_edje = _compl_text_set(kind, cfg, compl->kind);
+        Evas_Object *const kind_edje = _compl_text_set(kind, gui, compl->kind);
         evas_object_show(kind);
         elm_table_pack(table, kind, 0, 0, 1, 1);
 
@@ -574,7 +573,7 @@ _compl_content_get(void *data,
 
    /* Column 1: type part, above the spacer */
    o = _layout_item_add(table, "eovim/completion/type");
-   _compl_text_set(o, cfg, compl->menu);
+   _compl_text_set(o, gui, compl->menu);
    elm_table_pack(table, o, 1, 0, 1, 1);
    evas_object_show(o);
 
@@ -585,7 +584,7 @@ _compl_content_get(void *data,
 
    /* Column 2: completion contents */
    o = _layout_item_add(table, "eovim/completion/word");
-   _compl_text_set(o, cfg, compl->word);
+   _compl_text_set(o, gui, compl->word);
    elm_table_pack(table, o, 2, 0, 1, 1);
    evas_object_show(o);
 

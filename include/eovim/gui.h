@@ -64,6 +64,11 @@ struct gui
       Eina_Bool nvim_sel_event; /**< Nvim initiated a selection */
    } cmdline;
 
+   struct {
+      char *name; /**< Dynamically allocated */
+      unsigned int size;
+   } font;
+
    s_prefs prefs;
 
    s_nvim *nvim;

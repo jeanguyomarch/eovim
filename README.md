@@ -113,11 +113,12 @@ starts. See the manual for details.
 Eovim detects when Caps Lock are on and off. The default theme can display a
 visual hint if enabled. Neovim is also made aware of the toggling of Caps Lock
 via an `autocmd`. To add hooks in response to caps lock events, you must
-override the `EovimCapsLock` `augroup`:
+override the `Eovim` `augroup`:
 
 ```vim
-:augroup EovimCapsLock
+:augroup Eovim
 :   autocmd!
+:   autocmd User EovimReady <your handle when Eovim is ready>
 :   autocmd User EovimCapsLockOn <your handle when Caps Lock is ON>
 :   autocmd User EovimCapsLockOff <your handle when Caps Lock is OFF>
 :augroup END

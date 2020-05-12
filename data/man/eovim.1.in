@@ -1,4 +1,4 @@
-.TH EOVIM "1" "December 2017" "eovim @PROJECT_VERSION@" "User Commands"
+.TH EOVIM "1" "May 2020" "eovim @PROJECT_VERSION@" "User Commands"
 
 .SH NAME
 \fBeovim\fR \- EFL Code Editor using Neovim
@@ -60,10 +60,9 @@ The communication channel for neovim to send events to the Eovim plug-ins.
 This integer is defined and set to 1 when Eovim spawn an neovim, making it
 possible for the user to known whether neovim is run under Eovim or not.
 .IP
-\fBautocmd group\fR \fIEovimCapsLock\fR
+\fBautocmd group\fR \fIEovim\fR
 Eovim creates this autocmd group to handle the autocmd User events
-\fIEovimCapsLockOn\fR and \fIEovimCapsLockOff\fR. They can are called when
-Caps Lock is respectively set and unset.
+\fIEovimReady\fR, \fIEovimCapsLockOn\fR and \fIEovimCapsLockOff\fR.
 
 
 .SH AUTHORS

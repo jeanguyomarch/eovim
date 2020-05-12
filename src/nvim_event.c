@@ -142,7 +142,7 @@ static Eina_Bool
 nvim_event_update_menu(s_nvim *nvim EINA_UNUSED,
                        const msgpack_object_array *args EINA_UNUSED)
 {
-   CRI("Unimplemented");
+   DBG("Unimplemented");
    return EINA_TRUE;
 }
 
@@ -412,7 +412,7 @@ static Eina_Bool
 nvim_event_visual_bell(s_nvim *nvim EINA_UNUSED,
                        const msgpack_object_array *args EINA_UNUSED)
 {
-   CRI("Unimplemented");
+   DBG("Unimplemented");
    return EINA_TRUE;
 }
 

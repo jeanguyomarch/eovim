@@ -58,10 +58,55 @@ _emoji_set(s_nvim *nvim EINA_UNUSED, const msgpack_object *value EINA_UNUSED)
 }
 
 static Eina_Bool
-_guifont_set(s_nvim *nvim EINA_UNUSED, const msgpack_object *value EINA_UNUSED)
+_guifont_set(s_nvim *const nvim, const msgpack_object *const value)
 {
-   /* XXX unimplemented for now */
-   return EINA_TRUE;
+  s_gui *const gui = &nvim->gui;
+  const msgpack_object_str *const val =
+    EOVIM_MSGPACK_STRING_OBJ_EXTRACT(value, fail);
+  if (val->size == 0)
+  { return EINA_TRUE; }
+
+  /* Havind a NUL-terminating string would just be so much better */
+  char *const str = strndup(val->ptr, val->size);
+  if (EINA_UNLIKELY(! str))
+  { CRI("Alloc failed"); goto fail; }
+
+  /* We are now trying to find a pattern such as: FontName:FontSize */
+  char *sep = strchr(str, ':');
+  if (EINA_UNLIKELY(! sep)) /* TODO: real message */
+  {
+    ERR("invalid guifont='%s'. Expected: Fontname:Fontsize'", str);
+    goto clean;
+  }
+  *sep = '\0';
+  sep++; /* <--- now points to the start of fontsize */
+
+  /* Parse the fontsize. We forbid a subset of fantasist sizes to both
+   * catch parsing failures (returned value would be ULONG_MAX) and to
+   * prevent invalid use of other APIs */
+  char *end = sep;
+  const unsigned long fontsize = strtoul(sep, &end, 10);
+  if ((fontsize > UINT_MAX) || (*end != '\0'))
+  {
+    ERR("Failed to parse fontsize '%s'", sep);
+    goto clean;
+  }
+
+  DBG("Using font '%s' with size '%lu'", str, fontsize);
+  termview_font_set(gui->termview, str, (unsigned int)fontsize);
+  gui_size_recalculate(gui);
+
+  /* Keep around the font characteristics */
+  free(gui->font.name);
+  gui->font.name = str;
+  gui->font.size = (unsigned int)fontsize;
+
+  return EINA_TRUE;
+
+clean:
+  free(sep);
+fail:
+  return EINA_FALSE;
 }
 
 static Eina_Bool
@@ -174,7 +219,7 @@ nvim_event_option_set(s_nvim *nvim,
         const f_opt_set func = eina_hash_find(_options, key);
         if (EINA_UNLIKELY(! func))
           {
-             ERR("Unknown 'option_set' keyword argument '%s'", key);
+             DBG("Unknown 'option_set' keyword argument '%s'", key);
              eina_stringshare_del(key);
              continue; /* Try the next keyword-argument */
           }
