@@ -147,15 +147,13 @@ nvim_api_ui_attach(s_nvim *nvim,
    /* Pack the options. There are 3: rgb, ext_popupmenu and ext_tabline */
    msgpack_pack_map(pk, 3);
 
-   /* Pack the RGB option (boolean) */
+   /* Pack the RGB option (boolean) - always enabled */
    {
       const char key[] = "rgb";
       const size_t len = sizeof(key) - 1;
       msgpack_pack_str(pk, len);
       msgpack_pack_str_body(pk, key, len);
-      if (cfg->true_colors) msgpack_pack_true(pk);
-      else msgpack_pack_false(pk);
-      nvim->true_colors = cfg->true_colors;
+      msgpack_pack_true(pk);
    }
 
    /* Pack the External popupmemnu */

@@ -322,16 +322,6 @@ _nvim_prefs_check_add(Evas_Object *table,
 }
 
 static void
-_true_colors_changed_cb(void *data,
-                        Evas_Object *obj,
-                        void *info EINA_UNUSED)
-{
-   s_gui *const gui = data;
-   const Eina_Bool cols = elm_check_state_get(obj);
-   config_true_colors_set(gui->nvim->config, cols);
-}
-
-static void
 _ext_tabs_changed_cb(void *data,
                      Evas_Object *obj,
                      void *info EINA_UNUSED)
@@ -373,12 +363,6 @@ _nvim_prefs_plug_add(s_gui *gui,
    Evas_Object *const table = elm_table_add(f);
    elm_table_align_set(table, 0.5, 0.0);
    evas_object_show(table);
-
-   /* True colors switch */
-   Evas_Object *const cols = _nvim_prefs_check_add(table, "Use True Colors", row++);
-   evas_object_smart_callback_add(cols, "changed", _true_colors_changed_cb, gui);
-   elm_check_state_set(cols, config->true_colors);
-   evas_object_show(cols);
 
    /* Externalized tabs switch */
    Evas_Object *const tabs = _nvim_prefs_check_add(table, "Externalize Tabs", row++);

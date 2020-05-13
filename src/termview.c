@@ -110,9 +110,6 @@ struct termview
    Eina_List *seq_compose;
 };
 
-#include "termcolors.x"
-
-
 static void
 _keys_send(struct termview *sd,
            const char *keys,
@@ -987,37 +984,19 @@ termview_cursor_goto(Evas_Object *obj,
 
 
 struct termview_color
-termview_color_decompose(uint32_t col,
-                         Eina_Bool true_colors)
+termview_color_decompose(uint32_t col)
 {
-   if (true_colors)
-     {
-        /*
-         * When true colors are requested, we have to decompose
-         * a 24-bits color. Alpha is always maximal (full opacity).
-         */
-        const struct termview_color color = {
-           .r = (uint8_t)((col & 0x00ff0000) >> 16),
-           .g = (uint8_t)((col & 0x0000ff00) >> 8),
-           .b = (uint8_t)((col & 0x000000ff) >> 0),
-           .a = 0xff,
-        };
-        return color;
-     }
-   else
-     {
-        /*
-         * When terminal colors are requested, we must check there is no
-         * overflow ([0;255]), then we access the true colors used to paint
-         * the terminal color. See 'src/termcolors.x'.
-         */
-        if (EINA_UNLIKELY(col >= 256))
-          {
-             ERR("Color %u is not a terminal color", col);
-             col = 255;
-          }
-        return _termcolors[col];
-     }
+  /*
+   * When true colors are requested, we have to decompose
+   * a 24-bits color. Alpha is always maximal (full opacity).
+   */
+  const struct termview_color color = {
+     .r = (uint8_t)((col & 0x00ff0000) >> 16),
+     .g = (uint8_t)((col & 0x0000ff00) >> 8),
+     .b = (uint8_t)((col & 0x000000ff) >> 0),
+     .a = 0xff,
+  };
+  return color;
 }
 
 static uint8_t
@@ -1060,7 +1039,7 @@ _make_palette_from_color(struct termview *sd,
    else
      {
         const struct termview_color col =
-           termview_color_decompose((uint32_t)color, sd->nvim->true_colors);
+           termview_color_decompose((uint32_t)color);
         return _make_palette(sd, col);
      }
 }

@@ -36,7 +36,7 @@
  * existing configurations on the user side, and yield unexpected results.
  *
  *===========================================================================*/
-static const unsigned int _config_version = 9u;
+static const unsigned int _config_version = 10u;
 
 static Eet_Data_Descriptor *_edd = NULL;
 static const char _key[] = "eovim/config";
@@ -65,7 +65,6 @@ config_init(void)
    EDD_BASIC_ADD(ext_popup, EET_T_UCHAR);
    EDD_BASIC_ADD(ext_cmdline, EET_T_UCHAR);
    EDD_BASIC_ADD(ext_tabs, EET_T_UCHAR);
-   EDD_BASIC_ADD(true_colors, EET_T_UCHAR);
    EET_DATA_DESCRIPTOR_ADD_LIST_STRING(_edd, s_config, "plugins", plugins);
 
    return EINA_TRUE;
@@ -120,13 +119,6 @@ config_ext_tabs_set(s_config *config,
 }
 
 void
-config_true_colors_set(s_config *config,
-                       Eina_Bool true_colors)
-{
-   config->true_colors = !!true_colors;
-}
-
-void
 config_plugin_add(s_config *config,
                   const s_plugin *plugin)
 {
@@ -155,7 +147,6 @@ _config_new(void)
    config->version = _config_version;
    config->mute_bell = EINA_FALSE;
    config->key_react = EINA_TRUE;
-   config->true_colors = EINA_TRUE;
    config->ext_popup = EINA_TRUE;
    config->ext_cmdline = EINA_TRUE;
    config->ext_tabs = EINA_TRUE;
@@ -239,7 +230,6 @@ config_load(const char *file)
               cfg->key_react = EINA_TRUE;
               /* Fall through */
            case 2:
-              cfg->true_colors = EINA_TRUE;
               cfg->ext_popup = EINA_TRUE;
               /* Fall through */
            case 3:
