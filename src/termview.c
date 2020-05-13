@@ -52,8 +52,8 @@ enum
 static Evas_Smart *_smart = NULL;
 static Evas_Smart_Class _parent_sc = EVAS_SMART_CLASS_INIT_NULL;
 
-typedef struct termview s_termview;
-typedef void (*f_cursor_calc)(s_termview *sd, Evas_Coord x, Evas_Coord y);
+struct termview;
+typedef void (*f_cursor_calc)(struct termview *sd, Evas_Coord x, Evas_Coord y);
 
 struct termview
 {
@@ -114,7 +114,7 @@ struct termview
 
 
 static void
-_keys_send(s_termview *sd,
+_keys_send(struct termview *sd,
            const char *keys,
            unsigned int size)
 {
@@ -126,14 +126,14 @@ _keys_send(s_termview *sd,
 
 
 static inline Eina_Bool
-_composing_is(const s_termview *sd)
+_composing_is(const struct termview *sd)
 {
    /* Composition is pending if the seq_compose list is not empty */
    return (sd->seq_compose == NULL) ? EINA_FALSE : EINA_TRUE;
 }
 
 static inline void
-_composition_reset(s_termview *sd)
+_composition_reset(struct termview *sd)
 {
    /* Discard all elements within the list */
    Eina_Stringshare *str;
@@ -142,7 +142,7 @@ _composition_reset(s_termview *sd)
 }
 
 static inline void
-_composition_add(s_termview *sd, const char *key)
+_composition_add(struct termview *sd, const char *key)
 {
    /* Add the key as a stringshare in the seq list. Hence, starting the
     * composition */
@@ -156,7 +156,7 @@ _composition_add(s_termview *sd, const char *key)
  * key itself.
  */
 static Eina_Bool
-_compose(s_termview *sd, const char *key)
+_compose(struct termview *sd, const char *key)
 {
   if (_composing_is(sd))
     {
@@ -205,7 +205,7 @@ _compose(s_termview *sd, const char *key)
 }
 
 static inline Eina_Bool
-_unfinished_resizing_is(const s_termview *sd)
+_unfinished_resizing_is(const struct termview *sd)
 {
    /* If neovim cols/rows are different from the termview cols/rows, we are
     * resizing the UI, and we must avoid processing old neovim data */
@@ -213,7 +213,7 @@ _unfinished_resizing_is(const s_termview *sd)
 }
 
 static void
-_cursor_calc_block(s_termview *sd,
+_cursor_calc_block(struct termview *sd,
                    Evas_Coord x, Evas_Coord y)
 {
    /* Place the cursor at (x,y) and set its size to a cell */
@@ -226,7 +226,7 @@ _cursor_calc_block(s_termview *sd,
 }
 
 static void
-_cursor_calc_vertical(s_termview *sd,
+_cursor_calc_vertical(struct termview *sd,
                       Evas_Coord x, Evas_Coord y)
 {
    /* Place the cursor at (x,y) and set its width to mode->cell_percentage
@@ -241,7 +241,7 @@ _cursor_calc_vertical(s_termview *sd,
 }
 
 static void
-_cursor_calc_horizontal(s_termview *sd,
+_cursor_calc_horizontal(struct termview *sd,
                         Evas_Coord x, Evas_Coord y)
 {
    /* Place the cursor at the bottom of (x,y) and set its height to
@@ -258,7 +258,7 @@ _cursor_calc_horizontal(s_termview *sd,
 
 
 static void
-_coords_to_cell(const s_termview *sd,
+_coords_to_cell(const struct termview *sd,
                 int px, int py,
                 unsigned int *cell_x, unsigned int *cell_y)
 {
@@ -294,7 +294,7 @@ _mouse_button_to_string(int button)
 }
 
 static void
-_mouse_event(s_termview *sd, const char *event,
+_mouse_event(struct termview *sd, const char *event,
              unsigned int cx, unsigned int cy,
              int btn)
 {
@@ -319,7 +319,7 @@ _termview_mouse_move_cb(void *data,
                         Evas_Object *obj EINA_UNUSED,
                         void *event)
 {
-   s_termview *const sd = data;
+   struct termview *const sd = data;
 
    /* If there is no mouse drag, nothing to do! */
    if (! sd->mouse_drag.btn) { return; }
@@ -348,7 +348,7 @@ _termview_mouse_up_cb(void *data,
                       Evas_Object *obj EINA_UNUSED,
                       void *event)
 {
-   s_termview *const sd = data;
+   struct termview *const sd = data;
    const Evas_Event_Mouse_Up *const ev = event;
    unsigned int cx, cy;
 
@@ -363,7 +363,7 @@ _termview_mouse_down_cb(void *data,
                         Evas_Object *obj EINA_UNUSED,
                         void *event)
 {
-   s_termview *const sd = data;
+   struct termview *const sd = data;
    const Evas_Event_Mouse_Down *const ev = event;
    unsigned int cx, cy;
 
@@ -384,7 +384,7 @@ _termview_mouse_wheel_cb(void *data,
                          Evas_Object *obj EINA_UNUSED,
                          void *event)
 {
-   s_termview *const sd = data;
+   struct termview *const sd = data;
    const Evas_Event_Mouse_Wheel *const ev = event;
 
    /* If mouse is NOT enabled, we don't handle mouse events */
@@ -407,7 +407,7 @@ _paste_cb(void *data,
 {
    EINA_SAFETY_ON_FALSE_RETURN_VAL(ev->format == ELM_SEL_FORMAT_TEXT, EINA_FALSE);
 
-   s_termview *const sd = data;
+   struct termview *const sd = data;
    const char *const string = ev->data;
    Eina_Bool ret = EINA_TRUE;
    size_t escaped_len = 0;
@@ -471,7 +471,7 @@ _termview_key_down_cb(void *data,
                       Evas_Object *obj EINA_UNUSED,
                       void *event)
 {
-   s_termview *const sd = data;
+   struct termview *const sd = data;
    const Evas_Event_Key_Down *const ev = event;
    const Evas_Modifier *const mod = ev->modifiers;
    unsigned int send_size;
@@ -592,7 +592,7 @@ _termview_focus_in_cb(void *data,
                       void *event EINA_UNUSED)
 {
    Edje_Message_Int msg = { .val = 1 }; /* may_blink := TRUE */
-   s_termview *const sd = data;
+   struct termview *const sd = data;
    s_gui *const gui = &(sd->nvim->gui);
 
    /* When entering back on the Eovim window, the user may have pressed
@@ -619,7 +619,7 @@ _termview_focus_out_cb(void *data,
 {
    Edje_Message_Int msg = { .val = 0 }; /* may_blink := FALSE */
 
-   s_termview *const sd = data;
+   struct termview *const sd = data;
    edje_object_message_send(sd->cursor, EDJE_MESSAGE_INT,
                             THEME_MSG_MAY_BLINK_SET, &msg);
    edje_object_signal_emit(sd->cursor, "eovim,blink,stop", "eovim");
@@ -630,7 +630,7 @@ _termview_focus_out_cb(void *data,
 static void
 _smart_add(Evas_Object *obj)
 {
-   s_termview *const sd = calloc(1, sizeof(s_termview));
+   struct termview *const sd = calloc(1, sizeof(struct termview));
    if (EINA_UNLIKELY(! sd))
      {
         CRI("Failed to allocate termview structure");
@@ -691,7 +691,7 @@ _smart_add(Evas_Object *obj)
 static void
 _smart_del(Evas_Object *obj)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
    evas_object_del(sd->textgrid);
    evas_object_del(sd->cursor);
    eina_hash_free(sd->palettes);
@@ -703,7 +703,7 @@ _smart_resize(Evas_Object *obj,
               Evas_Coord w,
               Evas_Coord h)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
 
    const unsigned int cols = (unsigned int)w / sd->cell_w;
    const unsigned int rows = (unsigned int)h / sd->cell_h;
@@ -731,7 +731,7 @@ _smart_move(Evas_Object *obj,
 static void
 _smart_calculate(Evas_Object *obj)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
    Evas_Coord ox, oy;
    evas_object_geometry_get(obj, &ox, &oy, NULL, NULL);
 
@@ -772,7 +772,7 @@ static void
 _termview_nvim_set(Evas_Object *obj,
                   s_nvim *nvim)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
    sd->nvim = nvim;
 }
 
@@ -790,7 +790,7 @@ termview_add(Evas_Object *parent,
 void
 termview_refresh(Evas_Object *obj)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
    evas_object_textgrid_update_add(sd->textgrid, 0, 0, (int)sd->cols, (int)sd->rows);
 }
 
@@ -802,7 +802,7 @@ termview_font_set(Evas_Object *obj,
    EINA_SAFETY_ON_NULL_RETURN(font_name);
    EINA_SAFETY_ON_TRUE_RETURN(font_size == 0);
 
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
 
    evas_object_textgrid_font_set(sd->textgrid, font_name, (int)font_size);
    evas_object_textgrid_cell_size_get(sd->textgrid,
@@ -814,7 +814,7 @@ termview_cell_size_get(const Evas_Object *obj,
                        unsigned int *w,
                        unsigned int *h)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
    if (w) *w = sd->cell_w;
    if (h) *h = sd->cell_h;
 }
@@ -824,7 +824,7 @@ termview_size_get(const Evas_Object *obj,
                   unsigned int *cols,
                   unsigned int *rows)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
    if (cols) *cols = sd->cols;
    if (rows) *rows = sd->rows;
 }
@@ -836,7 +836,7 @@ termview_resize(Evas_Object *obj,
 {
    if (EINA_UNLIKELY((cols == 0) || (rows == 0))) { return; }
 
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
 
 
    /* When we resize the termview, we have reset the scrolling region to the
@@ -857,7 +857,7 @@ termview_resized_confirm(Evas_Object *obj,
                          unsigned int rows)
 {
    /* Update the neovim columns and rows */
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
    sd->nvim_rows = rows;
    sd->nvim_cols = cols;
 }
@@ -865,7 +865,7 @@ termview_resized_confirm(Evas_Object *obj,
 void
 termview_clear(Evas_Object *obj)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
    Evas_Object *const grid = sd->textgrid;
 
    /*
@@ -891,7 +891,7 @@ termview_clear(Evas_Object *obj)
 void
 termview_eol_clear(Evas_Object *obj)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
    Evas_Object *const grid = sd->textgrid;
 
    if (EINA_UNLIKELY(_unfinished_resizing_is(sd))) { return; }
@@ -913,7 +913,7 @@ termview_put(Evas_Object *obj,
              const Eina_Unicode *ustring,
              unsigned int size)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
 
    if (EINA_UNLIKELY(_unfinished_resizing_is(sd))) { return; }
 
@@ -961,7 +961,7 @@ termview_cursor_goto(Evas_Object *obj,
                      unsigned int to_x,
                      unsigned int to_y)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
 
    if (EINA_UNLIKELY(_unfinished_resizing_is(sd))) { return; }
 
@@ -986,7 +986,7 @@ termview_cursor_goto(Evas_Object *obj,
 
 
 
-s_termview_color
+struct termview_color
 termview_color_decompose(uint32_t col,
                          Eina_Bool true_colors)
 {
@@ -996,7 +996,7 @@ termview_color_decompose(uint32_t col,
          * When true colors are requested, we have to decompose
          * a 24-bits color. Alpha is always maximal (full opacity).
          */
-        const s_termview_color color = {
+        const struct termview_color color = {
            .r = (uint8_t)((col & 0x00ff0000) >> 16),
            .g = (uint8_t)((col & 0x0000ff00) >> 8),
            .b = (uint8_t)((col & 0x000000ff) >> 0),
@@ -1021,8 +1021,8 @@ termview_color_decompose(uint32_t col,
 }
 
 static uint8_t
-_make_palette(s_termview *sd,
-              s_termview_color color)
+_make_palette(struct termview *sd,
+              struct termview_color color)
 {
    if (color.a == 0x00) { return 0; }
 
@@ -1049,7 +1049,7 @@ _make_palette(s_termview *sd,
 }
 
 static uint8_t
-_make_palette_from_color(s_termview *sd,
+_make_palette_from_color(struct termview *sd,
                          t_int color,
                          Eina_Bool fg)
 {
@@ -1059,7 +1059,7 @@ _make_palette_from_color(s_termview *sd,
      }
    else
      {
-        const s_termview_color col =
+        const struct termview_color col =
            termview_color_decompose((uint32_t)color, sd->nvim->true_colors);
         return _make_palette(sd, col);
      }
@@ -1067,9 +1067,9 @@ _make_palette_from_color(s_termview *sd,
 
 void
 termview_style_set(Evas_Object *obj,
-                   const s_termview_style *style)
+                   const struct termview_style *style)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
 
    sd->current.fg = _make_palette_from_color(sd, style->fg_color, EINA_TRUE);
    sd->current.bg = _make_palette_from_color(sd, style->bg_color, EINA_FALSE);
@@ -1090,7 +1090,7 @@ void
 termview_scroll_region_set(Evas_Object *obj,
                            const Eina_Rectangle *region)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
    memcpy(&sd->scroll, region, sizeof(Eina_Rectangle));
 }
 
@@ -1098,7 +1098,7 @@ void
 termview_scroll(Evas_Object *obj,
                 int count)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
    Evas_Object *const grid = sd->textgrid;
    const size_t width = sizeof(Evas_Textgrid_Cell) * ((unsigned)sd->scroll.w + 1);
    const int end_of_scroll = sd->scroll.y + sd->scroll.h;
@@ -1182,7 +1182,7 @@ void
 termview_fg_color_set(Evas_Object *obj,
                       int r, int g, int b, int a)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
 
    /* Set the new value of the default foreground text. */
    evas_color_argb_premul(a, &r, &g, &b);
@@ -1200,7 +1200,7 @@ void
 termview_fg_color_get(const Evas_Object *obj,
                       int *r, int *g, int *b, int *a)
 {
-   const s_termview *const sd = evas_object_smart_data_get(obj);
+   const struct termview *const sd = evas_object_smart_data_get(obj);
    evas_object_textgrid_palette_get(
       sd->textgrid, EVAS_TEXTGRID_PALETTE_EXTENDED,
       COL_DEFAULT_FG, r, g, b, a
@@ -1214,7 +1214,7 @@ termview_cell_to_coords(const Evas_Object *obj,
                         int *px,
                         int *py)
 {
-   const s_termview *const sd = evas_object_smart_data_get(obj);
+   const struct termview *const sd = evas_object_smart_data_get(obj);
 
    int wx, wy;
    evas_object_geometry_get(sd->textgrid, &wx, &wy, NULL, NULL);
@@ -1238,7 +1238,7 @@ _cursor_color_get(s_nvim *nvim,
    msg->val[1] = hl_group->bg.g;
    msg->val[2] = hl_group->bg.b;
 
-   s_termview *const sd = evas_object_smart_data_get(nvim->gui.termview);
+   struct termview *const sd = evas_object_smart_data_get(nvim->gui.termview);
    edje_object_message_send(sd->cursor, EDJE_MESSAGE_INT_SET,
                             THEME_MSG_COLOR_SET, msg);
 }
@@ -1250,7 +1250,7 @@ termview_cursor_mode_set(Evas_Object *obj,
    /* Set sd->cursor_calc to the appropriate function that will calculate
     * the resizing and positionning of the cursor. We also keep track of
     * the mode. */
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
    const f_cursor_calc funcs[] = {
       [CURSOR_SHAPE_BLOCK] = _cursor_calc_block,
       [CURSOR_SHAPE_HORIZONTAL] = _cursor_calc_horizontal,
@@ -1290,7 +1290,7 @@ void
 termview_cursor_visibility_set(Evas_Object *obj,
                                Eina_Bool visible)
 {
-   s_termview *const sd = evas_object_smart_data_get(obj);
+   struct termview *const sd = evas_object_smart_data_get(obj);
    if (visible) evas_object_show(sd->cursor);
    else evas_object_hide(sd->cursor);
 }
