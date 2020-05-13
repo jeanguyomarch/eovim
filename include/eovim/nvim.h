@@ -49,7 +49,7 @@ typedef enum
    NVIM_HANDLER_DATA  = 2,
    NVIM_HANDLER_ERROR = 3,
    NVIM_HANDLERS_LAST /* Sentinel */
-} e_nvim_handler;;
+} e_nvim_handler;
 
 struct nvim
 {
@@ -74,7 +74,13 @@ struct nvim
 
    Eina_UStrbuf *decode;
    Eina_Bool mouse_enabled;
-   Eina_Bool true_colors;
+
+   struct {
+     Eina_Bool linegrid;
+     Eina_Bool multigrid;
+     Eina_Bool cmdline;
+     Eina_Bool wildmenu;
+   } features;
 };
 
 

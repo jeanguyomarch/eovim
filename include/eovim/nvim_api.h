@@ -31,8 +31,7 @@ Eina_Bool nvim_api_ui_attach(s_nvim *nvim, unsigned int width, unsigned int heig
                              f_nvim_api_cb func, void *func_data);
 Eina_Bool nvim_api_get_api_info(s_nvim *nvim, f_nvim_api_cb cb, void *data);
 Eina_Bool nvim_api_ui_try_resize(s_nvim *nvim, unsigned int width, unsigned height);
-Eina_Bool nvim_api_ui_ext_cmdline_set(s_nvim *nvim, Eina_Bool externalize);
-Eina_Bool nvim_api_ui_ext_wildmenu_set(s_nvim *nvim, Eina_Bool externalize);
+Eina_Bool nvim_api_ui_ext_set(s_nvim *nvim, const char *key, Eina_Bool enabled);
 Eina_Bool nvim_api_input(s_nvim *nvim, const char *input, size_t input_size);
 
 Eina_Bool nvim_api_eval(s_nvim *nvim, const char *input, size_t input_size,
