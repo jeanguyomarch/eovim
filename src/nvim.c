@@ -28,6 +28,7 @@
 #include "eovim/nvim_event.h"
 #include "eovim/nvim_request.h"
 #include "eovim/nvim_helper.h"
+#include "eovim/msgpack_helper.h"
 #include "eovim/log.h"
 #include "eovim/main.h"
 
@@ -389,7 +390,7 @@ _nvim_received_data_cb(void *data,
           }
         const msgpack_object *const obj = &(result.data);
 
-#if 0 /* Uncomment to roughly dump the received messages */
+#if 1 /* Uncomment to roughly dump the received messages */
         msgpack_object_print(stderr, *obj);
         fprintf(stderr, "\n--------\n");
 #endif
@@ -533,13 +534,13 @@ _version_fragment_decode(const msgpack_object *version)
 }
 
 
-static inline int
-_msgpack_strncmp(const msgpack_object_str *str, const char *with, size_t len)
+static inline Eina_Bool
+_msgpack_streq(const msgpack_object_str *str, const char *with, size_t len)
 {
-  return strncmp(str->ptr, with, MIN(str->size, len));
+  return 0 == strncmp(str->ptr, with, MIN(str->size, len));
 }
-#define _MSGPACK_STRCMP(MsgPackStr, StaticStr) \
-  _msgpack_strncmp(MsgPackStr, "" StaticStr "", sizeof(StaticStr) - 1u)
+#define _MSGPACK_STREQ(MsgPackStr, StaticStr) \
+  _msgpack_streq(MsgPackStr, "" StaticStr "", sizeof(StaticStr) - 1u)
 
 static void
 _version_decode(s_nvim *nvim, const msgpack_object *args)
@@ -572,13 +573,51 @@ _version_decode(s_nvim *nvim, const msgpack_object *args)
       continue;
     }
     const msgpack_object_str *const key = &(kv->key.via.str);
-    if (0 == _MSGPACK_STRCMP(key, "major"))
+    if (_MSGPACK_STREQ(key, "major"))
     { nvim->version.major = _version_fragment_decode(&(kv->val)); }
-    else if (0 == _MSGPACK_STRCMP(key, "minor"))
+    else if (_MSGPACK_STREQ(key, "minor"))
     { nvim->version.minor = _version_fragment_decode(&(kv->val)); }
-    else if (0 == _MSGPACK_STRCMP(key, "patch"))
+    else if (_MSGPACK_STREQ(key, "patch"))
     { nvim->version.patch = _version_fragment_decode(&(kv->val)); }
   }
+}
+
+static void
+_ui_options_decode(s_nvim *nvim, const msgpack_object *args)
+{
+  /* The ui_options object is a list like what is written below:
+   *
+   *   [
+   *     "rgb",
+   *     "ext_cmdline",
+   *     "ext_popupmenu",
+   *     "ext_tabline",
+   *     "ext_wildmenu",
+   *     "ext_linegrid",
+   *     "ext_hlstate"
+   *   ]
+   *
+   */
+  if (EINA_UNLIKELY(args->type != MSGPACK_OBJECT_ARRAY))
+  {
+    ERR("An array was expected. Got type 0x%x", args->type);
+    return;
+  }
+  const msgpack_object_array *const arr = &(args->via.array);
+  for (uint32_t i = 0u; i < arr->size; i++)
+  {
+    const msgpack_object *const o = &(arr->ptr[i]);
+    const msgpack_object_str *const opt = EOVIM_MSGPACK_STRING_OBJ_EXTRACT(o, fail);
+
+    nvim->features.linegrid |= (_MSGPACK_STREQ(opt, "ext_linegrid"));
+    nvim->features.multigrid |= (_MSGPACK_STREQ(opt, "ext_multigrid"));
+    nvim->features.cmdline |= (_MSGPACK_STREQ(opt, "ext_cmdline"));
+    nvim->features.wildmenu |= (_MSGPACK_STREQ(opt, "ext_wildmenu"));
+  }
+
+  return;
+fail:
+  ERR("Failed to decode ui_options API");
 }
 
 static void
@@ -620,8 +659,11 @@ _api_decode_cb(s_nvim *nvim, void *data EINA_UNUSED, const msgpack_object *resul
     const msgpack_object_str *const key = &(kv->key.via.str);
 
     /* Decode the "version" arguments */
-    if (0 == _MSGPACK_STRCMP(key, "version"))
+    if (_MSGPACK_STREQ(key, "version"))
     { _version_decode(nvim, &(kv->val)); }
+    /* Decode the "ui_options" arguments */
+    else if (_MSGPACK_STREQ(key, "ui_options"))
+    { _ui_options_decode(nvim, &(kv->val)); }
   }
 
   /****************************************************************************
@@ -639,13 +681,24 @@ _api_decode_cb(s_nvim *nvim, void *data EINA_UNUSED, const msgpack_object *resul
   }
   /* We are now sure that we are running at least 0.2.0. *********************/
 
-  /* From neovim 0.2.1, the command-line can be externalized */
-  if (NVIM_VERSION_PATCH(nvim) >= 1)
+  /* We want linegrid */
+  if (! nvim->features.linegrid)
   {
-    /* Cmdline and wildmenu are going by pair */
-    nvim_api_ui_ext_cmdline_set(nvim, nvim->config->ext_cmdline);
-    nvim_api_ui_ext_wildmenu_set(nvim, nvim->config->ext_cmdline);
+    gui_die(&nvim->gui,
+      "Eovim only supports rendering with 'ext_linegrid', which you version of "
+      "neovim (%u.%u.%u) does not provide.",
+      nvim->version.major, nvim->version.minor, nvim->version.patch);
   }
+
+  if (nvim->features.cmdline)
+  { nvim_api_ui_ext_set(nvim, "ext_cmdline", nvim->config->ext_cmdline); }
+  if (nvim->features.wildmenu)
+  { nvim_api_ui_ext_set(nvim, "ext_wildmenu", nvim->config->ext_cmdline); }
+  // TODO - uncomment when new UI will be implemented
+  //if (nvim->features.linegrid)
+  //{ nvim_api_ui_ext_set(nvim, "ext_linegrid", EINA_TRUE); }
+  //if (nvim->features.multigrid)
+  //{ nvim_api_ui_ext_set(nvim, "ext_multigrid", EINA_TRUE); }
 
   /* Now that we know Neovim's version, setup the virtual interface, that will
    * prevent compatibilty issues */

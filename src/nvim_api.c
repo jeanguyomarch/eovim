@@ -144,7 +144,7 @@ nvim_api_ui_attach(s_nvim *nvim,
    msgpack_pack_int64(pk, width);
    msgpack_pack_int64(pk, height);
 
-   /* Pack the options. There are 3: rgb, ext_popupmenu and ext_tabline */
+   /* Pack the options. */
    msgpack_pack_map(pk, 3);
 
    /* Pack the RGB option (boolean) - always enabled */
@@ -199,53 +199,28 @@ nvim_api_get_api_info(s_nvim *nvim, f_nvim_api_cb cb, void *data)
 }
 
 Eina_Bool
-nvim_api_ui_ext_cmdline_set(s_nvim *nvim,
-                            Eina_Bool externalize)
+nvim_api_ui_ext_set(
+  s_nvim *const nvim,
+  const char *const key,
+  Eina_Bool enabled)
 {
-   const char api[] = "nvim_ui_set_option";
-   const char key[] = "ext_cmdline";
-   const size_t len = sizeof(key) - 1;
+  const char api[] = "nvim_ui_set_option";
 
-   s_request *const req = _request_new(nvim, api, sizeof(api) - 1);
-   if (EINA_UNLIKELY(! req))
-     {
-        CRI("Failed to create request");
-        return EINA_FALSE;
-     }
-
-   msgpack_packer *const pk = &nvim->packer;
-   msgpack_pack_array(pk, 2);
-   msgpack_pack_str(pk, len);
-   msgpack_pack_str_body(pk, key, len);
-   if (externalize) msgpack_pack_true(pk);
-   else msgpack_pack_false(pk);
-
-   return _request_send(nvim, req);
-}
-
-Eina_Bool
-nvim_api_ui_ext_wildmenu_set(s_nvim *nvim,
-                             Eina_Bool externalize)
-{
-   const char api[] = "nvim_ui_set_option";
-   const char key[] = "ext_wildmenu";
-   const size_t len = sizeof(key) - 1;
-
-   s_request *const req = _request_new(nvim, api, sizeof(api) - 1);
-   if (EINA_UNLIKELY(! req))
-     {
-        CRI("Failed to create request");
-        return EINA_FALSE;
-     }
-
-   msgpack_packer *const pk = &nvim->packer;
-   msgpack_pack_array(pk, 2);
-   msgpack_pack_str(pk, len);
-   msgpack_pack_str_body(pk, key, len);
-   if (externalize) msgpack_pack_true(pk);
-   else msgpack_pack_false(pk);
-
-   return _request_send(nvim, req);
+  s_request *const req = _request_new(nvim, api, sizeof(api) - 1);
+  if (EINA_UNLIKELY(! req))
+  {
+    CRI("Failed to create request");
+    return EINA_FALSE;
+  }
+  const size_t len = strlen(key);
+  msgpack_packer *const pk = &nvim->packer;
+  msgpack_pack_array(pk, 2);
+  msgpack_pack_str(pk, len);
+  msgpack_pack_str_body(pk, key, len);
+  if (enabled) msgpack_pack_true(pk);
+  else msgpack_pack_false(pk);
+  DBG("Configuring option '%s' => %s", key, enabled ? "on" : "off");
+  return _request_send(nvim, req);
 }
 
 Eina_Bool
