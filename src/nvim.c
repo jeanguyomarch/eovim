@@ -390,7 +390,7 @@ _nvim_received_data_cb(void *data,
           }
         const msgpack_object *const obj = &(result.data);
 
-#if 1 /* Uncomment to roughly dump the received messages */
+#if 0 /* Uncomment to roughly dump the received messages */
         msgpack_object_print(stderr, *obj);
         fprintf(stderr, "\n--------\n");
 #endif
