@@ -188,6 +188,7 @@ void gui_wildmenu_select(s_gui *gui, ssize_t index);
 void gui_cmdline_cursor_pos_set(s_gui *gui, size_t pos);
 
 void gui_title_set(s_gui *gui, const char *title);
+void gui_font_set(s_gui *gui, const char *font_name, unsigned int font_size);
 
 void gui_tabs_reset(s_gui *gui);
 void gui_tabs_add(s_gui *gui, const char *name, unsigned int id, Eina_Bool active);
