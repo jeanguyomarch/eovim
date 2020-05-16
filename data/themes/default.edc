@@ -59,10 +59,10 @@ color_classes {
 }
 
 #define CMDLINE_INFO_STYLE(Color) \
-   "font=Sans font_size=14 font_weight=Bold color="Color" wrap=word left_margin=8 right_margin=8"
+   "font_weight=Bold text_class=cmdline color="Color" left_margin=8 right_margin=8"
 styles {
    style { name: "cmdline";
-      base: "font=Sans font_size=14 color=#bcbcbc wrap='word' left_margin=2 right_margin=2";
+      base: "color=#bcbcbc wrap=word left_margin=2 right_margin=2 text_class=cmdline";
    }
    style { name: "cmdline_slash_info";
       base: CMDLINE_INFO_STYLE("#ffffa7");
@@ -243,6 +243,7 @@ collections {
                rel1.relative: 1.0 0.0;
                rel2.relative: 1.0 0.0;
                align: 1.0 0.0;
+               fixed: 1 1;
                params {
                   string: "style" "wheel";
                   bool: "pulse" 1;
@@ -306,6 +307,7 @@ collections {
                rel2.relative: 0.8 0.0;
                align: 0.5 0.0;
                rel1.offset: 0 40;
+               fixed: 0 1;
             }
             desc { "hidden";
                /* Hidden: the textblock will be above the main view */

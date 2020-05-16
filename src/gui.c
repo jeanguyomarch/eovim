@@ -208,7 +208,7 @@ gui_add(s_gui *gui,
     * ===================================================================== */
 
    gui->termview = termview_add(gui->layout, nvim);
-   termview_font_set(gui->termview, "Sans Mono", 14);
+   gui_font_set(gui, "Courier", 14);
    elm_layout_content_set(gui->layout, "eovim.main.view", gui->termview);
 
    /* ========================================================================
@@ -301,6 +301,17 @@ gui_die(s_gui *gui,
    evas_object_smart_callback_add(pop, "dismissed", _die_cb, gui);
    elm_object_part_content_set(pop, "button1", btn);
    evas_object_show(pop);
+}
+
+void
+gui_font_set(
+  s_gui *const gui,
+  const char *const font_name,
+  const unsigned int font_size)
+{
+  assert(font_size < INT_MAX);
+  edje_text_class_set("cmdline", font_name, (int)font_size);
+  termview_font_set(gui->termview, font_name, font_size);
 }
 
 void

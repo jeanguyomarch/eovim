@@ -93,7 +93,7 @@ _guifont_set(s_nvim *const nvim, const msgpack_object *const value)
   }
 
   DBG("Using font '%s' with size '%lu'", str, fontsize);
-  termview_font_set(gui->termview, str, (unsigned int)fontsize);
+  gui_font_set(gui, str, (unsigned int)fontsize);
   gui_size_recalculate(gui);
 
   /* Keep around the font characteristics */
