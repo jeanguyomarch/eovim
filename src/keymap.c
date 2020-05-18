@@ -92,6 +92,7 @@ static const s_kv_keymap _map[] =
    KM("space", "Space"),
    KM_IDENT("Tab"),
    KM("ISO_Left_Tab", "Tab"),
+   KM("backslash", "Bslash"),
 };
 
 static Eina_Hash *_keymap = NULL;
