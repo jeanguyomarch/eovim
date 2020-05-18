@@ -397,69 +397,33 @@ _termview_mouse_wheel_cb(void *data,
    nvim_api_input(sd->nvim, input, (unsigned int)bytes);
 }
 
+/**
+ * If \p cond is true add the modifier \p mod to the cell of \p buf at the index
+ * pointed by \p size.  A dash '-' is then appended.
+ * The index pointed by \p size is then incremented by two to update the caller's
+ * value.
+ *
+ * \return
+ * If the operation would overflow (the index pointed by \p size is greater than
+ * 61) this function does nothing and returns EINA_FALSE.
+ * Otherwise, this function returns EINA_TRUE, indicating the absence of error.
+ */
 static Eina_Bool
-_paste_cb(void *data,
-          Evas_Object *obj EINA_UNUSED,
-          Elm_Selection_Data *ev)
+_add_modifier(char buf[64], const int cond, const char mod, int *const size)
 {
-   EINA_SAFETY_ON_FALSE_RETURN_VAL(ev->format == ELM_SEL_FORMAT_TEXT, EINA_FALSE);
+  if (cond)
+  {
+    if (EINA_UNLIKELY(*size + 2 >= 64))
+    {
+      ERR("Buffer overflow! Not sending key to neovim");
+      return EINA_FALSE;
+    }
 
-   struct termview *const sd = data;
-   const char *const string = ev->data;
-   Eina_Bool ret = EINA_TRUE;
-   size_t escaped_len = 0;
-
-   for (size_t i = 0; i < ev->len; i++)
-     {
-        /* We know that if we type '<' we must escape it as "<lt>", so we will
-         * hav to write 4 characters? Otherwise, there is no escaping, we will
-         * write only one character */
-        escaped_len += (string[i] == '<') ? 4 : 1;
-     }
-
-   /* We can only pass UINT_MAX bytes to neovim, so if the input is greater
-    * than that (lol), we will truncate the paste... such a shame...
-    */
-   if (EINA_UNLIKELY(escaped_len > UINT_MAX))
-     {
-        ERR("Integer overflow. Pasting will be truncated.");
-        ret = EINA_FALSE; /* We will not copy everything */
-     }
-
-   if (escaped_len != ev->len)
-     {
-        /* If we have some escaping to do, we have to make copies of the input
-         * data, as we need to modify it. That's not great... but we how it
-         * goes. */
-        char *const escaped = malloc(escaped_len + 1);
-        if (EINA_UNLIKELY(! escaped))
-          {
-             CRI("Failed to allocate memory");
-             return EINA_FALSE;
-          }
-        char *ptr = escaped;
-         for (unsigned int i = 0; i < ev->len; i++)
-           {
-             if (string[i] == '<')
-               {
-                  strcpy(ptr, "<lt>");
-                  ptr += 4;
-               }
-             else *(ptr++) = string[i];
-           }
-         escaped[escaped_len] = '\0';
-
-         /* Send the data, then free the temporayy storage */
-        nvim_api_input(sd->nvim, escaped, (unsigned int)escaped_len);
-        free(escaped);
-     }
-   else
-     {
-        /* Cool! No escaping to do! Send the pasted data as they are. */
-        nvim_api_input(sd->nvim, string, (unsigned int)ev->len);
-     }
-
-   return ret;
+    buf[(*size) + 0] = mod;
+    buf[(*size) + 1] = '-';
+    (*size) += 2;
+  }
+  return EINA_TRUE;
 }
 
 static void
@@ -471,10 +435,9 @@ _termview_key_down_cb(void *data,
    struct termview *const sd = data;
    const Evas_Event_Key_Down *const ev = event;
    const Evas_Modifier *const mod = ev->modifiers;
-   unsigned int send_size;
+   int send_size = 0;
    const s_keymap *const keymap = keymap_get(ev->key);
-   char nvim_compose = '\0';
-   char buf[32];
+   char buf[64];
    const char *send;
    const char caps[] = "Caps_Lock";
    s_gui *const gui = &(sd->nvim->gui);
@@ -508,76 +471,66 @@ _termview_key_down_cb(void *data,
      return;
 
    const Eina_Bool ctrl = evas_key_modifier_is_set(mod, "Control");
-   const Eina_Bool shift = evas_key_modifier_is_set(mod, "Shift");
    const Eina_Bool super = evas_key_modifier_is_set(mod, "Super");
    const Eina_Bool alt = evas_key_modifier_is_set(mod, "Alt");
 
-   /* Register modifiers. Ctrl and shit are special: we enable composition
-    * only if the key is present in the keymap (it is a special key). */
-   if (ctrl && keymap) { nvim_compose = 'C'; }
-   if (shift && keymap) { nvim_compose = 'S'; }
-   if (super) { nvim_compose = 'D'; }
-   if (alt) { nvim_compose = 'M'; }
+   /* Register modifiers. Ctrl and shit are special: we enable composition only
+    * if the key is present in the keymap (it is a special key). We disregard
+    * shift alone, because it would just mean "uppercase" if alone  */
+   const Eina_Bool compose = ctrl || super || alt;
 
-   if (ctrl && shift)
+
+   if (compose)
      {
-        /* When we hit CTRL+SHIFT, we will handle single character commands,
-         * such as CTRL+SHIFT+C and CTRL+SHIFT+V.
-         * To avoid string comparison, we match the first character only.
-         * However, some key names have multiple-character strings (Backspace).
-         * To avoid matching against them, we discard these
-         */
-        const char *const key = ev->key;
-        if ((! key) || (key[1] != '\0')) { return; /* Ignore */ }
-
-        switch (key[0])
-        {
-         case 'V':
-            elm_cnp_selection_get(gui->win,
-                                  ELM_SEL_TYPE_CLIPBOARD, ELM_SEL_FORMAT_TEXT,
-                                  _paste_cb, sd);
-            break;
-
-         default: /* Please the compiler! */
-            break;
-        }
-        /* Stop right here. Do nothing more. */
-        return;
-     }
-
-   if (nvim_compose)
-     {
-        const char *const key = keymap ? keymap->name : ev->string;
+        const Eina_Bool shift = evas_key_modifier_is_set(mod, "Shift");
+        const char *const key = keymap ? keymap->name : ev->key;
         if (! key) { return; }
-        /* If we can compose, create an aggregate string we will send to
-         * neovim. */
-        send_size = (unsigned int)snprintf(buf, sizeof(buf), "<%c-%s>",
-                                           nvim_compose, key);
+
+        /* Compose a string containing the textual representation of the
+         * special keys to be sent to neovim.
+         * Search :help META for details.
+         *
+         * We first compose the first part with the modifiers. E.g. <C-S-
+         */
+        buf[0] = '<'; send_size = 1;
+        if (! _add_modifier(buf, ctrl, 'C', &send_size)) { return; }
+        if (! _add_modifier(buf, shift, 'S', &send_size)) { return; }
+        if (! _add_modifier(buf, super, 'D', &send_size)) { return; }
+        if (! _add_modifier(buf, alt, 'A', &send_size)) { return; }
+
+        /* Add the real key after the modifier, and close the bracket */
+        assert(send_size < (int)sizeof(buf));
+        const size_t len = sizeof(buf) - (size_t)send_size;
+        const int ret = snprintf(buf + send_size, len, "%s>", key);
+        if (EINA_UNLIKELY(ret < 2))
+        { ERR("Failed to compose key."); return; }
+        send_size += ret;
         send = buf;
      }
    else if (keymap)
      {
-        send_size = (unsigned int)snprintf(buf, sizeof(buf), "<%s>",
-                                           keymap->name);
+        send_size = snprintf(buf, sizeof(buf), "<%s>", keymap->name);
+        if (EINA_UNLIKELY(send_size < 3))
+        { ERR("Failed to write key to string"); return; }
         send = buf;
      }
    else if (ev->string)
      {
         send = ev->string;
-        send_size = (unsigned int)strlen(send);
+        send_size = (int)strlen(send);
      }
    else
      {
         /* Only pass ev->key if it is not a complex string. This allow to
          * filter out things like Control_L. */
-        const unsigned int size = (unsigned int)strlen(ev->key);
+        const int size = (int)strlen(ev->key);
         send_size = (size == 1) ? size : 0;
         send = ev->key; /* Never NULL */
      }
 
    /* If a key is availabe pass it to neovim and update the ui */
    if (EINA_LIKELY(send_size > 0))
-     _keys_send(sd, send, send_size);
+     _keys_send(sd, send, (unsigned int)send_size);
    else
      DBG("Unhandled key '%s'", ev->key);
 }
