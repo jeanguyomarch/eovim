@@ -873,6 +873,10 @@ _method_eovim_init(e_method method_id)
 {
    s_method *const method = &(_methods[method_id]);
 
+   const s_method_ctor ctors[] = {
+     CB_CTOR("reload", nvim_event_eovim_reload),
+   };
+
    /* Register the name of the method as a stringshare */
    const char name[] = "eovim";
    method->name = eina_stringshare_add_length(name, sizeof(name) - 1);
@@ -883,7 +887,8 @@ _method_eovim_init(e_method method_id)
      }
 
    /* Create an empty the callbacks table of the method */
-   method->callbacks = eina_hash_stringshared_new(NULL);
+   method->callbacks =
+      _method_callbacks_table_build(ctors, EINA_C_ARRAY_LENGTH(ctors));
    if (EINA_UNLIKELY(! method->callbacks))
      {
         CRI("Failed to create table of callbacks");

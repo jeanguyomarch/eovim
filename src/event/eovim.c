@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Jean Guyomarc'h
+ * Copyright (c) 2020 Jean Guyomarc'h
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -20,36 +20,18 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __EOVIM_NVIM_HELPER_H__
-#define __EOVIM_NVIM_HELPER_H__
+#include "event.h"
 
-#include "eovim/types.h"
-
-typedef struct
+static inline Evas_Object *
+win_get(s_nvim *const nvim)
 {
-   struct {
-      uint8_t r;
-      uint8_t g;
-      uint8_t b;
-      Eina_Bool used;
-   } bg, fg;
-} s_hl_group;
+  return nvim->gui.win;
+}
 
-typedef void (*f_highlight_group_decode)(s_nvim *nvim, const s_hl_group *hl_group);
-
-void
-nvim_helper_highlight_group_decode(s_nvim *nvim,
-                                   unsigned int group,
-                                   f_highlight_group_decode func);
-
-void
-nvim_helper_highlight_group_decode_noop(s_nvim *nvim,
-                                        unsigned int group,
-                                        f_highlight_group_decode func);
-
-
-Eina_Bool nvim_helper_autocmd_do(s_nvim *nvim, const char *event, f_nvim_api_cb func, void *func_data);
-
-Eina_Bool nvim_helper_config_reload(s_nvim *nvim);
-
-#endif /* ! __EOVIM_NVIM_HELPER_H__ */
+Eina_Bool
+nvim_event_eovim_reload(
+  s_nvim *const nvim, const msgpack_object_array *const args EINA_UNUSED)
+{
+  return nvim_helper_config_reload(nvim);
+  return EINA_TRUE;
+}
