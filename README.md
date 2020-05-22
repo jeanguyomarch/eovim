@@ -6,7 +6,7 @@ Eovim is the Enlightened Neovim. That's just an [EFL][1] GUI client for
 
 # Status
 
-[![Build Status](https://travis-ci.org/jeanguyomarch/eovim.svg?branch=master)](https://travis-ci.org/jeanguyomarch/eovim)
+[![Eovim CI](https://github.com/jeanguyomarch/eovim/workflows/Eovim%20CI/badge.svg)](https://github.com/jeanguyomarch/eovim/actions)
 [![Coverity Scan Build](https://scan.coverity.com/projects/13836/badge.svg)](https://scan.coverity.com/projects/13836)
 
 Eovim is still in development, but it is stable enough to be used for your daily programming.
