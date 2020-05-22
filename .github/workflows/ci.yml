@@ -1,0 +1,29 @@
+name: Eovim CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: Ubuntu Latest
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: install-deps
+      run: |
+        sudo add-apt-repository --yes ppa:niko2040/e19
+        sudo apt-get install --yes libefl-dev
+        sudo apt-get install --yes libmsgpack-dev
+        sudo apt-get install --yes cmake
+        sudo apt-get install --yes build-essential
+    - name: compile
+      run: |
+        mkdir -p build/_install
+        cd build
+        cmake -DCMAKE_INSTALL_PREFIX=_install ..
+        cmake --build .
+        cmake --build . --target install
