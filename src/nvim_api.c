@@ -21,7 +21,6 @@
  */
 
 #include "eovim/types.h"
-#include "eovim/config.h"
 #include "eovim/log.h"
 #include "eovim/nvim_api.h"
 #include "eovim/nvim_event.h"
@@ -137,44 +136,18 @@ nvim_api_ui_attach(s_nvim *nvim,
    req->cb.func = func;
    req->cb.data = func_data;
 
-   const s_config *const cfg = nvim->config;
-
    msgpack_packer *const pk = &nvim->packer;
    msgpack_pack_array(pk, 3);
    msgpack_pack_int64(pk, width);
    msgpack_pack_int64(pk, height);
 
-   /* Pack the options. */
-   msgpack_pack_map(pk, 3);
-
-   /* Pack the RGB option (boolean) - always enabled */
-   {
-      const char key[] = "rgb";
-      const size_t len = sizeof(key) - 1;
-      msgpack_pack_str(pk, len);
-      msgpack_pack_str_body(pk, key, len);
-      msgpack_pack_true(pk);
-   }
-
-   /* Pack the External popupmemnu */
-   {
-      const char key[] = "ext_popupmenu";
-      const size_t len = sizeof(key) - 1;
-      msgpack_pack_str(pk, len);
-      msgpack_pack_str_body(pk, key, len);
-      if (cfg->ext_popup) msgpack_pack_true(pk);
-      else msgpack_pack_false(pk);
-   }
-
-   /* Pack the External tabline */
-   {
-      const char key[] = "ext_tabline";
-      const size_t len = sizeof(key) - 1;
-      msgpack_pack_str(pk, len);
-      msgpack_pack_str_body(pk, key, len);
-      if (cfg->ext_tabs) msgpack_pack_true(pk);
-      else msgpack_pack_false(pk);
-   }
+   /* Pack the only option: RGB  - always enabled */
+   const char key[] = "rgb";
+   const size_t len = sizeof(key) - 1;
+   msgpack_pack_map(pk, 1);
+   msgpack_pack_str(pk, len);
+   msgpack_pack_str_body(pk, key, len);
+   msgpack_pack_true(pk);
 
    return _request_send(nvim, req);
 }
@@ -219,7 +192,7 @@ nvim_api_ui_ext_set(
   msgpack_pack_str_body(pk, key, len);
   if (enabled) msgpack_pack_true(pk);
   else msgpack_pack_false(pk);
-  DBG("Configuring option '%s' => %s", key, enabled ? "on" : "off");
+  INF("Externalized UI option '%s' => %s", key, enabled ? "on" : "off");
   return _request_send(nvim, req);
 }
 
@@ -341,29 +314,6 @@ nvim_api_command(s_nvim *nvim,
    msgpack_pack_array(pk, 1);
    msgpack_pack_str(pk, input_size);
    msgpack_pack_str_body(pk, input, input_size);
-
-   return _request_send(nvim, req);
-}
-
-Eina_Bool
-nvim_api_var_integer_set(s_nvim *nvim,
-                         const char *name,
-                         int value)
-{
-   const char api[] = "nvim_set_var";
-   s_request *const req = _request_new(nvim, api, sizeof(api) - 1);
-   if (EINA_UNLIKELY(! req))
-     {
-        CRI("Failed to create request");
-        return EINA_FALSE;
-     }
-   const size_t name_size = strlen(name);
-
-   msgpack_packer *const pk = &nvim->packer;
-   msgpack_pack_array(pk, 2);
-   msgpack_pack_str(pk, name_size);
-   msgpack_pack_str_body(pk, name, name_size);
-   msgpack_pack_int(pk, value);
 
    return _request_send(nvim, req);
 }

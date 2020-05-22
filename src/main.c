@@ -21,7 +21,6 @@
  */
 
 #include "eovim/keymap.h"
-#include "eovim/config.h"
 #include "eovim/nvim.h"
 #include "eovim/nvim_api.h"
 #include "eovim/nvim_request.h"
@@ -29,7 +28,6 @@
 #include "eovim/termview.h"
 #include "eovim/main.h"
 #include "eovim/log.h"
-#include "eovim/prefs.h"
 #include "eovim/options.h"
 
 int _eovim_log_domain = -1;
@@ -49,12 +47,10 @@ static const s_module _modules[] =
 #define MODULE(name_) \
    { .name = #name_, .init = name_ ## _init, .shutdown = name_ ## _shutdown }
 
-   MODULE(config),
    MODULE(keymap),
    MODULE(nvim_api),
    MODULE(nvim_request),
    MODULE(nvim_event),
-   MODULE(prefs),
    MODULE(gui),
    MODULE(termview),
 

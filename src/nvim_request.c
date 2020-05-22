@@ -121,7 +121,6 @@ nvim_request_process(s_nvim *nvim, Eina_Stringshare *request,
    else
      {
         const Eina_Bool ok = func(nvim, args, pk);
-        nvim_flush(nvim);
         return ok;
      }
 }

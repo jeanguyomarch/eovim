@@ -51,10 +51,6 @@ Run \fBnvim \-\-help\fR to learn more about Neovim's options.
 \fBfunction\fR \fIEovim(...)\fR
 The communication channel for neovim to send events to Eovim.
 .IP
-\fBvariable\fR \fIg:eovim_running\fR
-This integer is defined and set to 1 when Eovim spawn an neovim, making it
-possible for the user to known whether neovim is run under Eovim or not.
-.IP
 \fBautocmd group\fR \fIEovim\fR
 Eovim creates this autocmd group to handle the autocmd User events
 \fIEovimReady\fR, \fIEovimCapsLockOn\fR and \fIEovimCapsLockOff\fR.

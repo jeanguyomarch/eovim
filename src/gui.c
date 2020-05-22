@@ -27,7 +27,6 @@
 #include "eovim/main.h"
 #include "eovim/log.h"
 #include "eovim/nvim_api.h"
-#include "eovim/config.h"
 #include <Elementary.h>
 
 static const char *const _nvim_data_key = "nvim";
@@ -93,16 +92,6 @@ _layout_item_add(Evas_Object *parent,
 fail:
    evas_object_del(o);
    return NULL;
-}
-
-static void
-_prefs_show_cb(void *data,
-               Evas_Object *obj EINA_UNUSED,
-               const char *emission EINA_UNUSED,
-               const char *source EINA_UNUSED)
-{
-   s_nvim *const nvim = data;
-   prefs_show(&nvim->gui);
 }
 
 void
@@ -172,8 +161,8 @@ gui_add(s_gui *gui,
         goto fail;
      }
    gui->edje = elm_layout_edje_get(gui->layout);
-   elm_layout_signal_callback_add(gui->layout, "config,open", "eovim",
-                                  _prefs_show_cb, nvim);
+   //elm_layout_signal_callback_add(gui->layout, "about,open", "eovim",
+   //                               NULL, nvim);
    elm_layout_signal_callback_add(gui->layout, "eovim,tabs,shown", "eovim",
                                   _tabs_shown_cb, nvim);
    elm_win_resize_object_add(gui->win, gui->layout);
@@ -209,7 +198,8 @@ gui_add(s_gui *gui,
 
    gui->termview = termview_add(gui->layout, nvim);
    gui_font_set(gui, "Courier", 14);
-   elm_layout_content_set(gui->layout, "eovim.main.view", gui->termview);
+   evas_object_hide(gui->termview);
+   //elm_layout_content_set(gui->layout, "eovim.main.view", gui->termview);
 
    /* ========================================================================
     * Command-Line GUI objects
@@ -243,11 +233,11 @@ gui_add(s_gui *gui,
     * Finalize GUI
     * ===================================================================== */
 
-   gui_cmdline_hide(gui);
-   gui_wildmenu_clear(gui);
-   evas_object_show(gui->termview);
+
+   elm_layout_signal_emit(gui->layout, "eovim,cmdline,hide", "eovim");
    evas_object_show(gui->layout);
    evas_object_show(gui->win);
+   evas_object_resize(gui->win, 600, 480);
    return EINA_TRUE;
 
 fail:
@@ -905,7 +895,14 @@ gui_bell_ring(s_gui *gui)
 
 void gui_ready_set(s_gui *gui)
 {
-   elm_layout_signal_emit(gui->layout, "eovim,ready", "eovim");
+  elm_layout_content_set(gui->layout, "eovim.main.view", gui->termview);
+  evas_object_show(gui->termview);
+
+  if (gui->must_resize)
+  {
+    const s_geometry *const geo = &gui->nvim->opts->geometry;
+    gui_resize(gui, geo->w, geo->h);
+  }
 }
 
 static void

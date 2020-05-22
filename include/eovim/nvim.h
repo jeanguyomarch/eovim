@@ -55,6 +55,7 @@ struct nvim
 {
    s_gui gui;
    s_version version; /**< The neovim's version */
+   uint64_t channel;
    s_config *config;
    const s_options *opts;
 
@@ -80,6 +81,8 @@ struct nvim
      Eina_Bool multigrid;
      Eina_Bool cmdline;
      Eina_Bool wildmenu;
+     Eina_Bool tabline;
+     Eina_Bool popupmenu;
    } features;
 };
 
@@ -92,6 +95,7 @@ Eina_Bool nvim_mode_add(s_nvim *nvim, s_mode *mode);
 const s_mode *nvim_named_mode_get(const s_nvim *nvim, Eina_Stringshare *name);
 void nvim_mouse_enabled_set(s_nvim *nvim, Eina_Bool enable);
 Eina_Bool nvim_mouse_enabled_get(const s_nvim *nvim);
+void nvim_attach(s_nvim *nvim);
 
 /**
  * Flush the msgpack buffer to the neovim instance, by writing to its standard
