@@ -29,12 +29,9 @@
 struct config
 {
    unsigned int version;
-   Eina_Bool mute_bell;
-   Eina_Bool key_react;
    Eina_Bool ext_popup;
    Eina_Bool ext_cmdline;
    Eina_Bool ext_tabs;
-   Eina_Bool alert_capslock;
 
    /* Internals */
    char *path;
@@ -44,9 +41,6 @@ Eina_Bool config_init(void);
 void config_shutdown(void);
 void config_free(s_config *config);
 void config_save(s_config *config);
-void config_bell_mute_set(s_config *config, Eina_Bool mute);
-void config_key_react_set(s_config *config, Eina_Bool react);
-void config_caps_lock_alert_set(s_config *config, Eina_Bool alert);
 void config_ext_popup_set(s_config *config, Eina_Bool pop);
 void config_ext_cmdline_set(s_config *config, Eina_Bool cmd);
 void config_ext_tabs_set(s_config *config, Eina_Bool tabs);

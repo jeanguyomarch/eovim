@@ -53,139 +53,6 @@ _frame_add(Evas_Object *parent,
 
    return f;
 }
-
-/*============================================================================*
- *                          Cursor Reaction Handling                          *
- *============================================================================*/
-
-static void
-_key_react_changed_cb(void *data,
-                      Evas_Object *obj,
-                      void *event_info EINA_UNUSED)
-{
-   s_gui *const gui = data;
-   const Eina_Bool react = elm_check_state_get(obj);
-   config_key_react_set(gui->nvim->config, react);
-}
-
-static Evas_Object *
-_config_key_react_add(s_gui *gui,
-                      Evas_Object *parent)
-{
-   const s_config *const config = gui->nvim->config;
-
-   /* Frame container */
-   Evas_Object *const f = _frame_add(parent, "Cursor Settings");
-
-   /* Checkbox */
-   Evas_Object *const chk = elm_check_add(f);
-   evas_object_size_hint_align_set(chk, 0.0, 0.0);
-   elm_object_text_set(chk, "React to key presses");
-   elm_check_state_set(chk, config->key_react);
-   evas_object_smart_callback_add(chk, "changed", _key_react_changed_cb, gui);
-   evas_object_show(chk);
-
-   elm_object_content_set(f, chk);
-   return f;
-}
-
-/*============================================================================*
- *                            Bell Config Handling                            *
- *============================================================================*/
-
-static void
-_bell_mute_changed_cb(void *data,
-                      Evas_Object *obj,
-                      void *event_info EINA_UNUSED)
-{
-   s_gui *const gui = data;
-   const Eina_Bool mute = elm_check_state_get(obj);
-   config_bell_mute_set(gui->nvim->config, mute);
-}
-
-static Evas_Object *
-_config_bell_add(s_gui *gui,
-                 Evas_Object *parent)
-{
-   const s_config *const config = gui->nvim->config;
-
-   /* Frame container */
-   Evas_Object *const f = _frame_add(parent, "Bell Settings");
-
-   /* Settings box */
-   Evas_Object *const box = elm_box_add(f);
-   elm_box_horizontal_set(box, EINA_FALSE);
-   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, 0.0);
-   evas_object_show(box);
-
-   /* Bell mute checkbox */
-   Evas_Object *const mute = elm_check_add(box);
-   evas_object_size_hint_align_set(mute, 0.0, 0.0);
-   elm_object_text_set(mute, "Mute the audible bell");
-   elm_check_state_set(mute, config->mute_bell);
-   evas_object_smart_callback_add(mute, "changed", _bell_mute_changed_cb, gui);
-   evas_object_show(mute);
-   elm_box_pack_end(box, mute);
-
-   elm_object_content_set(f, box);
-   return f;
-}
-
-/*============================================================================*
- *                      Caps Lock Warning Config Handling                     *
- *============================================================================*/
-
-static void
-_caps_lock_changed_cb(void *data,
-                      Evas_Object *obj,
-                      void *event_info EINA_UNUSED)
-{
-   s_gui *const gui = data;
-   const Eina_Bool alert = elm_check_state_get(obj);
-   config_caps_lock_alert_set(gui->nvim->config, alert);
-
-   /* If we have just disabled alerts in theme, but an alert was currently
-    * running, we shall stop it right now.
-    * Conversely, if we enable back alerts and there is an alert pending,
-    * trigger the alert animation. */
-   if (gui_caps_lock_warning_get(gui))
-     {
-        const char *const sig = (alert)
-          ? "eovim,capslock,on" : "eovim,capslock,off";
-        elm_layout_signal_emit(gui->layout, sig, "eovim");
-     }
-}
-
-static Evas_Object *
-_config_caps_lock_add(s_gui *gui,
-                      Evas_Object *parent)
-{
-   const s_config *const config = gui->nvim->config;
-
-   /* Frame container */
-   Evas_Object *const f = _frame_add(parent, "Caps Lock Settings");
-
-   /* Settings box */
-   Evas_Object *const box = elm_box_add(f);
-   elm_box_horizontal_set(box, EINA_FALSE);
-   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, 0.0);
-   evas_object_show(box);
-
-   /* Caps lock alert checkbox */
-   Evas_Object *const alert = elm_check_add(box);
-   evas_object_size_hint_align_set(alert, 0.0, 0.0);
-   elm_object_text_set(alert, "Alert when Caps Lock is On");
-   elm_check_state_set(alert, config->alert_capslock);
-   evas_object_smart_callback_add(alert, "changed", _caps_lock_changed_cb, gui);
-   evas_object_show(alert);
-   elm_box_pack_end(box, alert);
-
-   elm_object_content_set(f, box);
-   return f;
-}
-
 static void
 _flip_to(void *data,
          Evas_Object *obj EINA_UNUSED,
@@ -207,19 +74,6 @@ _prefs_box_new(Evas_Object *parent)
    return box;
 }
 
-static Evas_Object *
-_theme_prefs_new(s_gui *gui)
-{
-   Evas_Object *const box = _prefs_box_new(gui->prefs.nav);
-   Evas_Object *const bell = _config_bell_add(gui, box);
-   Evas_Object *const react = _config_key_react_add(gui, box);
-   Evas_Object *const caps_lock = _config_caps_lock_add(gui, box);
-
-   elm_box_pack_end(box, bell);
-   elm_box_pack_end(box, react);
-   elm_box_pack_end(box, caps_lock);
-   return box;
-}
 
 /*============================================================================*
  *                           Neovim Preferences Page                          *
@@ -435,8 +289,6 @@ prefs_show(s_gui *gui)
    evas_object_show(tb);
 
    /* Create the pages */
-   Elm_Object_Item *const p1 =
-      elm_naviframe_item_simple_push(nav, _theme_prefs_new(gui));
    Elm_Object_Item *const p3 =
       elm_naviframe_item_simple_push(nav, _nvim_prefs_new(gui));
 
@@ -445,7 +297,6 @@ prefs_show(s_gui *gui)
             main_in_tree_is() ? SOURCE_DATA_DIR : elm_app_data_dir_get());
 
    /* Associate one item data in the segment control to each page */
-   elm_toolbar_item_append(tb, "preferences-desktop-theme", "Theme", _flip_to, p1);
    elm_toolbar_item_append(tb, buf, "Neovim", _flip_to, p3);
 
 show:

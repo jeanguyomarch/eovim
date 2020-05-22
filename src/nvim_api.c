@@ -296,6 +296,31 @@ nvim_api_command_output(s_nvim *nvim,
 }
 
 Eina_Bool
+nvim_api_get_var(s_nvim *nvim,
+                 const char *var,
+                 f_nvim_api_cb func, void *func_data)
+{
+   const char api[] = "nvim_get_var";
+   s_request *const req = _request_new(nvim, api, sizeof(api) - 1);
+   if (EINA_UNLIKELY(! req))
+     {
+        CRI("Failed to create request");
+        return EINA_FALSE;
+     }
+   req->cb.func = func;
+   req->cb.data = func_data;
+
+   const size_t var_size = strlen(var);
+
+   msgpack_packer *const pk = &nvim->packer;
+   msgpack_pack_array(pk, 1);
+   msgpack_pack_str(pk, var_size);
+   msgpack_pack_str_body(pk, var, var_size);
+
+   return _request_send(nvim, req);
+}
+
+Eina_Bool
 nvim_api_command(s_nvim *nvim,
                  const char *input, size_t input_size,
                  f_nvim_api_cb func, void *func_data)

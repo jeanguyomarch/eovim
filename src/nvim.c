@@ -42,7 +42,7 @@ static void _ui_attached_cb(s_nvim *nvim, void *data EINA_UNUSED,
                             const msgpack_object *result EINA_UNUSED)
 {
   gui_ready_set(&nvim->gui);
-  nvim_helper_autocmd_do(nvim, "EovimReady");
+  nvim_helper_ready_send(nvim);
 }
 
 static Eina_Bool

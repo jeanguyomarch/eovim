@@ -113,9 +113,11 @@ nvim_helper_highlight_group_decode(s_nvim *nvim,
    nvim_api_command_output(nvim, vim_cmd, (size_t)bytes, _hl_group_color_get, func);
 }
 
-void
-nvim_helper_autocmd_do(s_nvim *nvim,
-                       const char *event)
+
+Eina_Bool
+nvim_helper_autocmd_do(
+  s_nvim *const nvim, const char *const event,
+  const f_nvim_api_cb func, void *const func_data)
 {
    /* Compose the vim command that will trigger an autocmd for the User event,
     * with our custom args */
@@ -124,16 +126,17 @@ nvim_helper_autocmd_do(s_nvim *nvim,
    if (EINA_UNLIKELY(bytes < 0))
      {
         CRI("Failed to write data in stack buffer");
-        return;
+        return EINA_FALSE;
      }
 
    /* Make neovim execute this */
-   const Eina_Bool ok = nvim_api_command(nvim, buf, (size_t)bytes, NULL, NULL);
+   const Eina_Bool ok = nvim_api_command(nvim, buf, (size_t)bytes, func, func_data);
    if (EINA_UNLIKELY(! ok))
      ERR("Failed to execute autocmd via: '%s'", buf);
+   return ok;
 }
 
-void
+Eina_Bool
 nvim_helper_autocmd_vimenter_exec(s_nvim *nvim)
 {
   const char cmd[] = "autocmd VimEnter * call rpcrequest(1, 'vimenter')";
@@ -141,4 +144,47 @@ nvim_helper_autocmd_vimenter_exec(s_nvim *nvim)
     nvim_api_command(nvim, cmd, sizeof(cmd) - 1u, NULL, NULL);
   if (EINA_UNLIKELY(! ok))
   { ERR("Failed to execute: %s", cmd); }
+  return ok;
+}
+
+/*****************************************************************************/
+
+
+/**
+ * This callback is called upon a sucessful of a boolean-like vim variable.  If
+ * this variable in \p res is a strictly positive integer, then the boolean
+ * parameter pointed by \p data is set to TRUE. Otherwise, it is set to FALSE.
+ */
+static void
+parse_config_boolean(
+  s_nvim *const nvim EINA_UNUSED,
+  void *const data,
+  const msgpack_object *const res)
+{
+  Eina_Bool *const param = data;
+  *param =
+    (res->type == MSGPACK_OBJECT_POSITIVE_INTEGER) &&
+    (res->via.u64 != UINT64_C(0));
+}
+
+static void
+eovim_ready_callback(
+  s_nvim *const nvim,
+  void *const data EINA_UNUSED,
+  const msgpack_object *const res EINA_UNUSED)
+{
+  s_gui *const gui = &nvim->gui;
+
+  nvim_api_get_var(nvim, "eovim_theme_bell_enabled",
+    &parse_config_boolean, &gui->theme.bell_enabled);
+  nvim_api_get_var(nvim, "eovim_theme_react_to_key_presses",
+    &parse_config_boolean, &gui->theme.react_to_key_presses);
+  nvim_api_get_var(nvim, "eovim_theme_react_to_caps_lock",
+    &parse_config_boolean, &gui->theme.react_to_caps_lock);
+}
+
+void
+nvim_helper_ready_send(s_nvim *const nvim)
+{
+  nvim_helper_autocmd_do(nvim, "EovimReady", &eovim_ready_callback, NULL);
 }

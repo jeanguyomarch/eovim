@@ -69,6 +69,12 @@ struct gui
       unsigned int size;
    } font;
 
+   struct {
+     Eina_Bool bell_enabled;
+     Eina_Bool react_to_key_presses;
+     Eina_Bool react_to_caps_lock;
+   } theme;
+
    s_prefs prefs;
 
    s_nvim *nvim;

@@ -899,7 +899,7 @@ void
 gui_bell_ring(s_gui *gui)
 {
    /* Ring the bell, but only if it was not muted */
-   if (! gui->nvim->config->mute_bell)
+   if (gui->theme.bell_enabled)
      elm_layout_signal_emit(gui->layout, "eovim,bell,ring", "eovim");
 }
 
@@ -1395,12 +1395,11 @@ gui_caps_lock_alert(s_gui *gui)
    if (! gui->capslock_warning)
      {
         /* Don't show the capslock alert in theme if deactivated */
-        const s_config *const cfg = gui->nvim->config;
-        if (cfg->alert_capslock)
+        if (gui->theme.react_to_caps_lock)
           elm_layout_signal_emit(gui->layout, "eovim,capslock,on", "eovim");
 
         /* Tell neovim we activated caps lock */
-        nvim_helper_autocmd_do(gui->nvim, "EovimCapsLockOn");
+        nvim_helper_autocmd_do(gui->nvim, "EovimCapsLockOn", NULL, NULL);
         gui->capslock_warning = EINA_TRUE;
      }
 }
@@ -1411,12 +1410,11 @@ gui_caps_lock_dismiss(s_gui *gui)
    if (gui->capslock_warning)
      {
         /* Don't hide the capslock alert in theme if deactivated */
-        const s_config *const cfg = gui->nvim->config;
-        if (cfg->alert_capslock)
+        if (gui->theme.react_to_caps_lock)
           elm_layout_signal_emit(gui->layout, "eovim,capslock,off", "eovim");
 
         /* Tell neovim we deactivated caps lock */
-        nvim_helper_autocmd_do(gui->nvim, "EovimCapsLockOff");
+        nvim_helper_autocmd_do(gui->nvim, "EovimCapsLockOff", NULL, NULL);
         gui->capslock_warning = EINA_FALSE;
      }
 }
