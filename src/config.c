@@ -59,9 +59,6 @@ config_init(void)
     * ===================================================================== */
 
    EDD_BASIC_ADD(version, EET_T_UINT);
-   EDD_BASIC_ADD(mute_bell, EET_T_UCHAR);
-   EDD_BASIC_ADD(key_react, EET_T_UCHAR);
-   EDD_BASIC_ADD(alert_capslock, EET_T_UCHAR);
    EDD_BASIC_ADD(ext_popup, EET_T_UCHAR);
    EDD_BASIC_ADD(ext_cmdline, EET_T_UCHAR);
    EDD_BASIC_ADD(ext_tabs, EET_T_UCHAR);
@@ -73,27 +70,6 @@ void
 config_shutdown(void)
 {
    eet_data_descriptor_free(_edd);
-}
-
-void
-config_bell_mute_set(s_config *config,
-                     Eina_Bool mute)
-{
-   config->mute_bell = !!mute;
-}
-
-void
-config_key_react_set(s_config *config,
-                     Eina_Bool react)
-{
-   config->key_react = !!react;
-}
-
-void
-config_caps_lock_alert_set(s_config *config,
-                           Eina_Bool alert)
-{
-   config->alert_capslock = !!alert;
 }
 
 void
@@ -128,12 +104,9 @@ _config_new(void)
      }
 
    config->version = _config_version;
-   config->mute_bell = EINA_FALSE;
-   config->key_react = EINA_TRUE;
    config->ext_popup = EINA_TRUE;
    config->ext_cmdline = EINA_TRUE;
    config->ext_tabs = EINA_TRUE;
-   config->alert_capslock = EINA_TRUE;
 
    return config;
 }
@@ -203,10 +176,8 @@ config_load(const char *file)
           {
            case 0: /* Fall through */
            case 1:
-              cfg->key_react = EINA_TRUE;
               /* Fall through */
            case 2:
-              cfg->ext_popup = EINA_TRUE;
               /* Fall through */
            case 3:
               /* Fall through */
@@ -217,7 +188,6 @@ config_load(const char *file)
               cfg->ext_tabs = EINA_TRUE;
               /* Fall through */
            case 6:
-              cfg->alert_capslock = EINA_TRUE;
               /* Fall through */
            case 7:
               /* Fall through */

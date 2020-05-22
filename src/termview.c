@@ -115,9 +115,8 @@ _keys_send(struct termview *sd,
            const char *keys,
            unsigned int size)
 {
-   const s_config *const config = sd->nvim->config;
    nvim_api_input(sd->nvim, keys, size);
-   if (config->key_react)
+   if (sd->nvim->gui.theme.react_to_key_presses)
      edje_object_signal_emit(sd->cursor, "key,down", "eovim");
 }
 
