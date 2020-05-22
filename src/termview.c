@@ -20,7 +20,6 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "contrib/contrib.h"
 #include "eovim/termview.h"
 #include "eovim/log.h"
 #include "eovim/gui.h"
@@ -62,6 +61,7 @@ struct termview
    Evas_Object *textgrid;
    Evas_Object *cursor;
    Eina_Hash *palettes;
+   Ecore_Event_Handler *key_down_handler;
 
    unsigned int cell_w;
    unsigned int cell_h;
@@ -137,11 +137,11 @@ _composition_reset(struct termview *sd)
 }
 
 static inline void
-_composition_add(struct termview *sd, const char *key)
+_composition_add(struct termview *sd, const Ecore_Event_Key *const key)
 {
    /* Add the key as a stringshare in the seq list. Hence, starting the
     * composition */
-   Eina_Stringshare *const shr = eina_stringshare_add(key);
+   Eina_Stringshare *const shr = eina_stringshare_add(key->key);
    sd->seq_compose = eina_list_append(sd->seq_compose, shr);
 }
 
@@ -151,7 +151,7 @@ _composition_add(struct termview *sd, const char *key)
  * key itself.
  */
 static Eina_Bool
-_compose(struct termview *sd, const char *key)
+_compose(struct termview *const sd, const Ecore_Event_Key *const key)
 {
   if (_composing_is(sd))
     {
@@ -159,7 +159,7 @@ _compose(struct termview *sd, const char *key)
 
        /* When composition is enabled, we want to skip modifiers, and only feed
         * non-modified keys to the composition engine */
-       if (contrib_key_is_modifier(key))
+       if (key->modifiers != 0u)
          return EINA_TRUE;
 
        /* Add the current key to the composition list, and compute */
@@ -424,15 +424,14 @@ _add_modifier(char buf[64], const int cond, const char mod, int *const size)
   return EINA_TRUE;
 }
 
-static void
-_termview_key_down_cb(void *data,
-                      Evas *e EINA_UNUSED,
-                      Evas_Object *obj EINA_UNUSED,
-                      void *event)
+static Eina_Bool
+_termview_key_down_cb(
+  void *const data,
+  const int type EINA_UNUSED,
+  void *const event)
 {
    struct termview *const sd = data;
-   const Evas_Event_Key_Down *const ev = event;
-   const Evas_Modifier *const mod = ev->modifiers;
+   const Ecore_Event_Key *const ev = event;
    int send_size = 0;
    const s_keymap *const keymap = keymap_get(ev->key);
    char buf[64];
@@ -440,11 +439,20 @@ _termview_key_down_cb(void *data,
    const char caps[] = "Caps_Lock";
    s_gui *const gui = &(sd->nvim->gui);
 
+#if 0
+   printf("key      : %s\n", ev->key);
+   printf("keyname  : %s\n", ev->keyname);
+   printf("string   : %s\n", ev->string);
+   printf("compose  : %s\n", ev->compose);
+   printf("modifiers: 0x%x\n", ev->modifiers);
+   printf("------------------------\n");
+#endif
+
    /* Did we press the Caps_Lock key? We can either have enabled or disabled
     * caps lock. */
    if (!strcmp(ev->key, caps)) /* Caps lock is pressed */
      {
-        if (evas_key_lock_is_set(ev->locks, caps)) /* DISABLE */
+        if (ev->modifiers & ECORE_EVENT_LOCK_CAPS) /* DISABLE */
           {
              /* If we press caps lock with prior caps locks, it means we
               * just DISABLED the caps lock */
@@ -458,19 +466,18 @@ _termview_key_down_cb(void *data,
           }
      }
 
+   /* If the key produces nothing. Stop */
+   if ((ev->string == NULL) && (keymap == NULL))
+     return ECORE_CALLBACK_PASS_ON;
+
    /* Try the composition. When this function returns EINA_TRUE, it already
     * worked out, nothing more to do. */
-   if (_compose(sd, ev->key))
-     return;
+   if (_compose(sd, ev))
+     return ECORE_CALLBACK_PASS_ON;
 
-   /* Skip the AltGr key. */
-   if (!strcmp(ev->key, "ISO_Level3_Shift") ||
-       !strcmp(ev->key, "AltGr"))
-     return;
-
-   const Eina_Bool ctrl = evas_key_modifier_is_set(mod, "Control");
-   const Eina_Bool super = evas_key_modifier_is_set(mod, "Super");
-   const Eina_Bool alt = evas_key_modifier_is_set(mod, "Alt");
+   const Eina_Bool ctrl = ev->modifiers & ECORE_EVENT_MODIFIER_CTRL;
+   const Eina_Bool super = ev->modifiers &  ECORE_EVENT_MODIFIER_WIN;
+   const Eina_Bool alt = ev->modifiers & ECORE_EVENT_MODIFIER_ALT;
 
    /* Register modifiers. Ctrl and shit are special: we enable composition only
     * if the key is present in the keymap (it is a special key). We disregard
@@ -480,9 +487,9 @@ _termview_key_down_cb(void *data,
 
    if (compose)
      {
-        const Eina_Bool shift = evas_key_modifier_is_set(mod, "Shift");
+        const Eina_Bool shift = ev->modifiers & ECORE_EVENT_MODIFIER_SHIFT;
         const char *const key = keymap ? keymap->name : ev->key;
-        if (! key) { return; }
+        if (! key) { return ECORE_CALLBACK_PASS_ON; }
 
         /* Compose a string containing the textual representation of the
          * special keys to be sent to neovim.
@@ -491,17 +498,21 @@ _termview_key_down_cb(void *data,
          * We first compose the first part with the modifiers. E.g. <C-S-
          */
         buf[0] = '<'; send_size = 1;
-        if (! _add_modifier(buf, ctrl, 'C', &send_size)) { return; }
-        if (! _add_modifier(buf, shift, 'S', &send_size)) { return; }
-        if (! _add_modifier(buf, super, 'D', &send_size)) { return; }
-        if (! _add_modifier(buf, alt, 'A', &send_size)) { return; }
+        if (! _add_modifier(buf, ctrl, 'C', &send_size))
+        { return ECORE_CALLBACK_PASS_ON; }
+        if (! _add_modifier(buf, shift, 'S', &send_size))
+        { return ECORE_CALLBACK_PASS_ON; }
+        if (! _add_modifier(buf, super, 'D', &send_size))
+        { return ECORE_CALLBACK_PASS_ON; }
+        if (! _add_modifier(buf, alt, 'A', &send_size))
+        { return ECORE_CALLBACK_PASS_ON; }
 
         /* Add the real key after the modifier, and close the bracket */
         assert(send_size < (int)sizeof(buf));
         const size_t len = sizeof(buf) - (size_t)send_size;
         const int ret = snprintf(buf + send_size, len, "%s>", key);
         if (EINA_UNLIKELY(ret < 2))
-        { ERR("Failed to compose key."); return; }
+        { ERR("Failed to compose key."); return ECORE_CALLBACK_PASS_ON; }
         send_size += ret;
         send = buf;
      }
@@ -509,21 +520,14 @@ _termview_key_down_cb(void *data,
      {
         send_size = snprintf(buf, sizeof(buf), "<%s>", keymap->name);
         if (EINA_UNLIKELY(send_size < 3))
-        { ERR("Failed to write key to string"); return; }
+        { ERR("Failed to write key to string"); return ECORE_CALLBACK_PASS_ON; }
         send = buf;
-     }
-   else if (ev->string)
-     {
-        send = ev->string;
-        send_size = (int)strlen(send);
      }
    else
      {
-        /* Only pass ev->key if it is not a complex string. This allow to
-         * filter out things like Control_L. */
-        const int size = (int)strlen(ev->key);
-        send_size = (size == 1) ? size : 0;
-        send = ev->key; /* Never NULL */
+        assert(ev->string != NULL);
+        send = ev->string;
+        send_size = (int)strlen(send);
      }
 
    /* If a key is availabe pass it to neovim and update the ui */
@@ -531,6 +535,7 @@ _termview_key_down_cb(void *data,
      _keys_send(sd, send, (unsigned int)send_size);
    else
      DBG("Unhandled key '%s'", ev->key);
+   return ECORE_CALLBACK_PASS_ON;
 }
 
 static void
@@ -588,7 +593,6 @@ _smart_add(Evas_Object *obj)
    /* Create the smart object */
    evas_object_smart_data_set(obj, sd);
    _parent_sc.add(obj);
-   evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_DOWN, _termview_key_down_cb, sd);
    evas_object_event_callback_add(obj, EVAS_CALLBACK_FOCUS_IN, _termview_focus_in_cb, sd);
    evas_object_event_callback_add(obj, EVAS_CALLBACK_FOCUS_OUT, _termview_focus_out_cb, sd);
    evas_object_event_callback_add(obj, EVAS_CALLBACK_MOUSE_MOVE, _termview_mouse_move_cb, sd);
@@ -643,6 +647,7 @@ _smart_del(Evas_Object *obj)
    evas_object_del(sd->textgrid);
    evas_object_del(sd->cursor);
    eina_hash_free(sd->palettes);
+   ecore_event_handler_del(sd->key_down_handler);
    _composition_reset(sd);
 }
 
@@ -714,12 +719,10 @@ termview_init(void)
 
 void
 termview_shutdown(void)
-{}
-
 {
-   struct termview *const sd = evas_object_smart_data_get(obj);
-   sd->nvim = nvim;
+  evas_smart_free(_smart);
 }
+
 
 Evas_Object *
 termview_add(Evas_Object *parent, s_nvim *nvim)
@@ -728,6 +731,14 @@ termview_add(Evas_Object *parent, s_nvim *nvim)
    Evas_Object *const obj = evas_object_smart_add(e, _smart);
    struct termview *const sd = evas_object_smart_data_get(obj);
    sd->nvim = nvim;
+
+   /* We use the ECORE event instead of the evas smart callback because
+    * the key modifiers are much more convenient as Ecore_Event_Key events
+    * than Evas_Event_Key_Down.
+    * This is not a problem, because the termview is the only widget in
+    * the Evas that actually requires keyboard use */
+   sd->key_down_handler =
+     ecore_event_handler_add(ECORE_EVENT_KEY_DOWN, &_termview_key_down_cb, sd);
 
    return obj;
 }
