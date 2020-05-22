@@ -161,8 +161,6 @@ gui_add(s_gui *gui,
         goto fail;
      }
    gui->edje = elm_layout_edje_get(gui->layout);
-   //elm_layout_signal_callback_add(gui->layout, "about,open", "eovim",
-   //                               NULL, nvim);
    elm_layout_signal_callback_add(gui->layout, "eovim,tabs,shown", "eovim",
                                   _tabs_shown_cb, nvim);
    elm_win_resize_object_add(gui->win, gui->layout);

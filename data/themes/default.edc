@@ -109,37 +109,13 @@ collections {
       parts {
          rect { "tabs_headings"; nomouse;
             desc { "default";
-               rel2.to_x: "tabs_spacer";
-               rel2.relative: 0.0 0.0;
+               rel2.relative: 1.0 0.0;
                align: 0.5 0.0;
                color_class: "background";
             }
             desc { "active";
                inherit: "default";
                min: 1 24;
-            }
-         }
-         /* Add a bit of spacing to make room to the settings icon, so it does
-          * not collide with the tabs */
-         image { "tabs_spacer"; nomouse;
-            desc { "default";
-               rel1.relative: 1.0 0.0;
-               rel2.to_y: "tabs_headings";
-               min: 20 1;
-               align: 1.0 0.5;
-               fixed: 1 1;
-               image.normal: "tab_other_m.png";
-               image.border: 0 0 4 4;
-               fill.smooth: 0;
-            }
-         }
-         rect { "tabs_spacer_line"; nomouse;
-            desc { "default";
-               rel.to: "tabs_spacer";
-               rel1.relative: 0.0 1.0;
-               min: 1 1;
-               align: 0.5 1.0;
-               color: 200 200 200 64;
             }
          }
          box { "eovim.tabline";
@@ -164,34 +140,6 @@ collections {
             desc { "default";
                rel1.to: "tabs_headings";
                rel1.relative: 0.0 1.0;
-            }
-         }
-
-         image { "about_icon";
-            desc { "default";
-               rel1.relative: 1.0 0.0;
-               rel2.relative: 1.0 0.0;
-               min: 20 20;
-               align: 1.0 0.0;
-               image.normal: "preferences.png";
-               color: 51 153 255 64;
-            }
-            desc { "hover";
-               inherit: "default";
-               color: 51 153 255 255;
-            }
-
-            program { signal: "mouse,in"; source: "about_icon";
-               action: STATE_SET "hover";
-               transition: SPRING 0.7 2.0 4;
-               target: "about_icon";
-            }
-            program { signal: "mouse,out"; source: "about_icon";
-               action: STATE_SET "default";
-               target: "about_icon";
-            }
-            program { signal: "mouse,clicked,1"; source: "about_icon";
-               action: SIGNAL_EMIT "about,open" "eovim";
             }
          }
 
