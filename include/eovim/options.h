@@ -33,7 +33,6 @@ typedef struct
    const char *nvim_prog;
    const char *theme;
 
-   Eina_Bool no_plugins;
    Eina_Bool fullscreen;
    Eina_Bool maximized; /**< Eovim will run in a maximized window */
    Eina_Bool forbidden;

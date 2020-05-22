@@ -35,9 +35,6 @@ _show_help(void)
       "  eovim [options] [files...]\n"
       "\n"
       "Options:\n"
-      "  -N, --no-plugin         Do not load any plugin\n"
-      "      --noplugin\n"
-      "\n"
       "  --nvim <nvim>           Set the path to the Neovim program\n"
       "\n"
       "  -g, --geometry <WxH>    Set the initial dimensions of the window\n"
@@ -83,7 +80,6 @@ typedef enum
    OPT_CONFIG           = 1,
    OPT_NVIM             = 3,
 
-   OPT_NO_PLUGIN        = 'N',
    OPT_GEOMETRY         = 'g',
    OPT_FULLSCREEN       = 'F',
    OPT_MAXIMIZED        = 'M',
@@ -102,8 +98,6 @@ typedef struct
 
 static const s_arg _args[] =
 {
-   ARG("noplugin",      OPT_NO_PLUGIN),
-   ARG("no-plugin",     OPT_NO_PLUGIN),
    ARG("nvim",          OPT_NVIM),
    ARG("geometry",      OPT_GEOMETRY),
    ARG("config",        OPT_CONFIG),
@@ -251,11 +245,6 @@ options_parse(int argc,
                 case OPT_GEOMETRY:
                    if (! _parse_geometry(&opts->geometry, GET_NEXT_ARG()))
                      return OPTIONS_RESULT_QUIT;
-                   break;
-
-                   /* No plugin, store true */
-                case OPT_NO_PLUGIN:
-                   opts->no_plugins = EINA_TRUE;
                    break;
 
                    /* Fullscreen, store true */

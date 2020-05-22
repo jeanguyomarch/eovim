@@ -11,41 +11,9 @@ project(eovim LANGUAGES C VERSION 0.1.3.99)
 
 include(CheckTypeSize)
 
-# Try to determine the architecture (32/64 bits) we are compiling for.  This
-# will be used to determine in which lib directory plugins must be loaded
-# (lib/lib32/lib64).
-check_type_size("void*" SIZEOF_VOID_P BUILTIN_TYPES_ONLY LANGUAGE C)
-if (SIZEOF_VOID_P EQUAL 4)
-   set(LIB_SUFFIX "32")
-elseif (SIZEOF_VOID_P EQUAL 8)
-   set(LIB_SUFFIX "64")
-else ()
-   set(LIB_SUFFIX "")
-endif ()
-
-# Set the directory where libraries will be installed (e.g. /usr/lib64, ...)
-# This is overridable by users via -DLIb_INSTALL_DIR=alternate-lib-dir
-set(LIB_INSTALL_DIR "lib${LIB_SUFFIX}"
-   CACHE STRING
-   "Set the installation prefix of libraries (relative the prefix installation)")
-
-# Shared objects (loadable modules) have different extensions from one platform
-# to another.  OSX and Linux use .so, whereas Windows uses .dll.  There may be
-# more, that I'm not aware of.
-if (WIN32)
-   set(MODULE_EXT ".dll")
-else ()
-   set(MODULE_EXT ".so")
-endif ()
-
-option(WITH_PLUGINS "Compile eovim with plug-ins support" ON)
-
 set(CMAKE_MODULE_PATH
    "${CMAKE_MODULE_PATH}${CMAKE_SOURCE_DIR}/cmake/Modules")
 
-if (WITH_PLUGINS)
-   include(plugin)
-endif ()
 include(compiler_warnings)
 include(git_commit)
 
@@ -114,7 +82,6 @@ add_executable(eovim
    "${SRC_DIR}/nvim_completion.c"
    "${SRC_DIR}/nvim_helper.c"
    "${SRC_DIR}/nvim_request.c"
-   "${SRC_DIR}/plugin.c"
    "${SRC_DIR}/options.c"
    "${SRC_DIR}/contrib.c"
 )
@@ -145,9 +112,6 @@ target_compile_definitions(eovim
    PACKAGE_DATA_DIR=\"${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}\"
    SOURCE_DATA_DIR=\"${CMAKE_SOURCE_DIR}/data\"
    BUILD_DATA_DIR=\"${CMAKE_BINARY_DIR}\"
-   BUILD_PLUGINS_DIR=\"${CMAKE_BINARY_DIR}/plugins\"
-   LIB_SUFFIX=\"${LIB_SUFFIX}\"
-   MODULE_EXT=\"${MODULE_EXT}\"
 )
 
 install(
@@ -176,30 +140,6 @@ install(
    FILES "${CMAKE_SOURCE_DIR}/data/images/eovim.png"
    DESTINATION "share/icons"
 )
-
-##############################################################################
-# Plug-ins support
-##############################################################################
-if (WITH_PLUGINS)
-   # Tell Eovim that we use plugins
-   target_compile_definitions(eovim PRIVATE HAVE_PLUGINS=1)
-
-   # Install Eovim's headers: Eovim.h and the headers it includes.
-   install(FILES
-      "${CMAKE_SOURCE_DIR}/include/Eovim.h"
-      DESTINATION include/eovim-0)
-   install(FILES
-      "${CMAKE_SOURCE_DIR}/include/eovim/types.h"
-      "${CMAKE_SOURCE_DIR}/include/eovim/msgpack_helper.h"
-      "${BUILD_INCLUDE_DIR}/eovim/version.h"
-      DESTINATION include/eovim-0/eovim)
-   add_subdirectory(plugins)
-
-   # When plugins are enabled, eovim must be linked against its plugins runtime
-   # library: libeovim.
-   target_link_libraries(eovim libeovim)
-endif ()
-
 
 ##############################################################################
 # Man page

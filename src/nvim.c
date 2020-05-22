@@ -705,22 +705,6 @@ _api_decode_cb(s_nvim *nvim, void *data EINA_UNUSED, const msgpack_object *resul
   _virtual_interface_setup(nvim);
 }
 
-static void
-_nvim_plugins_load(s_nvim *nvim)
-{
-   const Eina_List *const cfg_plugins = nvim->config->plugins;
-   Eina_Inlist *const plugins = main_plugins_get();
-   const unsigned int expect = eina_list_count(cfg_plugins);
-   const unsigned int loaded = plugin_list_load(plugins, cfg_plugins);
-
-   /* If we didn't load as many plugins as expected, warn */
-   if (EINA_UNLIKELY(expect != loaded))
-     WRN("The configuration expected %u plugins to be loaded, but "
-         "only %u were", expect, loaded);
-   else
-     INF("Loaded %u plugins out of %u", loaded, expect);
-}
-
 static Eina_Bool _nvim_event_handlers_add(s_nvim *nvim)
 {
    struct {
@@ -806,8 +790,6 @@ nvim_new(const s_options *opts,
    ok = eina_strbuf_append_printf(cmdline, "\"%s\"", opts->nvim_prog);
    ok &= eina_strbuf_append(cmdline, " --embed");
 
-   if (opts->no_plugins) ok &= eina_strbuf_append(cmdline, " --noplugin");
-
    for (const char *arg = *args; arg != NULL; arg = *(++args))
      {
         ok &= eina_strbuf_append_printf(cmdline, " \"%s\"", arg);
@@ -852,9 +834,6 @@ nvim_new(const s_options *opts,
         CRI("Failed to initialize a configuration");
         goto del_ustrbuf;
      }
-
-   /* Load the plugins requested by the config */
-   _nvim_plugins_load(nvim);
 
    /* Initialze msgpack for RPC */
    msgpack_sbuffer_init(&nvim->sbuffer);

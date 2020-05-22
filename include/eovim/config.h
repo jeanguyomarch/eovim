@@ -24,13 +24,11 @@
 #define __EOVIM_CONFIG_H__
 
 #include "eovim/types.h"
-#include "eovim/plugin.h"
 #include <Eina.h>
 
 struct config
 {
    unsigned int version;
-   Eina_List *plugins;
    Eina_Bool mute_bell;
    Eina_Bool key_react;
    Eina_Bool ext_popup;
@@ -52,8 +50,6 @@ void config_caps_lock_alert_set(s_config *config, Eina_Bool alert);
 void config_ext_popup_set(s_config *config, Eina_Bool pop);
 void config_ext_cmdline_set(s_config *config, Eina_Bool cmd);
 void config_ext_tabs_set(s_config *config, Eina_Bool tabs);
-void config_plugin_add(s_config *config, const s_plugin *plugin);
-void config_plugin_del(s_config *config, const s_plugin *plugin);
 s_config *config_load(const char *filename);
 
 #endif /* ! __EOVIM_CONFIG_H__ */
