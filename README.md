@@ -32,25 +32,17 @@ Have a problem/question/suggestion? Feel free to [open an issue][10]. Join the c
 # Installation
 
 Eovim requires the following components to be installed on your system before
-you can start hacking around:
+you can start hacking around. See [the Wiki][6] for details.
 
 - [EFL][1]: this framework of libraries is packaged in most of the GNU/Linux
   distributions and on macOS. Do not forget to install the efl-devel package
   which provides Eina among others.
 - [msgpack-c][3]: this serialization library is not widely packaged, but is
-  mandatory to communicate with Neovim. You are advised to run the script
-  `scripts/get-msgpack.sh` to install msgpack. This will retrieve and compile
-  a static version of msgpack that `eovim` can work with.
+  mandatory to communicate with Neovim.
 - [Neovim][2] version 0.2.0 or greater (earlier versions have not been tested),
 - [CMake][5].
 
-If you are unsure what packages shall be installed, you can run the following
-helper script from the top source directory. It will tell you how to setup your
-environment to compile Eovim from sources.
 
-```bash
-./scripts/setup.py
-```
 
 After making sure you have installed the dependencies aforementioned, run the
 following installation procedure:
@@ -60,7 +52,6 @@ mkdir -p build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 cmake --build .
 cmake --build . --target install # Possibly as root (i.e. via sudo)
-ldconfig # On Linux only, possibly as root (i.e. via sudo)
 ```
 
 If we want to run `eovim` without installing it, please refer to the
@@ -154,7 +145,7 @@ logo. Eovim's logo should be understood as a tribute to Neovim.
 [3]: https://github.com/msgpack/msgpack-c
 [4]: https://www.enlightenment.org/about-terminology
 [5]: https://cmake.org/
-[6]: https://git.enlightenment.org/tools/exactness.git/
+[6]: https://github.com/jeanguyomarch/eovim/wiki
 [7]: https://raw.githubusercontent.com/neovim/neovim.github.io/master/logos/neovim-logo-600x173.png
 [8]: https://phab.enlightenment.org/w/projects/eovim/#screenshots
 [9]: https://phab.enlightenment.org/w/projects/eovim/
