@@ -216,4 +216,8 @@ Eina_Bool option_set_init(void);
 void option_set_shutdown(void);
 Eina_Bool nvim_event_option_set(s_nvim *nvim, const msgpack_object_array *args);
 
+/*****************************************************************************/
+
+Eina_Bool nvim_event_eovim_reload(s_nvim *nvim, const msgpack_object_array *args);
+
 #endif /* ! EOVIM_EVENT_H__ */

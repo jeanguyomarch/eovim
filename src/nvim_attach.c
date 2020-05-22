@@ -157,35 +157,6 @@ fail:
 
 
 
-/** \return TRUE if \p res contains a strictly positive integer */
-static inline Eina_Bool
-parse_config_boolean(const msgpack_object *const res)
-{
-  return
-    (res->type == MSGPACK_OBJECT_POSITIVE_INTEGER) &&
-    (res->via.u64 != UINT64_C(0));
-}
-
-static void parse_theme_config(
-  s_nvim *const nvim EINA_UNUSED,
-  void *const data,
-  const msgpack_object *const result)
-{
-  Eina_Bool *const param = data;
-  *param = parse_config_boolean(result);
-}
-
-static void parse_ext_config(
-  s_nvim *const nvim,
-  void *const data,
-  const msgpack_object *const result)
-{
-  const char *const key = data;
-  const Eina_Bool param = parse_config_boolean(result);
-  nvim_api_ui_ext_set(nvim, key, param);
-}
-
-
 /******************************************************************************
  *                                  - 5 -
  *
@@ -208,29 +179,8 @@ _ui_attached_cb(
   nvim_flush(nvim);
   /* The request has now been fully acknowledged *******************************/
 
-
-  s_gui *const gui = &nvim->gui;
-
-  /* Retrive theme-oriented configuration */
-  nvim_api_get_var(nvim, "eovim_theme_bell_enabled",
-    &parse_theme_config, &gui->theme.bell_enabled);
-  nvim_api_get_var(nvim, "eovim_theme_react_to_key_presses",
-    &parse_theme_config, &gui->theme.react_to_key_presses);
-  nvim_api_get_var(nvim, "eovim_theme_react_to_caps_lock",
-    &parse_theme_config, &gui->theme.react_to_caps_lock);
-
-  nvim_api_get_var(nvim, "eovim_ext_tabline",
-    &parse_ext_config, "ext_tabline");
-  nvim_api_get_var(nvim, "eovim_ext_popupmenu",
-    &parse_ext_config, "ext_popupmenu");
-  nvim_api_get_var(nvim, "eovim_ext_wildmenu",
-    &parse_ext_config, "ext_wildmenu");
-  nvim_api_get_var(nvim, "eovim_ext_cmdline",
-    &parse_ext_config, "ext_cmdline");
-  //nvim_api_get_var(nvim, "eovim_ext_linegrid",
-  //  &parse_config_boolean, &gui->ext.linegrid);
-  //nvim_api_get_var(nvim, "eovim_ext_multigrid",
-  //  &parse_config_boolean, &gui->ext.multigrid);
+  /* Load the user configuration */
+  nvim_helper_config_reload(nvim);
 
   /* Okay, start running the GUI! */
   gui_ready_set(&nvim->gui);

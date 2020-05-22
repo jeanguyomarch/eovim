@@ -76,6 +76,7 @@ add_executable(eovim
    "${SRC_DIR}/event/option_set.c"
    "${SRC_DIR}/event/mode.c"
    "${SRC_DIR}/event/cmdline.c"
+   "${SRC_DIR}/event/eovim.c"
    "${SRC_DIR}/nvim_api.c"
    "${SRC_DIR}/nvim_attach.c"
    "${SRC_DIR}/nvim_completion.c"
