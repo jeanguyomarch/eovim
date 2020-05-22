@@ -26,7 +26,6 @@
 #include "eovim/gui.h"
 #include "eovim/main.h"
 #include "eovim/keymap.h"
-#include "eovim/config.h"
 #include "eovim/nvim_helper.h"
 #include "eovim/nvim_api.h"
 #include "eovim/nvim.h"
@@ -717,21 +716,18 @@ void
 termview_shutdown(void)
 {}
 
-static void
-_termview_nvim_set(Evas_Object *obj,
-                  s_nvim *nvim)
 {
    struct termview *const sd = evas_object_smart_data_get(obj);
    sd->nvim = nvim;
 }
 
 Evas_Object *
-termview_add(Evas_Object *parent,
-             s_nvim *nvim)
+termview_add(Evas_Object *parent, s_nvim *nvim)
 {
    Evas *const e  = evas_object_evas_get(parent);
    Evas_Object *const obj = evas_object_smart_add(e, _smart);
-   _termview_nvim_set(obj, nvim);
+   struct termview *const sd = evas_object_smart_data_get(obj);
+   sd->nvim = nvim;
 
    return obj;
 }

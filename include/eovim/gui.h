@@ -26,7 +26,6 @@
 #include <Elementary.h>
 
 #include "eovim/termview.h"
-#include "eovim/prefs.h"
 #include "eovim/types.h"
 
 struct gui
@@ -69,13 +68,12 @@ struct gui
       unsigned int size;
    } font;
 
+   /* Configuration parameters of the theme */
    struct {
      Eina_Bool bell_enabled;
      Eina_Bool react_to_key_presses;
      Eina_Bool react_to_caps_lock;
    } theme;
-
-   s_prefs prefs;
 
    s_nvim *nvim;
    Eina_Inarray *tabs;
@@ -87,6 +85,7 @@ struct gui
    /** True when the caps lock warning is on, False otherwise */
    Eina_Bool capslock_warning;
 
+   Eina_Bool must_resize;
    unsigned int active_tab; /**< Identifier of the active tab */
 };
 

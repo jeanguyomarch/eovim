@@ -23,7 +23,6 @@
 #include "eovim/nvim_api.h"
 #include "eovim/types.h"
 #include "eovim/nvim.h"
-#include "eovim/config.h"
 #include "eovim/nvim_api.h"
 #include "eovim/nvim_event.h"
 #include "eovim/nvim_request.h"
@@ -32,18 +31,10 @@
 #include "eovim/log.h"
 #include "eovim/main.h"
 
-static void _api_decode_cb(s_nvim *nvim, void *data, const msgpack_object *result);
 
 /*============================================================================*
  *                                 Private API                                *
  *============================================================================*/
-
-static void _ui_attached_cb(s_nvim *nvim, void *data EINA_UNUSED,
-                            const msgpack_object *result EINA_UNUSED)
-{
-  gui_ready_set(&nvim->gui);
-  nvim_helper_ready_send(nvim);
-}
 
 static Eina_Bool
 _handle_request(s_nvim *nvim, const msgpack_object_array *args)
@@ -269,49 +260,27 @@ fail:
    return EINA_FALSE;
 }
 
-static Eina_Bool
-_vimenter_request_cb(s_nvim *nvim EINA_UNUSED,
-                     const msgpack_object_array *args EINA_UNUSED,
-                     msgpack_packer *pk)
-{
-  msgpack_pack_nil(pk); /* Error */
-  msgpack_pack_nil(pk); /* Result */
-  return EINA_TRUE;
-}
 
 /*============================================================================*
  *                       Nvim Processes Events Handlers                       *
  *============================================================================*/
 
+
 static Eina_Bool
-_nvim_added_cb(void *data,
-               int   type EINA_UNUSED,
-               void *event)
+_nvim_added_cb(void *const data,
+               const int   type EINA_UNUSED,
+               void *const event)
 {
-#ifndef EFL_VERSION_1_22
    /* EFL versions 1.21 (and maybe 1.20 as well ??) have a bug. When coming out
     * of sleep/hibernation, a spurious event was sent, causing
     * ECORE_EXE_EVENT_ADD to be triggered with a NULL event, which is supposed
-    * to be always set. This test prevent this spurious event to crash eovim */
-   if (EINA_UNLIKELY(! event)) { return ECORE_CALLBACK_PASS_ON; }
-#endif
-
-   const Ecore_Exe_Event_Add *const info = event;
-   INF("Process with PID %i was created", ecore_exe_pid_get(info->exe));
-
-   /* Okay, at this point the neovim process is running! Great! Now, we can
-    * start to retrieve the API information and trigger the vimenter autocmd.
-    *
-    * We can start attaching the UI on the fly.
-    * See :help ui-startup for details.
-    */
-   s_nvim *const nvim = data;
-   nvim_api_get_api_info(nvim, _api_decode_cb, NULL);
-
-   nvim_helper_autocmd_vimenter_exec(nvim);
-   const s_geometry *const geo = &nvim->opts->geometry;
-   nvim_api_ui_attach(nvim, geo->w, geo->h, _ui_attached_cb, NULL);
-
+    * to be always set. This test prevents this spurious event to crash eovim */
+   if (EINA_LIKELY(event != NULL))
+   {
+     const Ecore_Exe_Event_Add *const info = event;
+     INF("Process with PID %i was created", ecore_exe_pid_get(info->exe));
+     nvim_attach(data);
+   }
 
    return ECORE_CALLBACK_PASS_ON;
 }
@@ -453,258 +422,6 @@ _nvim_received_error_cb(void *data EINA_UNUSED,
    return ECORE_CALLBACK_PASS_ON;
 }
 
-/* FIXME this is soooooo fragile */
-static void
-_nvim_runtime_load(s_nvim *nvim,
-                   const char *filename)
-{
-   INF("Loading runtime file: '%s'", filename);
-
-   Eina_Strbuf *const buf = eina_strbuf_new();
-   if (EINA_UNLIKELY(! buf))
-     {
-        CRI("Failed to allocate string buffer");
-        return;
-     }
-   eina_strbuf_append_printf(buf, ":source %s", filename);
-
-   /* Send it to neovim */
-   nvim_api_command(nvim, eina_strbuf_string_get(buf),
-                    (unsigned int)eina_strbuf_length_get(buf),
-                    NULL, NULL);
-   eina_strbuf_free(buf);
-}
-
-static void
-_nvim_builtin_runtime_load(s_nvim *nvim)
-{
-   Eina_Strbuf *const buf = eina_strbuf_new();
-   if (EINA_UNLIKELY(! buf))
-     {
-        CRI("Failed to create string buffer");
-        return;
-     }
-
-   /* Compose the path to the runtime file */
-   const char *const dir = (main_in_tree_is())
-      ? SOURCE_DATA_DIR
-      : elm_app_data_dir_get();
-   eina_strbuf_append_printf(buf, "%s/vim/runtime.vim", dir);
-
-   _nvim_runtime_load(nvim, eina_strbuf_string_get(buf));
-   eina_strbuf_free(buf);
-}
-
-static void
-_virtual_interface_init(s_nvim *nvim)
-{
-   nvim->hl_group_decode = nvim_helper_highlight_group_decode_noop;
-}
-
-static void
-_virtual_interface_setup(s_nvim *nvim)
-{
-   /* Setting up the highliht group decoder virtual interface */
-   if (NVIM_VERSION_EQ(nvim, 0, 2, 0))
-     {
-        ERR("You are running Neovim 0.2.0, which has a bug that prevents the "
-            "cursor color to be deduced.");
-     }
-   else
-     nvim->hl_group_decode = nvim_helper_highlight_group_decode;
-}
-
-static unsigned int
-_version_fragment_decode(const msgpack_object *version)
-{
-  /* A version shall be a positive integer that shall be contained within an
-   * 'unsigned int' */
-  if (EINA_UNLIKELY(version->type != MSGPACK_OBJECT_POSITIVE_INTEGER))
-  {
-    ERR("Version argument is expected to be a positive integer.");
-    return 0u; /* Fallback to zero... */
-  }
-  assert(version->via.i64 >= 0);
-  if (EINA_UNLIKELY(version->via.i64 > UINT_MAX))
-  {
-    ERR("Version is greater than %u, which is forbidden", UINT_MAX);
-    return UINT_MAX; /* Truncating */
-  }
-  return (unsigned int)version->via.i64;
-}
-
-
-static inline Eina_Bool
-_msgpack_streq(const msgpack_object_str *str, const char *with, size_t len)
-{
-  return 0 == strncmp(str->ptr, with, MIN(str->size, len));
-}
-#define _MSGPACK_STREQ(MsgPackStr, StaticStr) \
-  _msgpack_streq(MsgPackStr, "" StaticStr "", sizeof(StaticStr) - 1u)
-
-static void
-_version_decode(s_nvim *nvim, const msgpack_object *args)
-{
-  /* A version shall be a dictionary containing the following parameters:
-   *
-   * {
-   *   "major": X,
-   *   "minor": Y,
-   *   "patch": Z
-   *   "api_level": A,
-   *   "api_compatible": B,
-   *   "api_prerelease": T/F,
-   * }
-   *
-   * For now, we are only interested by 'major', 'minor' and 'patch'.
-   */
-  if (EINA_UNLIKELY(args->type != MSGPACK_OBJECT_MAP))
-  {
-    ERR("A dictionary was expected. Got type 0x%x", args->type);
-    return;
-  }
-  const msgpack_object_map *const map = &(args->via.map);
-  for (uint32_t i = 0u; i < map->size; i++)
-  {
-    const msgpack_object_kv *const kv = &(map->ptr[i]);
-    if (EINA_UNLIKELY(kv->key.type != MSGPACK_OBJECT_STR))
-    {
-      ERR("Dictionary key is expected to be of type string");
-      continue;
-    }
-    const msgpack_object_str *const key = &(kv->key.via.str);
-    if (_MSGPACK_STREQ(key, "major"))
-    { nvim->version.major = _version_fragment_decode(&(kv->val)); }
-    else if (_MSGPACK_STREQ(key, "minor"))
-    { nvim->version.minor = _version_fragment_decode(&(kv->val)); }
-    else if (_MSGPACK_STREQ(key, "patch"))
-    { nvim->version.patch = _version_fragment_decode(&(kv->val)); }
-  }
-}
-
-static void
-_ui_options_decode(s_nvim *nvim, const msgpack_object *args)
-{
-  /* The ui_options object is a list like what is written below:
-   *
-   *   [
-   *     "rgb",
-   *     "ext_cmdline",
-   *     "ext_popupmenu",
-   *     "ext_tabline",
-   *     "ext_wildmenu",
-   *     "ext_linegrid",
-   *     "ext_hlstate"
-   *   ]
-   *
-   */
-  if (EINA_UNLIKELY(args->type != MSGPACK_OBJECT_ARRAY))
-  {
-    ERR("An array was expected. Got type 0x%x", args->type);
-    return;
-  }
-  const msgpack_object_array *const arr = &(args->via.array);
-  for (uint32_t i = 0u; i < arr->size; i++)
-  {
-    const msgpack_object *const o = &(arr->ptr[i]);
-    const msgpack_object_str *const opt = EOVIM_MSGPACK_STRING_OBJ_EXTRACT(o, fail);
-
-    nvim->features.linegrid |= (_MSGPACK_STREQ(opt, "ext_linegrid"));
-    nvim->features.multigrid |= (_MSGPACK_STREQ(opt, "ext_multigrid"));
-    nvim->features.cmdline |= (_MSGPACK_STREQ(opt, "ext_cmdline"));
-    nvim->features.wildmenu |= (_MSGPACK_STREQ(opt, "ext_wildmenu"));
-  }
-
-  return;
-fail:
-  ERR("Failed to decode ui_options API");
-}
-
-static void
-_api_decode_cb(s_nvim *nvim, void *data EINA_UNUSED, const msgpack_object *result)
-{
-  /* We expect two arguments:
-   * 1) the channel ID. we don't care.
-   * 2) a dictionary containing meta information - that's what we want
-   */
-  if (EINA_UNLIKELY(result->type != MSGPACK_OBJECT_ARRAY))
-  {
-    ERR("An array is expected. Got type 0x%x", result->type);
-    return;
-  }
-  const msgpack_object_array *const args = &(result->via.array);
-  if (EINA_UNLIKELY(args->size != 2u))
-  {
-    ERR("An array of two arguments is expected. Got %"PRIu32, args->size);
-    return;
-  }
-  if (EINA_UNLIKELY(args->ptr[1].type != MSGPACK_OBJECT_MAP))
-  {
-    ERR("The second argument is expected to be a map.");
-    return;
-  }
-  const msgpack_object_map *const map = &(args->ptr[1].via.map);
-
-  /* Now that we have the map containing the API information, go through it to
-   * extract what we need. Currently, we are only interested in the "version"
-   * attribute */
-  for (uint32_t i = 0u; i < map->size; i++)
-  {
-    const msgpack_object_kv *const kv = &(map->ptr[i]);
-    if (EINA_UNLIKELY(kv->key.type != MSGPACK_OBJECT_STR))
-    {
-      ERR("Key is expected to be of type string. Got type 0x%x", kv->key.type);
-      continue;
-    }
-    const msgpack_object_str *const key = &(kv->key.via.str);
-
-    /* Decode the "version" arguments */
-    if (_MSGPACK_STREQ(key, "version"))
-    { _version_decode(nvim, &(kv->val)); }
-    /* Decode the "ui_options" arguments */
-    else if (_MSGPACK_STREQ(key, "ui_options"))
-    { _ui_options_decode(nvim, &(kv->val)); }
-  }
-
-  /****************************************************************************
-  * Now that we have decoded the API information, use them!
-  *****************************************************************************/
-
-  INF("Running Neovim version %u.%u.%u",
-      nvim->version.major, nvim->version.minor, nvim->version.patch);
-  if (EINA_UNLIKELY((nvim->version.major == 0) && (nvim->version.minor < 2)))
-  {
-    gui_die(&nvim->gui,
-            "You are running neovim %u.%u.%u, which is unsupported. "
-            "Please consider upgrading Neovim.",
-            nvim->version.major, nvim->version.minor, nvim->version.patch);
-  }
-  /* We are now sure that we are running at least 0.2.0. *********************/
-
-  /* We want linegrid */
-  if (! nvim->features.linegrid)
-  {
-    gui_die(&nvim->gui,
-      "Eovim only supports rendering with 'ext_linegrid', which you version of "
-      "neovim (%u.%u.%u) does not provide.",
-      nvim->version.major, nvim->version.minor, nvim->version.patch);
-  }
-
-  if (nvim->features.cmdline)
-  { nvim_api_ui_ext_set(nvim, "ext_cmdline", nvim->config->ext_cmdline); }
-  if (nvim->features.wildmenu)
-  { nvim_api_ui_ext_set(nvim, "ext_wildmenu", nvim->config->ext_cmdline); }
-  // TODO - uncomment when new UI will be implemented
-  //if (nvim->features.linegrid)
-  //{ nvim_api_ui_ext_set(nvim, "ext_linegrid", EINA_TRUE); }
-  //if (nvim->features.multigrid)
-  //{ nvim_api_ui_ext_set(nvim, "ext_multigrid", EINA_TRUE); }
-
-  /* Now that we know Neovim's version, setup the virtual interface, that will
-   * prevent compatibilty issues */
-  _virtual_interface_setup(nvim);
-}
-
 static Eina_Bool _nvim_event_handlers_add(s_nvim *nvim)
 {
    struct {
@@ -827,24 +544,10 @@ nvim_new(const s_options *opts,
         goto del_events;
      }
 
-   /* Create the config */
-   nvim->config = config_load(opts->config_path);
-   if (EINA_UNLIKELY(! nvim->config))
-     {
-        CRI("Failed to initialize a configuration");
-        goto del_ustrbuf;
-     }
-
    /* Initialze msgpack for RPC */
    msgpack_sbuffer_init(&nvim->sbuffer);
    msgpack_packer_init(&nvim->packer, &nvim->sbuffer, msgpack_sbuffer_write);
    msgpack_unpacker_init(&nvim->unpacker, 2048);
-
-   /* Initialize the virtual interface to safe values (non-NULL pointers) */
-   _virtual_interface_init(nvim);
-
-   /* Add a callback to the vimenter request */
-   nvim_request_add("vimenter", _vimenter_request_cb);
 
    /* Create the neovim process */
    nvim->exe = ecore_exe_pipe_run(
@@ -856,14 +559,11 @@ nvim_new(const s_options *opts,
    if (EINA_UNLIKELY(! nvim->exe))
      {
         CRI("Failed to execute nvim instance");
-        goto del_config;
+        goto del_ustrbuf;
      }
    DBG("Running %s", eina_strbuf_string_get(cmdline));
    eina_strbuf_free(cmdline);
 
-   /* FIXME These are sooo fragile. Rework that!!! */
-   _nvim_builtin_runtime_load(nvim);
-   nvim_api_var_integer_set(nvim, "eovim_running", 1);
 
    /* Create the GUI window */
    if (EINA_UNLIKELY(! gui_add(&nvim->gui, nvim)))
@@ -876,14 +576,12 @@ nvim_new(const s_options *opts,
    else if (opts->fullscreen)
       gui_fullscreen_set(&nvim->gui, opts->fullscreen);
    else
-      gui_resize(&nvim->gui, opts->geometry.w, opts->geometry.h);
+      nvim->gui.must_resize = EINA_TRUE;
 
    return nvim;
 
 del_process:
    ecore_exe_kill(nvim->exe);
-del_config:
-   config_free(nvim->config);
 del_ustrbuf:
    eina_ustrbuf_free(nvim->decode);
 del_events:
@@ -904,7 +602,6 @@ nvim_free(s_nvim *nvim)
         _nvim_event_handlers_del(nvim);
         msgpack_sbuffer_destroy(&nvim->sbuffer);
         msgpack_unpacker_destroy(&nvim->unpacker);
-        config_free(nvim->config);
         eina_ustrbuf_free(nvim->decode);
         free(nvim);
      }

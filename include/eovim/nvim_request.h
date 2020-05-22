@@ -34,7 +34,7 @@
  *   result of the request. See msgpack-rpc.
  * @return EINA_TRUE on success, EINA_FALSE on failure
  *
- * @note This function should not call nvim_flush(). It is automatically handled.
+ * @note This function is responsible for calling nvim_flush().
  */
 typedef Eina_Bool (*f_nvim_request_cb)(s_nvim *nvim, const msgpack_object_array *args,
                                        msgpack_packer *pk);
