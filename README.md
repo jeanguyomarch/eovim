@@ -24,8 +24,7 @@ Have a look at [the Enlightenment Wiki][8] for more.
 Eovim is written in plain C, with the amazing [EFL][1]. You have great added
 value to the text-only neovim with a minimal runtime overhead. No need to spawn
 a web browser to use it! If you don't like the externalized UI, it can be
-turned off, or changed via themes. Eovim also provides its own plugin system,
-so the UI can be modified directly from neovim.
+turned off, or changed via themes.
 
 Have a problem/question/suggestion? Feel free to [open an issue][10]. Join the club!
 
@@ -84,13 +83,6 @@ When `eovim` starts, it spawns an instance of Neovim. If it happens that `nvim`
 is not in your `PATH` or if you want to use an alterate binary of Neovim, you
 can feed it to `eovim` with the option `--nvim`.
 
-
-# Plug-Ins
-
-Eovim supports plug-ins! They allow Eovim to respond to events from Neovim, and
-as such to make Neovim freely manipulate the native graphical user interface
-provided by Eovim. Details about plug-ins and how the built-in plug-ins work
-can be read in the README contained in the `plugins/` directory.
 
 
 # Vim Runtime

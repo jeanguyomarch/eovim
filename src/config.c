@@ -65,7 +65,6 @@ config_init(void)
    EDD_BASIC_ADD(ext_popup, EET_T_UCHAR);
    EDD_BASIC_ADD(ext_cmdline, EET_T_UCHAR);
    EDD_BASIC_ADD(ext_tabs, EET_T_UCHAR);
-   EET_DATA_DESCRIPTOR_ADD_LIST_STRING(_edd, s_config, "plugins", plugins);
 
    return EINA_TRUE;
 }
@@ -118,22 +117,6 @@ config_ext_tabs_set(s_config *config,
    config->ext_tabs = !!tabs;
 }
 
-void
-config_plugin_add(s_config *config,
-                  const s_plugin *plugin)
-{
-   config->plugins = eina_list_append(config->plugins,
-                                      eina_stringshare_ref(plugin->name));
-}
-
-void
-config_plugin_del(s_config *config,
-                  const s_plugin *plugin)
-{
-   config->plugins = eina_list_remove(config->plugins, plugin->name);
-   eina_stringshare_del(plugin->name);
-}
-
 static s_config *
 _config_new(void)
 {
@@ -151,7 +134,6 @@ _config_new(void)
    config->ext_cmdline = EINA_TRUE;
    config->ext_tabs = EINA_TRUE;
    config->alert_capslock = EINA_TRUE;
-   config->plugins = NULL;
 
    return config;
 }
@@ -213,12 +195,6 @@ config_load(const char *file)
           }
         cfg->path = path;
 
-        /* We load strings from the config. Create stringshares from them */
-        Eina_List *l;
-        const char *plugin;
-        EINA_LIST_FOREACH(cfg->plugins, l, plugin)
-           eina_list_data_set(l, eina_stringshare_add(plugin));
-
         /* Previous configurations compatibility. If we load versions that
          * are earlier than the current version, set the default parameters
          * to be compatible with our new version.
@@ -233,7 +209,6 @@ config_load(const char *file)
               cfg->ext_popup = EINA_TRUE;
               /* Fall through */
            case 3:
-              cfg->plugins = NULL;
               /* Fall through */
            case 4:
               cfg->ext_cmdline = EINA_TRUE;
@@ -294,9 +269,6 @@ config_save(s_config *config)
 void
 config_free(s_config *config)
 {
-   Eina_Stringshare *plugin;
-   EINA_LIST_FREE(config->plugins, plugin)
-     eina_stringshare_del(plugin);
    free(config->path);
    free(config);
 }

@@ -28,7 +28,6 @@
 #include "eovim/nvim_event.h"
 #include "eovim/termview.h"
 #include "eovim/main.h"
-#include "eovim/plugin.h"
 #include "eovim/log.h"
 #include "eovim/prefs.h"
 #include "eovim/options.h"
@@ -37,7 +36,6 @@ int _eovim_log_domain = -1;
 
 static Eina_Bool _in_tree = EINA_FALSE;
 static Eina_Strbuf *_edje_file = NULL;
-static Eina_Inlist *_plugins = NULL;
 
 typedef struct
 {
@@ -56,7 +54,6 @@ static const s_module _modules[] =
    MODULE(nvim_api),
    MODULE(nvim_request),
    MODULE(nvim_event),
-   MODULE(plugin),
    MODULE(prefs),
    MODULE(gui),
    MODULE(termview),
@@ -93,12 +90,6 @@ const char *
 main_edje_file_get(void)
 {
    return eina_strbuf_string_get(_edje_file);
-}
-
-Eina_Inlist *
-main_plugins_get(void)
-{
-   return _plugins;
 }
 
 /* This function is a hack around a bug in the EFL backtrace bug.  If an ERR()
@@ -157,15 +148,6 @@ elm_main(int argc,
          goto log_unregister;
      }
 
-#ifdef HAVE_PLUGINS
-   /* If plugin-is are supported, we enable the plugins as long as the
-    * --no-plugins option is NOT passed to eovim */
-   plugin_enabled_set(! opts.no_plugins);
-#else
-   /* Plugins are not supported, disable them */
-   plugin_enabled_set(EINA_FALSE);
-#endif
-
    /*
     * App settings
     */
@@ -200,18 +182,13 @@ elm_main(int argc,
      }
 
    /*=========================================================================
-    * Load the plugins
-    *========================================================================*/
-   _plugins = plugin_list_new();
-
-   /*=========================================================================
     * Create the Neovim handler
     *========================================================================*/
    s_nvim *const nvim = nvim_new(&opts, (const char *const *)argv);
    if (EINA_UNLIKELY(! nvim))
      {
         CRI("Failed to create a NeoVim instance");
-        goto plugins_shutdown;
+        goto modules_shutdown;
      }
 
    /*=========================================================================
@@ -223,8 +200,6 @@ elm_main(int argc,
 
    /* Everything seemed to have run fine :) */
    return_code = EXIT_SUCCESS;
-plugins_shutdown:
-   plugin_list_free(_plugins);
 modules_shutdown:
    for (--mod_it; mod_it >= _modules; mod_it--)
      mod_it->shutdown();

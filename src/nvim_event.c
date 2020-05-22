@@ -898,19 +898,6 @@ fail:
 }
 
 Eina_Bool
-nvim_event_plugin_register(const char *command,
-                           f_event_cb callback)
-{
-   /* Add the callback for the given command to the eovim method */
-   Eina_Hash *const table = _methods[E_METHOD_EOVIM].callbacks;
-   const Eina_Bool ok =
-      _command_add(table, command, (unsigned int)strlen(command), callback);
-   if (EINA_UNLIKELY(! ok))
-     CRI("Failed to register plugin event '%s'", command);
-   return ok;
-}
-
-Eina_Bool
 nvim_event_init(void)
 {
    int i;

@@ -9,14 +9,9 @@
 
 .SH DESCRIPTION
 \fBeovim\fR is a code editor written with the EFL (Enlightenment Foundation
-Libraries), that uses Neovim as a back-end. It supports all the UI
-externalization means that Neovim provides, as well as its own plug-ins system
-to make Neovim plug-ins control the GUI offered by Eovim.
+Libraries), that uses Neovim as a back-end.
 
 .SH OPTIONS
-.TP
-\fB\-N\fR, \fB\-\-no\-plugin\fR, \fB\-\-noplugin\fR
-Do not load any plugin
 .TP
 \fB\-\-nvim\fR \fInvim\fR
 Use \fInvim\fR as the Neovim program to be run by eovim.
@@ -54,7 +49,7 @@ Run \fBnvim \-\-help\fR to learn more about Neovim's options.
 \fBeovim\fR adds its own overlay to the Vim runtime provided by Neovim:
 .IP
 \fBfunction\fR \fIEovim(...)\fR
-The communication channel for neovim to send events to the Eovim plug-ins.
+The communication channel for neovim to send events to Eovim.
 .IP
 \fBvariable\fR \fIg:eovim_running\fR
 This integer is defined and set to 1 when Eovim spawn an neovim, making it
