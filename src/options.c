@@ -19,7 +19,6 @@ _show_help(void)
       "\n"
       "  -g, --geometry <WxH>    Set the initial dimensions of the window\n"
       "                          (e.g. 80x24 for a 80x24 cells window)\n"
-      "  --config <file>         Provide an alternate GUI configuration\n"
       "  -F, --fullscreen        Run Eovim in fullscreen\n"
       "  -M, --maximized         Run Eovim in a maximized window\n"
       "  -t, --theme <path>      Provide an alternate theme to Eovim\n"
@@ -57,7 +56,6 @@ typedef enum
    OPT_PARSE_ERROR      = -1,
    OPT_UNKNOWN          = -2,
    OPT_FORBIDDEN        = 0,
-   OPT_CONFIG           = 1,
    OPT_NVIM             = 3,
 
    OPT_GEOMETRY         = 'g',
@@ -80,7 +78,6 @@ static const s_arg _args[] =
 {
    ARG("nvim",          OPT_NVIM),
    ARG("geometry",      OPT_GEOMETRY),
-   ARG("config",        OPT_CONFIG),
    ARG("fullscreen",    OPT_FULLSCREEN),
    ARG("maximized",     OPT_MAXIMIZED),
    ARG("theme",         OPT_THEME),
@@ -214,11 +211,6 @@ options_parse(int argc,
                    /* Nvim program, grab the next argument */
                 case OPT_NVIM:
                    opts->nvim_prog = GET_NEXT_ARG();
-                   break;
-
-                   /* GUI config, grab the next argument */
-                case OPT_CONFIG:
-                   opts->config_path = GET_NEXT_ARG();
                    break;
 
                    /* Geomtry, parse the next argument */
