@@ -42,7 +42,6 @@ you can start hacking around. See [the Wiki][6] for details.
 - [CMake][5].
 
 
-
 After making sure you have installed the dependencies aforementioned, run the
 following installation procedure:
 
@@ -82,30 +81,6 @@ information about the Vim Runtime modifications that are operated by Eovim.
 When `eovim` starts, it spawns an instance of Neovim. If it happens that `nvim`
 is not in your `PATH` or if you want to use an alterate binary of Neovim, you
 can feed it to `eovim` with the option `--nvim`.
-
-
-
-# Vim Runtime
-
-Eovim adds its own overlay to Vim's runtime. It resides in
-`data/vim/runtime.vim`, and is installed with Eovim. It is sourced when Eovim
-starts. See the manual for details.
-
-## Caps Lock handling
-
-Eovim detects when Caps Lock are on and off. The default theme can display a
-visual hint if enabled. Neovim is also made aware of the toggling of Caps Lock
-via an `autocmd`. To add hooks in response to caps lock events, you must
-override the `Eovim` `augroup`:
-
-```vim
-:augroup Eovim
-:   autocmd!
-:   autocmd User EovimReady <your handle when Eovim is ready>
-:   autocmd User EovimCapsLockOn <your handle when Caps Lock is ON>
-:   autocmd User EovimCapsLockOff <your handle when Caps Lock is OFF>
-:augroup END
-```
 
 
 # Hacking
