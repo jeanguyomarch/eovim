@@ -53,14 +53,7 @@ cmake --build . --target install # Possibly as root (i.e. via sudo)
 ```
 
 If we want to run `eovim` without installing it, please refer to the
-**Hacking** section.
-
-Note that unless `-DWITH_OPTIONS=OFF` is passed to cmake, eovim will install
-libraries. Hence, the need to run `ldconfig` after installing Eovim. Libraries
-are by default installed in the **prefix** directory passed to cmake (by default
-`/usr/local`) in a subdirectory that can be either `lib32/`, `lib64/` or `lib/`
-dependending on how the target architecture is detected. This subdirectory can
-be forced by passing `-DLIB_INSTALL_DIR=alteratnate-lib-dir` to cmake.
+Wiki page [Developing Eovim][11].
 
 
 # Usage
@@ -83,27 +76,11 @@ is not in your `PATH` or if you want to use an alterate binary of Neovim, you
 can feed it to `eovim` with the option `--nvim`.
 
 
-# Hacking
-
-Eovim uses some environment variables that can influence its runtime. Some are
-directly inherited from the [EFL][1] framework, others are eovim-specific:
-- `EINA_LOG_BACKTRACE` set it to an integer to get run-time backtraces.
-- `EINA_LOG_LEVELS` set it to "eovim:INT" where _INT_ is the log level.
-- `EOVIM_IN_TREE` set it to non-zero to load files from the build directory
-   instead of the installation directory.
-
-To develop/debug, a typical use is to run `eovim` like this (from the build
-directory):
-
-```bash
-env EOVIM_IN_TREE=1 EINA_LOG_BACKTRACE=0 EINA_LOG_LEVELS="eovim:3" ./eovim
-```
-
 # License
 
-Eovim is MIT-licensed. See the `LICENSE` file for details. Files in
-`data/themes/img` have been taken from [terminology][4] or the [EFL][1] and are
-not original creations.
+Eovim is MIT-licensed. See the [`LICENSE`](License) file for details. Files in
+[`data/themes/img`](data/themes/img) have been taken from [terminology][4] or
+the [EFL][1] and are not original creations.
 Portions of the Eovim logo have been [borrowed][7] from the original Neovim
 logo. Eovim's logo should be understood as a tribute to Neovim.
 
@@ -117,3 +94,4 @@ logo. Eovim's logo should be understood as a tribute to Neovim.
 [8]: https://phab.enlightenment.org/w/projects/eovim/#screenshots
 [9]: https://phab.enlightenment.org/w/projects/eovim/
 [10]: https://github.com/jeanguyomarch/eovim/issues/new
+[11]: https://github.com/jeanguyomarch/eovim/wiki/Developing-Eovim
