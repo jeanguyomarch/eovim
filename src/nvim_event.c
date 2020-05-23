@@ -509,7 +509,7 @@ nvim_event_popupmenu_show(s_nvim *nvim,
 {
    CHECK_BASE_ARGS_COUNT(args, ==, 1);
    ARRAY_OF_ARGS_EXTRACT(args, params);
-   CHECK_ARGS_COUNT(params, ==, 4);
+   CHECK_ARGS_COUNT(params, >=, 4);
 
    const msgpack_object *const data_obj = &(params->ptr[0]);
    CHECK_TYPE(data_obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
