@@ -9,7 +9,6 @@ typedef struct
 {
    s_geometry geometry;
 
-   const char *config_path;
    const char *nvim_prog;
    const char *theme;
 

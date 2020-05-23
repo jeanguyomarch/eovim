@@ -21,10 +21,6 @@ Set the initial dimensions of the window where \fIW\fR is the width in cells of
 the neovim window, and \fIH\fR is its height (e.g. 80x24 for a 80x24 cells
 window).
 .TP
-\fB\-\-config\fR \fIpath\fR
-Provide an alternate GUI configuration, where \fIpath\fR is the path to an
-eovim configuration.
-.TP
 \fB\-F\fR, \fB\-\-fullscreen\fR
 Start Eovim in a full-screen window
 .TP
