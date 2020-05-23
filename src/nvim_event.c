@@ -114,6 +114,17 @@ nvim_event_clear(s_nvim *nvim,
 }
 
 static Eina_Bool
+nvim_event_flush(
+  s_nvim *const nvim EINA_UNUSED,
+  const msgpack_object_array *const args EINA_UNUSED)
+{
+  /* We just ignore the flush event. It tells the UI that neovim is done
+   * drwaing the screen, but The EFL are alrady responsible of rendering what
+   * changed. */
+  return EINA_TRUE;
+}
+
+static Eina_Bool
 nvim_event_eol_clear(s_nvim *nvim,
                      const msgpack_object_array *args EINA_UNUSED)
 {
@@ -841,6 +852,7 @@ _method_redraw_init(e_method method_id)
       CB_CTOR("wildmenu_hide", nvim_event_wildmenu_hide),
       CB_CTOR("wildmenu_select", nvim_event_wildmenu_select),
       CB_CTOR("option_set", nvim_event_option_set),
+      CB_CTOR("flush", nvim_event_flush),
    };
 
    /* Register the name of the method as a stringshare */
