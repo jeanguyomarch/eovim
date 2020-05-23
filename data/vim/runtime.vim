@@ -1,3 +1,5 @@
+" This file is part of Eovim, which is under the MIT License
+
 let g:eovim_running = 1
 
 function! Eovim(request, ...)
