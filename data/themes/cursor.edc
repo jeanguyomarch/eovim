@@ -57,6 +57,8 @@ group { "eovim/cursor";
          /* Stop pending timers and animations. */
          new anim_id = get_int(g_anim);
          new timer_id = get_int(g_timer);
+
+         set_int(g_may_blink, 0);
          cancel_anim(anim_id);
          cancel_timer(timer_id);
 
