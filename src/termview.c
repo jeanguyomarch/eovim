@@ -561,7 +561,8 @@ _termview_focus_in_cb(void *data,
    edje_object_message_send(sd->cursor, EDJE_MESSAGE_INT,
                             THEME_MSG_MAY_BLINK_SET, &msg);
    edje_object_signal_emit(sd->cursor, "focus,in", "eovim");
-   edje_object_signal_emit(sd->cursor, "eovim,blink,start", "eovim");
+   if (sd->mode && sd->mode->blinkon != 0)
+   { edje_object_signal_emit(sd->cursor, "eovim,blink,start", "eovim"); }
 }
 
 static void
@@ -1203,17 +1204,18 @@ termview_cursor_mode_set(Evas_Object *obj,
    msg->val[1] = (double)mode->blinkon / 1000.0;
    msg->val[2] = (double)mode->blinkoff / 1000.0;
 
-   /* If the cursor was blinking, we stop the blinking */
-   if (sd->mode && sd->mode->blinkon != 0)
-     edje_object_signal_emit(sd->cursor, "eovim,blink,stop", "eovim");
-
    /* If we requested the cursor to blink, make it blink */
    if (mode->blinkon != 0)
      {
+        /* If the cursor was blinking, we stop the blinking */
+        if (sd->mode && sd->mode->blinkon)
+        { edje_object_signal_emit(sd->cursor, "eovim,blink,stop", "eovim"); }
         edje_object_message_send(sd->cursor, EDJE_MESSAGE_FLOAT_SET,
                                  THEME_MSG_BLINK_SET, msg);
         edje_object_signal_emit(sd->cursor, "eovim,blink,start", "eovim");
      }
+   else
+   { edje_object_signal_emit(sd->cursor, "eovim,blink,stop", "eovim"); }
 
    /* Register the new mode and update the cursor calculation function. */
    sd->mode = mode;
