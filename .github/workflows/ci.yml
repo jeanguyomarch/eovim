@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+
+    # Install compile-time dependencies
     - name: install-deps
       run: |
         sudo add-apt-repository --yes ppa:niko2040/e19
@@ -20,10 +22,11 @@ jobs:
         sudo apt-get install --yes libmsgpack-dev
         sudo apt-get install --yes cmake
         sudo apt-get install --yes build-essential
+
     - name: compile
       run: |
         mkdir -p build/_install
         cd build
-        cmake -DCMAKE_INSTALL_PREFIX=_install ..
+        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_install ..
         cmake --build .
         cmake --build . --target install

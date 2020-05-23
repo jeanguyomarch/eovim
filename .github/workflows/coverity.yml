@@ -1,0 +1,65 @@
+# This is largely inspired from:
+# https://github.com/ruby/actions-coverity-scan
+# (file: .github/workflows/coverity-scan.yml)
+
+name: coverity-scan
+
+# We only run this when something is pushed on master
+# We don't require this for each PR, because Coverity limits its service
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  latest:
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: install-deps
+      run: |
+        sudo add-apt-repository --yes ppa:niko2040/e19
+        sudo apt-get install --yes libefl-dev
+        sudo apt-get install --yes libmsgpack-dev
+        sudo apt-get install --yes cmake
+        sudo apt-get install --yes build-essential
+
+    # Yep, Java... that's for Coverity
+    - name: set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+
+    - name: Download Coverity Build Tool
+      run: |
+        wget https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=jeanguyomarch/eovim" -O cov-analysis-linux64.tar.gz
+        mkdir cov-analysis-linux64
+        tar xzf cov-analysis-linux64.tar.gz --strip 1 -C cov-analysis-linux64
+      env:
+        TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+
+    - name: configure
+      run: |
+        mkdir -p build
+        cd build
+        cmake ..
+
+    - name: Build with cov-build
+      run: |
+        export PATH=`pwd`/cov-analysis-linux64/bin:$PATH
+        cov-build --dir cov-int make -C build
+
+    - name: Submit the result to Coverity Scan
+      run: |
+        tar czvf eovim.tgz cov-int
+        curl \
+          --form project=jeanguyomarch/eovim \
+          --form token=$TOKEN \
+          --form file=@eovim.tgz \
+          --form email=eovim-cov@guyomarch.bzh \
+          --form version=trunk \
+          --form description="Nightly Coverity Scan" \
+          https://scan.coverity.com/builds?project=jeanguyomarch/eovim
+      env:
+        TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
