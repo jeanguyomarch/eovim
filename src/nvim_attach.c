@@ -345,23 +345,7 @@ _api_decode_cb(s_nvim *nvim, void *data EINA_UNUSED, const msgpack_object *resul
   }
   /* We are now sure that we are running at least 0.2.0. *********************/
 
-  /* We want linegrid */
-  if (! nvim->features.linegrid)
-  {
-    gui_die(&nvim->gui,
-      "Eovim only supports rendering with 'ext_linegrid', which you version of "
-      "neovim (%u.%u.%u) does not provide.",
-      nvim->version.major, nvim->version.minor, nvim->version.patch);
-  }
 
-//  if (nvim->features.cmdline)
-//  { nvim_api_ui_ext_set(nvim, "ext_cmdline", nvim->config->ext_cmdline); }
-//  if (nvim->features.wildmenu)
-//  { nvim_api_ui_ext_set(nvim, "ext_wildmenu", nvim->config->ext_cmdline); }
-//  if (nvim->features.tabline)
-//  { nvim_api_ui_ext_set(nvim, "ext_tabline", 1); }
-//  if (nvim->features.popupmenu)
-//  { nvim_api_ui_ext_set(nvim, "ext_popupmenu", 1); }
   // TODO - uncomment when new UI will be implemented
   //if (nvim->features.linegrid)
   //{ nvim_api_ui_ext_set(nvim, "ext_linegrid", EINA_TRUE); }
