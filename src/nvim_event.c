@@ -49,11 +49,12 @@ Eina_Stringshare *nvim_event_keywords[__KW_LAST] =
   [KW_EXT_HLSTATE] = "ext_hlstate",
 };
 
-typedef struct
+struct method
 {
-   Eina_Stringshare *name; /**< Name of the method */
-   Eina_Hash *callbacks; /**< Table of callbacks associated with the method */
-} s_method;
+  Eina_Stringshare *name; /**< Name of the method */
+  Eina_Hash *callbacks; /**< Table of callbacks associated with the method */
+  Eina_Bool (*batch_end_func)(s_nvim *); /**< Function called after a batch ends */
+};
 
 typedef enum
 {
@@ -66,67 +67,17 @@ typedef enum
 /* Array of callbacks for each method. It is NOT a hash table as we will support
  * (for now) very little number of methods (around two). It is much faster to
  * search sequentially among arrays of few cells than a map of two. */
-static s_method _methods[__E_METHOD_LAST];
+static struct method _methods[__E_METHOD_LAST];
 
 
-static Eina_Bool
-nvim_event_resize(s_nvim *nvim,
-                  const msgpack_object_array *args)
-{
-   CHECK_BASE_ARGS_COUNT(args, ==, 1);
-   ARRAY_OF_ARGS_EXTRACT(args, params);
-   CHECK_ARGS_COUNT(params, ==, 2);
-
-   t_int rows, columns;
-   GET_ARG(params, 0, t_int, &columns);
-   GET_ARG(params, 1, t_int, &rows);
-
-   gui_resized_confirm(&nvim->gui, (unsigned int)columns, (unsigned int)rows);
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_clear(s_nvim *nvim,
-                 const msgpack_object_array *args EINA_UNUSED)
-{
-   gui_clear(&nvim->gui);
-   return EINA_TRUE;
-}
 
 static Eina_Bool
 nvim_event_flush(
-  s_nvim *const nvim EINA_UNUSED,
+  s_nvim *const nvim,
   const msgpack_object_array *const args EINA_UNUSED)
 {
-  /* We just ignore the flush event. It tells the UI that neovim is done
-   * drwaing the screen, but The EFL are alrady responsible of rendering what
-   * changed. */
+  termview_flush(nvim->gui.termview);
   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_eol_clear(s_nvim *nvim,
-                     const msgpack_object_array *args EINA_UNUSED)
-{
-   gui_eol_clear(&nvim->gui);
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_cursor_goto(s_nvim *nvim,
-                       const msgpack_object_array *args)
-{
-   CHECK_BASE_ARGS_COUNT(args, ==, 1);
-   ARRAY_OF_ARGS_EXTRACT(args, params);
-   CHECK_ARGS_COUNT(params, ==, 2);
-
-   t_int row, column;
-   GET_ARG(params, 0, t_int, &row);
-   GET_ARG(params, 1, t_int, &column);
-
-   gui_cursor_goto(&nvim->gui, (unsigned int)column, (unsigned int)row);
-
-   return EINA_TRUE;
 }
 
 static Eina_Bool
@@ -170,228 +121,6 @@ nvim_event_mouse_off(s_nvim *nvim,
 }
 
 static Eina_Bool
-nvim_event_set_scroll_region(s_nvim *nvim,
-                             const msgpack_object_array *args)
-{
-   CHECK_BASE_ARGS_COUNT(args, >=, 1);
-
-   /* XXX It appears that under certain circumstantes, set_scroll_region can
-    * receive multiple arguments:
-    *
-    *   ["set_scroll_region", [0, 39, 0, 118], [0, 39, 0, 118]]
-    *
-    * This is not part of the specification, but happens anyway. So be ready to
-    * handle that case.
-    */
-   for (uint32_t i = 1u; i < args->size; i++)
-   {
-     const msgpack_object *const obj = &(args->ptr[i]);
-     CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
-     const msgpack_object_array *const params = &(obj->via.array);
-     CHECK_ARGS_COUNT(params, ==, 4);
-
-     t_int top, bot, left, right;
-     GET_ARG(params, 0, t_int, &top);
-     GET_ARG(params, 1, t_int, &bot);
-     GET_ARG(params, 2, t_int, &left);
-     GET_ARG(params, 3, t_int, &right);
-
-     gui_scroll_region_set(&nvim->gui, (int)top, (int)bot, (int)left, (int)right);
-   }
-
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_scroll(s_nvim *nvim,
-                  const msgpack_object_array *args)
-{
-   CHECK_BASE_ARGS_COUNT(args, >=, 1);
-   /*
-    * It appears that in some cases (when the sh*tty command popup opens,
-    * because a message is open in another castle), the scroll command changes,
-    * and we get ["scroll", [N], [N]] instead of ["scroll", [N]].  I'm not sure
-    * if this is supposed to happen, but that's what happens!  So we should be
-    * ready to handle X arguments to "scroll" instead of just one
-    */
-   for (unsigned int i = 1; i < args->size; i++) /* 1 to exclude "scroll" */
-     {
-        const msgpack_object *const obj = &(args->ptr[i]);
-        CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
-        const msgpack_object_array *const arr = &(obj->via.array);
-        CHECK_ARGS_COUNT(arr, ==, 1);
-
-        t_int scroll;
-        GET_ARG(arr, 0, t_int, &scroll);
-        gui_scroll(&nvim->gui, (int)scroll);
-     }
-
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_highlight_set(s_nvim *nvim,
-                         const msgpack_object_array *args)
-{
-   CHECK_BASE_ARGS_COUNT(args, >=, 1);
-
-   /* Array that holds pointer to values within hash tables.
-    * We must ensure this array has been zeroes-out since we will rely on
-    * NULL pointers to check whether a value was provided or not */
-   const msgpack_object *objs[KW_HIGHLIGHT_END - KW_HIGHLIGHT_START + 1];
-   memset(objs, 0, sizeof(objs));
-
-   /*
-    * highlight arguments are arrays containing maps.
-    */
-   for (unsigned int i = 1; i < args->size; i++)
-     {
-        const msgpack_object *const obj = &(args->ptr[i]);
-        CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
-        const msgpack_object_array *const arr = &(obj->via.array);
-        CHECK_ARGS_COUNT(arr, ==, 1);
-        const msgpack_object *const arr_arg = &(arr->ptr[0]);
-        CHECK_TYPE(arr_arg, MSGPACK_OBJECT_MAP, EINA_FALSE);
-
-        /*
-         * Okay, we now have a map. We go through all its key-value pairs
-         * and match the keys with the expected keys. If we have a match,
-         * we grab a pointer to the value, and pass on to the next pair.
-         */
-        const msgpack_object_map *const map = &(arr_arg->via.map);
-        for (unsigned int j = 0; j < map->size; j++)
-          {
-             const msgpack_object_kv *const kv = &(map->ptr[j]);
-             const msgpack_object *const key_obj = &(kv->key);
-             CHECK_TYPE(key_obj, MSGPACK_OBJECT_STR, EINA_FALSE);
-             const msgpack_object_str *const key = &(key_obj->via.str);
-             Eina_Stringshare *const shr_key = eina_stringshare_add_length(
-                key->ptr, key->size
-             );
-             if (EINA_UNLIKELY(! shr_key))
-               {
-                  CRI("Failed to create stringshare");
-                  return EINA_FALSE;
-               }
-
-             /*
-              * Keys matching. I think this is pretty efficient, as we are
-              * comparing stringshares! So key matching is just a pointer
-              * comparison. There are not much keys to be matched against
-              * (< 10), so linear walk is good enough -- probably faster than
-              * hashing.
-              */
-             for (unsigned int k = KW_HIGHLIGHT_START, x = 0; k <= KW_HIGHLIGHT_END; k++, x++)
-               {
-                  if (shr_key == KW(k))
-                    {
-                       objs[x] = &(kv->val);
-                       break;
-                    }
-               }
-
-             eina_stringshare_del(shr_key);
-          }
-     }
-
-   s_termview_style style = {
-      .fg_color = -1,
-      .bg_color = -1,
-      .sp_color = -1,
-      .reverse = EINA_FALSE,
-      .italic = EINA_FALSE,
-      .bold = EINA_FALSE,
-      .underline = EINA_FALSE,
-      .undercurl = EINA_FALSE,
-   };
-   const msgpack_object *o;
-
-   /*
-    * At this point, we have collected everything we could. We check for
-    * types to ensure that we will correctly use the memory.
-    */
-
-#define _GET_INT(Kw, Set)                                                     \
-   if ((o = objs[Kw])) {                                                      \
-        if (EINA_UNLIKELY((o->type != MSGPACK_OBJECT_POSITIVE_INTEGER) &&     \
-                          (o->type != MSGPACK_OBJECT_NEGATIVE_INTEGER)))      \
-          CRI("Expected an integer type. Got 0x%x", o->type);                 \
-        else Set = o->via.i64;                                                \
-   }
-
-#define _GET_BOOL(Kw, Set)                                                    \
-   if ((o = objs[Kw])) {                                                      \
-        if (EINA_UNLIKELY(o->type != MSGPACK_OBJECT_BOOLEAN))                 \
-          CRI("Expected an integer type. Got 0x%x", o->type);                 \
-        else Set = o->via.boolean;                                            \
-   }
-
-   _GET_INT(KW_FOREGROUND, style.fg_color);
-   _GET_INT(KW_BACKGROUND, style.bg_color);
-   _GET_INT(KW_SPECIAL, style.sp_color);
-   _GET_BOOL(KW_REVERSE, style.reverse);
-   _GET_BOOL(KW_ITALIC, style.italic);
-   _GET_BOOL(KW_BOLD, style.bold);
-   _GET_BOOL(KW_UNDERLINE, style.underline);
-   _GET_BOOL(KW_UNDERCURL, style.undercurl);
-
-#undef _GET_INT
-#undef _GET_BOOL
-
-   gui_style_set(&nvim->gui, &style);
-
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_put(s_nvim *nvim,
-               const msgpack_object_array *args)
-{
-   /*
-    * The 'put' command is much more complicated than what it should be.
-    * We are suppose to receive a string, but we actually do receive arrays
-    * of strings.
-    */
-   CHECK_BASE_ARGS_COUNT(args, >=, 1);
-
-   /* Reset the put decode buffer */
-   eina_ustrbuf_reset(nvim->decode);
-
-   /*
-    * Go through all the arguments. Each argument is an array that contains
-    * exactly one string. We concatenate all these strings together in one
-    * static buffer (this is always called from the main thread, so no
-    * concurrency shit).
-    */
-   for (unsigned int i = 1; i < args->size; i++)
-     {
-        const msgpack_object *const obj = &(args->ptr[i]);
-        CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
-        const msgpack_object_array *const arr = &(obj->via.array);
-        CHECK_ARGS_COUNT(arr, ==, 1);
-        const msgpack_object *const arr_arg = &(arr->ptr[0]);
-        CHECK_TYPE(arr_arg, MSGPACK_OBJECT_STR, EINA_FALSE);
-
-        const msgpack_object_str *const str = &(arr_arg->via.str);
-        int index = 0;
-        const Eina_Unicode cp = eina_unicode_utf8_next_get(str->ptr, &index);
-        if (EINA_UNLIKELY(cp == 0))
-          {
-             ERR("Failed to decode utf-8 string. Skipping.");
-             continue;
-          }
-        eina_ustrbuf_append_char(nvim->decode, cp);
-     }
-
-   /* Finally, pass the string and its length to the gui */
-   gui_put(&nvim->gui,
-           eina_ustrbuf_string_get(nvim->decode),
-           (unsigned int)eina_ustrbuf_length_get(nvim->decode));
-
-   return EINA_TRUE;
-}
-
-static Eina_Bool
 nvim_event_bell(s_nvim *nvim,
                 const msgpack_object_array *args EINA_UNUSED)
 {
@@ -404,48 +133,6 @@ nvim_event_visual_bell(s_nvim *nvim EINA_UNUSED,
                        const msgpack_object_array *args EINA_UNUSED)
 {
    DBG("Unimplemented");
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_update_fg(s_nvim *nvim,
-                     const msgpack_object_array *args)
-{
-   CHECK_BASE_ARGS_COUNT(args, ==, 1);
-   ARRAY_OF_ARGS_EXTRACT(args, params);
-   CHECK_ARGS_COUNT(params, ==, 1);
-
-   t_int color;
-   GET_ARG(params, 0, t_int, &color);
-   gui_update_fg(&nvim->gui, color);
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_update_bg(s_nvim *nvim,
-                     const msgpack_object_array *args)
-{
-   CHECK_BASE_ARGS_COUNT(args, ==, 1);
-   ARRAY_OF_ARGS_EXTRACT(args, params);
-   CHECK_ARGS_COUNT(params, ==, 1);
-
-   t_int color;
-   GET_ARG(params, 0, t_int, &color);
-   gui_update_bg(&nvim->gui, color);
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-nvim_event_update_sp(s_nvim *nvim,
-                     const msgpack_object_array *args)
-{
-   CHECK_BASE_ARGS_COUNT(args, ==, 1);
-   ARRAY_OF_ARGS_EXTRACT(args, params);
-   CHECK_ARGS_COUNT(params, ==, 1);
-
-   t_int color;
-   GET_ARG(params, 0, t_int, &color);
-   gui_update_sp(&nvim->gui, color);
    return EINA_TRUE;
 }
 
@@ -637,7 +324,7 @@ nvim_event_tabline_update(s_nvim *nvim,
      {
         const msgpack_object *const o_tab = &tabs->ptr[i];
         const msgpack_object_map *const map =
-           EOVIM_MSGPACK_MAP_EXTRACT(o_tab, fail);
+           EOVIM_MSGPACK_MAP_EXTRACT(o_tab, goto fail);
         const msgpack_object *o_key, *o_val;
         unsigned int it;
 
@@ -670,39 +357,52 @@ fail:
    return EINA_FALSE;
 }
 
+const struct method *
+nvim_event_method_find(Eina_Stringshare *const method_name)
+{
+  /* Go sequentially through the list of methods we know about, so we can
+   * find out the callbacks table for that method, to try to find what matches
+   * 'command'. */
+  for (size_t i = 0u; i < EINA_C_ARRAY_LENGTH(_methods); i++)
+  {
+    const struct method *const method = &(_methods[i]);
+    if (method->name == method_name) /* Fond the method */
+    { return method; }
+  }
+
+  WRN("Unknown method '%s'", method_name);
+  return NULL;
+}
 
 Eina_Bool
-nvim_event_dispatch(s_nvim *nvim,
-                    Eina_Stringshare *method_name,
-                    Eina_Stringshare *command,
-                    const msgpack_object_array *args)
+nvim_event_method_dispatch(
+  s_nvim *const nvim,
+  const struct method *const method,
+  Eina_Stringshare *const command,
+  const msgpack_object_array *const args)
 {
-   /* Go sequentially through the list of methods we know about, so we can
-    * find out the callbacks table for that method, to try to find what matches
-    * 'command'. */
-   for (size_t i = 0u; i < EINA_C_ARRAY_LENGTH(_methods); i++)
-     {
-        const s_method *const method = &(_methods[i]);
-        if (method->name == method_name) /* Fond the method */
-          {
-             /* Grab the callback for the command. If we could find none,
-              * that's an error. Otherwise we call it. In both cases, the
-              * execution of the function will be terminated. */
-             const f_event_cb cb = eina_hash_find(method->callbacks, command);
-             if (EINA_UNLIKELY(! cb))
-               {
-                  WRN("Failed to get callback for command '%s' of method '%s'",
-                      command, method_name);
-                  return EINA_FALSE;
-               }
-             else
-               return cb(nvim, args);
-          }
-     }
+  /* Grab the callback for the command. If we could find none,
+   * that's an error. Otherwise we call it. In both cases, the
+   * execution of the function will be terminated. */
+  const f_event_cb cb = eina_hash_find(method->callbacks, command);
+  if (EINA_UNLIKELY(! cb))
+  {
+    WRN("Failed to get callback for command '%s' of method '%s'",
+        command, method->name);
+    return EINA_FALSE;
+  }
+  return cb(nvim, args);
+}
 
-   /* At this point, we didn't find the method. */
-   WRN("Unknown method '%s'", method_name);
-   return EINA_FALSE;
+Eina_Bool
+nvim_event_method_batch_end(
+  s_nvim *const nvim,
+  const struct method *const method)
+{
+  EINA_SAFETY_ON_NULL_RETURN_VAL(method, EINA_FALSE);
+  return (method->batch_end_func != NULL)
+    ? method->batch_end_func(nvim)
+    : EINA_TRUE;
 }
 
 
@@ -781,7 +481,7 @@ fail:
 }
 
 static void
-_method_free(s_method *method)
+_method_free(struct method *method)
 {
    /* This function is always used on statically-allocated containers.
     * As such, free() should not be called on 'method' */
@@ -790,14 +490,17 @@ _method_free(s_method *method)
 }
 
 static Eina_Bool
+_nvim_event_redraw_end(s_nvim *const nvim)
+{
+  termview_redraw_end(nvim->gui.termview);
+  return EINA_TRUE;
+}
+
+static Eina_Bool
 _method_redraw_init(e_method method_id)
 {
-   s_method *const method = &(_methods[method_id]);
+   struct method *const method = &(_methods[method_id]);
    const s_method_ctor ctors[] = {
-      CB_CTOR("resize", nvim_event_resize),
-      CB_CTOR("clear", nvim_event_clear),
-      CB_CTOR("eol_clear", nvim_event_eol_clear),
-      CB_CTOR("cursor_goto", nvim_event_cursor_goto),
       CB_CTOR("mode_info_set", nvim_event_mode_info_set),
       CB_CTOR("update_menu", nvim_event_update_menu),
       CB_CTOR("busy_start", nvim_event_busy_start),
@@ -805,15 +508,8 @@ _method_redraw_init(e_method method_id)
       CB_CTOR("mouse_on", nvim_event_mouse_on),
       CB_CTOR("mouse_off", nvim_event_mouse_off),
       CB_CTOR("mode_change", nvim_event_mode_change),
-      CB_CTOR("set_scroll_region", nvim_event_set_scroll_region),
-      CB_CTOR("scroll", nvim_event_scroll),
-      CB_CTOR("highlight_set", nvim_event_highlight_set),
-      CB_CTOR("put", nvim_event_put),
       CB_CTOR("bell", nvim_event_bell),
       CB_CTOR("visual_bell", nvim_event_visual_bell),
-      CB_CTOR("update_fg", nvim_event_update_fg),
-      CB_CTOR("update_bg", nvim_event_update_bg),
-      CB_CTOR("update_sp", nvim_event_update_sp),
       CB_CTOR("suspend", nvim_event_suspend),
       CB_CTOR("set_title", nvim_event_set_title),
       CB_CTOR("set_icon", nvim_event_set_icon),
@@ -833,6 +529,14 @@ _method_redraw_init(e_method method_id)
       CB_CTOR("wildmenu_select", nvim_event_wildmenu_select),
       CB_CTOR("option_set", nvim_event_option_set),
       CB_CTOR("flush", nvim_event_flush),
+      CB_CTOR("default_colors_set", nvim_event_default_colors_set),
+      CB_CTOR("hl_attr_define", nvim_event_hl_attr_define),
+      CB_CTOR("hl_group_set", nvim_event_hl_group_set),
+      CB_CTOR("grid_resize", nvim_event_grid_resize),
+      CB_CTOR("grid_clear", nvim_event_grid_clear),
+      CB_CTOR("grid_cursor_goto", nvim_event_grid_cursor_goto),
+      CB_CTOR("grid_line", nvim_event_grid_line),
+      CB_CTOR("grid_scroll", nvim_event_grid_scroll),
    };
 
    /* Register the name of the method as a stringshare */
@@ -843,6 +547,8 @@ _method_redraw_init(e_method method_id)
         CRI("Failed to create stringshare from string '%s'", name);
         goto fail;
      }
+
+   method->batch_end_func = &_nvim_event_redraw_end;
 
    /* Build the callbacks table of the method */
    method->callbacks =
@@ -863,7 +569,7 @@ fail:
 static Eina_Bool
 _method_eovim_init(e_method method_id)
 {
-   s_method *const method = &(_methods[method_id]);
+   struct method *const method = &(_methods[method_id]);
 
    const s_method_ctor ctors[] = {
      CB_CTOR("reload", nvim_event_eovim_reload),
@@ -936,8 +642,17 @@ nvim_event_init(void)
         goto mode_deinit;
      }
 
+   /* Initialize the internals of option_set */
+   if (EINA_UNLIKELY(! event_linegrid_init()))
+     {
+        CRI("Failed to initialize 'linegrid'");
+        goto option_deinit;
+     }
+
    return EINA_TRUE;
 
+option_deinit:
+   option_set_shutdown();
 mode_deinit:
    mode_shutdown();
 del_methods:
@@ -952,8 +667,9 @@ fail:
 void
 nvim_event_shutdown(void)
 {
-   mode_shutdown();
+   event_linegrid_shutdown();
    option_set_shutdown();
+   mode_shutdown();
    for (unsigned int i = 0; i < __KW_LAST; i++)
      eina_stringshare_del(nvim_event_keywords[i]);
    for (unsigned int i = 0; i < EINA_C_ARRAY_LENGTH(_methods); i++)

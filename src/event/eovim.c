@@ -7,5 +7,4 @@ nvim_event_eovim_reload(
   s_nvim *const nvim, const msgpack_object_array *const args EINA_UNUSED)
 {
   return nvim_helper_config_reload(nvim);
-  return EINA_TRUE;
 }

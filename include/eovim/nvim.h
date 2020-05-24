@@ -51,9 +51,7 @@ struct nvim
    msgpack_packer packer;
    uint32_t request_id;
 
-   void (*hl_group_decode)(s_nvim *, unsigned int, f_highlight_group_decode);
-
-   Eina_UStrbuf *decode;
+   Eina_Hash *modes;
    Eina_Bool mouse_enabled;
 
    struct {
@@ -70,9 +68,6 @@ struct nvim
 s_nvim *nvim_new(const s_options *opts, const char *const args[]);
 void nvim_free(s_nvim *nvim);
 uint32_t nvim_next_uid_get(s_nvim *nvim);
-Eina_Bool nvim_api_response_dispatch(s_nvim *nvim, const s_request *req, const msgpack_object_array *args);
-Eina_Bool nvim_mode_add(s_nvim *nvim, s_mode *mode);
-const s_mode *nvim_named_mode_get(const s_nvim *nvim, Eina_Stringshare *name);
 void nvim_mouse_enabled_set(s_nvim *nvim, Eina_Bool enable);
 Eina_Bool nvim_mouse_enabled_get(const s_nvim *nvim);
 void nvim_attach(s_nvim *nvim);
@@ -85,5 +80,8 @@ void nvim_attach(s_nvim *nvim);
  * @return EINA_TRUE on success, EINA_FALSE on failure.
  */
 Eina_Bool nvim_flush(s_nvim *nvim);
+
+struct mode *nvim_mode_new(void);
+void nvim_mode_free(struct mode *mode);
 
 #endif /* ! __EOVIM_NVIM_H__ */

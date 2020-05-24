@@ -98,7 +98,7 @@ void nvim_api_request_call(s_nvim *nvim,
                            const s_request *req,
                            const msgpack_object *result)
 {
-   if (req->cb.func) req->cb.func(nvim, req->cb.data, result);
+   if (req->cb.func) { req->cb.func(nvim, req->cb.data, result); }
 }
 
 Eina_Bool
@@ -121,13 +121,21 @@ nvim_api_ui_attach(s_nvim *nvim,
    msgpack_pack_int64(pk, width);
    msgpack_pack_int64(pk, height);
 
-   /* Pack the only option: RGB  - always enabled */
-   const char key[] = "rgb";
-   const size_t len = sizeof(key) - 1;
-   msgpack_pack_map(pk, 1);
-   msgpack_pack_str(pk, len);
-   msgpack_pack_str_body(pk, key, len);
-   msgpack_pack_true(pk);
+   /* Pack the only option to be always enabled */
+   const char *const keys[] = {
+     "rgb",
+     "ext_linegrid",
+     //"ext_hlstate",
+   };
+
+   msgpack_pack_map(pk, EINA_C_ARRAY_LENGTH(keys));
+   for (size_t i = 0; i < EINA_C_ARRAY_LENGTH(keys); i++)
+   {
+     const size_t len = strlen(keys[i]);
+     msgpack_pack_str(pk, len);
+     msgpack_pack_str_body(pk, keys[i], len);
+     msgpack_pack_true(pk);
+   }
 
    return _request_send(nvim, req);
 }
@@ -180,6 +188,7 @@ Eina_Bool
 nvim_api_ui_try_resize(s_nvim *nvim,
                        unsigned int width, unsigned height)
 {
+   EINA_SAFETY_ON_FALSE_RETURN_VAL(width > 0 && height > 0, EINA_FALSE);
    const char api[] = "nvim_ui_try_resize";
    s_request *const req = _request_new(nvim, api, sizeof(api) - 1);
    if (EINA_UNLIKELY(! req))

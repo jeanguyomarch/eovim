@@ -19,8 +19,7 @@ let g:eovim_ext_tabline = 1
 let g:eovim_ext_popupmenu = 1
 let g:eovim_ext_wildmenu = 1
 let g:eovim_ext_cmdline = 1
-let g:eovim_ext_linegrid = 1
-let g:eovim_ext_multigrid = 1
+let g:eovim_ext_multigrid = 0
 
 augroup Eovim
    autocmd User EovimReady :

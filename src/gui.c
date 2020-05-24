@@ -74,19 +74,6 @@ fail:
    return NULL;
 }
 
-void
-gui_size_recalculate(s_gui *gui)
-{
-   int tv_w, tv_h;
-   unsigned int w, h;
-   termview_cell_size_get(gui->termview, &w, &h);
-   evas_object_geometry_get(gui->termview, NULL, NULL, &tv_w, &tv_h);
-   const unsigned int cols = (unsigned)tv_w / w;
-   const unsigned int rows = (unsigned)tv_h / h;
-   gui_resize(gui, cols, rows);
-   termview_refresh(gui->termview);
-}
-
 static void
 _win_close_cb(void *data,
               Evas_Object *obj EINA_UNUSED,
@@ -100,6 +87,17 @@ _win_close_cb(void *data,
    s_nvim *const nvim = data;
    const char cmd[] = ":quitall!";
    nvim_api_command(nvim, cmd, sizeof(cmd) - 1, NULL, NULL);
+}
+
+static void
+_termview_relayout_cb(
+  void *const data,
+  Evas_Object *const obj EINA_UNUSED,
+  void *const info)
+{
+  s_gui *const gui = data;
+  const Eina_Rectangle *const geo = info;
+  evas_object_resize(gui->win, geo->x + geo->w, geo->y + geo->h);
 }
 
 Eina_Bool
@@ -146,6 +144,7 @@ gui_add(s_gui *gui,
    elm_win_resize_object_add(gui->win, gui->layout);
    evas_object_smart_callback_add(gui->win, "focus,in", _focus_in_cb, gui);
    evas_object_smart_callback_add(gui->win, "focus,out", _focus_out_cb, gui);
+   evas_object_smart_callback_add(gui->win, "focus,out", _focus_out_cb, gui);
 
    /* ========================================================================
     * Completion GUI objects
@@ -175,9 +174,8 @@ gui_add(s_gui *gui,
     * ===================================================================== */
 
    gui->termview = termview_add(gui->layout, nvim);
-   gui_font_set(gui, "Courier", 14);
+   evas_object_smart_callback_add(gui->termview, "relayout", _termview_relayout_cb, gui);
    evas_object_hide(gui->termview);
-   //elm_layout_content_set(gui->layout, "eovim.main.view", gui->termview);
 
    /* ========================================================================
     * Command-Line GUI objects
@@ -211,11 +209,12 @@ gui_add(s_gui *gui,
     * Finalize GUI
     * ===================================================================== */
 
+   gui_font_set(gui, "Courier", 14);
+
 
    elm_layout_signal_emit(gui->layout, "eovim,cmdline,hide", "eovim");
    evas_object_show(gui->layout);
    evas_object_show(gui->win);
-   evas_object_resize(gui->win, 600, 480);
    return EINA_TRUE;
 
 fail:
@@ -277,155 +276,38 @@ gui_font_set(
   const char *const font_name,
   const unsigned int font_size)
 {
-  assert(font_size < INT_MAX);
-  edje_text_class_set("cmdline", font_name, (int)font_size);
-  termview_font_set(gui->termview, font_name, font_size);
+  EINA_SAFETY_ON_NULL_RETURN(font_name);
+  EINA_SAFETY_ON_FALSE_RETURN(font_size < INT_MAX);
+
+  const Eina_Bool name_changed =
+    eina_stringshare_replace(&gui->font.name, font_name);
+
+  DBG("Using font '%s' with size '%u'", font_name, font_size);
+  if (name_changed || (font_size != gui->font.size))
+  {
+    gui->font.size = font_size;
+    edje_text_class_set("cmdline", gui->font.name, (int)font_size);
+    termview_font_set(gui->termview, gui->font.name, gui->font.size);
+  }
 }
 
-void
-gui_resize(s_gui *gui,
-           unsigned int cols,
-           unsigned int rows)
+void gui_default_colors_set(
+  s_gui *const gui,
+  const union color fg,
+  const union color bg,
+  const union color sp)
 {
-   unsigned int cell_w, cell_h;
-   termview_cell_size_get(gui->termview, &cell_w, &cell_h);
+  /* Change foreground and special (e.g. underline) colors */
+  termview_default_colors_set(gui->termview, fg, bg, sp);
 
-   /*
-    * We set the resieing step of the window to the size of a cell of the
-    * textgrid that is embedded within the termview.
-    */
-   elm_win_size_step_set(gui->win, (int)cell_w, (int)cell_h);
-
-   /*
-    * To resize the gui, we first resize the textgrid with the new amount
-    * of columns and rows, then we resize the window. UI widgets will
-    * automatically be sized to the window's frame.
-    *
-    * XXX: This won't work with the tabline!
-    */
-   const int w = (int)(cols * cell_w);
-   const int h = (int)(rows * cell_h);
-   evas_object_resize(gui->win, w, h);
-
-   /* XXX This is a bit of a hack. I'm not really sure why we have the issue,
-    * but there is a little "jitter" when resizing the window:
-    *   1) the window is resized to the expected size
-    *   2) it is resized back (on the X-axis) to "a bit less".
-    *
-    * This makes the --geometry parameter create a window that does not respect
-    * the initial size. I'm sure the problem is somewhere here, but I haven't
-    * found its root yet. So, as a quickfix (which will probably stay for a
-    * while...) prevent the window from being resized down until we have
-    * effectively resize the window. When done, we will remove this barrier
-    * (see gui_resized_confirm()).
-    */
-   evas_object_size_hint_min_set(gui->win, w, h);
-}
-
-void
-gui_resized_confirm(s_gui *gui,
-                    unsigned int cols,
-                    unsigned int rows)
-{
-   termview_resized_confirm(gui->termview, cols, rows);
-
-   /* see gui_resize() */
-   evas_object_size_hint_min_set(gui->win, -1, -1);
-}
-
-void
-gui_clear(s_gui *gui)
-{
-   termview_clear(gui->termview);
-}
-
-void
-gui_eol_clear(s_gui *gui)
-{
-   termview_eol_clear(gui->termview);
-}
-
-void
-gui_put(s_gui *gui,
-        const Eina_Unicode *ustring,
-        unsigned int size)
-{
-   termview_put(gui->termview, ustring, size);
-}
-
-void
-gui_cursor_goto(s_gui *gui,
-                unsigned int to_x,
-                unsigned int to_y)
-{
-   termview_cursor_goto(gui->termview, to_x, to_y);
-}
-
-
-void
-gui_style_set(s_gui *gui,
-              const s_termview_style *style)
-{
-   termview_style_set(gui->termview, style);
-}
-
-void
-gui_update_fg(s_gui *gui,
-              t_int color)
-{
-   if (color >= 0)
-     {
-        const s_termview_color col =
-           termview_color_decompose((uint32_t)color);
-        termview_fg_color_set(gui->termview, col.r, col.g, col.b, col.a);
-     }
-}
-
-void
-gui_update_bg(s_gui *gui,
-              t_int color)
-{
-   if (color >= 0)
-     {
-        const s_termview_color col =
-           termview_color_decompose((uint32_t)color);
-        gui_bg_color_set(gui, col.r, col.g, col.b, col.a);
-     }
-}
-
-/* TODO: special colors */
-void
-gui_update_sp(s_gui *gui EINA_UNUSED,
-              t_int color)
-{
-   if (color >= 0)
-     {
-        DBG("Unimplemented");
-     }
-}
-
-void
-gui_scroll_region_set(s_gui *gui,
-                      int top,
-                      int bot,
-                      int left,
-                      int right)
-{
-   const Eina_Rectangle region = {
-      .x = left,
-      .y = top,
-      .w = right - left,
-      .h = bot - top,
-   };
-   termview_scroll_region_set(gui->termview, &region);
-}
-
-void
-gui_scroll(s_gui *gui,
-           int scroll)
-{
-   if (scroll != 0)
-     termview_scroll(gui->termview, scroll);
+  /* Set the background through the Edje theme */
+  Edje_Message_Int_Set *const msg = alloca(sizeof(*msg) + (sizeof(int) * 4));
+  msg->count = 4;
+  msg->val[0] = bg.r;
+  msg->val[1] = bg.g;
+  msg->val[2] = bg.b;
+  msg->val[3] = bg.a;
+  edje_object_message_send(gui->edje, EDJE_MESSAGE_INT_SET, THEME_MSG_BG, msg);
 }
 
 void
@@ -451,21 +333,6 @@ gui_busy_set(s_gui *gui,
      }
 }
 
-void
-gui_bg_color_set(s_gui *gui,
-                 int r, int g, int b, int a)
-{
-   Edje_Message_Int_Set *msg;
-
-   msg = alloca(sizeof(*msg) + (sizeof(int) * 4));
-   msg->count = 4;
-   msg->val[0] = r;
-   msg->val[1] = g;
-   msg->val[2] = b;
-   msg->val[3] = a;
-
-   edje_object_message_send(gui->edje, EDJE_MESSAGE_INT_SET, THEME_MSG_BG, msg);
-}
 
 static inline Evas_Object *
 _compl_text_set(Evas_Object *layout,
@@ -871,16 +738,20 @@ gui_bell_ring(s_gui *gui)
      elm_layout_signal_emit(gui->layout, "eovim,bell,ring", "eovim");
 }
 
-void gui_ready_set(s_gui *gui)
+void gui_ready_set(s_gui *const gui)
 {
   elm_layout_content_set(gui->layout, "eovim.main.view", gui->termview);
   evas_object_show(gui->termview);
 
-  if (gui->must_resize)
-  {
-    const s_geometry *const geo = &gui->nvim->opts->geometry;
-    gui_resize(gui, geo->w, geo->h);
-  }
+  const s_options *const opts = gui->nvim->opts;
+
+
+  /* For maximize and fullscreen, we just update the window's dimensions.
+   * When the resizing is finished, we will notify neovim */
+  if (opts->maximized)
+  { elm_win_maximized_set(gui->win, EINA_TRUE); }
+  else if (opts->fullscreen)
+  { elm_win_fullscreen_set(gui->win, EINA_TRUE); }
 }
 
 static void
@@ -962,20 +833,6 @@ gui_title_set(s_gui *gui,
 
    /* Set the title to the window, or just "Eovim" if it happens to be empty */
    elm_win_title_set(gui->win, (title[0]) ? title : "Eovim");
-}
-
-void
-gui_fullscreen_set(s_gui *gui,
-                   Eina_Bool fullscreen)
-{
-   elm_win_fullscreen_set(gui->win, fullscreen);
-}
-
-void
-gui_maximized_set(s_gui *gui,
-                  Eina_Bool maximized)
-{
-   elm_win_maximized_set(gui->win, maximized);
 }
 
 void

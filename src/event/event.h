@@ -101,12 +101,18 @@ extern Eina_Stringshare *nvim_event_keywords[__KW_LAST];
    }
 
 #define GET_ARG(Args, Index, Type, Get) \
-   if (EINA_UNLIKELY(! _arg_ ## Type ## _get((Args), (Index), (Get)))) { \
+  do { \
+    if (EINA_UNLIKELY((Index) >= (Args)->size)) { \
+      ERR("Out of bounds index"); \
       return EINA_FALSE; \
-   }
+    } \
+    if (EINA_UNLIKELY(! arg_ ## Type ## _get(&((Args)->ptr[Index]), (Get)))) { \
+       return EINA_FALSE; \
+    } \
+  } while (0)
 
 #define ARRAY_OF_ARGS_EXTRACT(Args, Ret) \
-   const msgpack_object_array *const Ret = _array_of_args_extract(Args); \
+   const msgpack_object_array *const Ret = array_of_args_extract((Args), 1); \
    if (EINA_UNLIKELY(! Ret)) { return EINA_FALSE; }
 
 #define CHECK_TYPE(Obj, Type, ...) \
@@ -116,58 +122,12 @@ extern Eina_Stringshare *nvim_event_keywords[__KW_LAST];
    }
 
 
-static inline const msgpack_object_array *
-_array_of_args_extract(const msgpack_object_array *args)
-{
-   const msgpack_object *const obj = &(args->ptr[1]);
-   CHECK_TYPE(obj, MSGPACK_OBJECT_ARRAY, NULL);
-   return &(obj->via.array);
-}
-
-static inline Eina_Bool
-_arg_t_int_get(const msgpack_object_array *args,
-               unsigned int index,
-               t_int *arg)
-{
-   const msgpack_object *const obj = &(args->ptr[index]);
-   if (EINA_UNLIKELY((obj->type != MSGPACK_OBJECT_POSITIVE_INTEGER) &&
-                     (obj->type != MSGPACK_OBJECT_NEGATIVE_INTEGER)))
-     {
-        CRI("Expected an integer type for argument %u. Got 0x%x",
-            index, obj->type);
-        return EINA_FALSE;
-     }
-   *arg = obj->via.i64;
-   return EINA_TRUE;
-}
-
-static inline Eina_Bool
-_arg_stringshare_get(const msgpack_object_array *args,
-                     unsigned int index,
-                     Eina_Stringshare **arg)
-{
-   const msgpack_object *const obj = &(args->ptr[index]);
-   CHECK_TYPE(obj, MSGPACK_OBJECT_STR, EINA_FALSE);
-   const msgpack_object_str *const str = &(obj->via.str);
-   *arg = eina_stringshare_add_length(str->ptr, str->size);
-   if (EINA_UNLIKELY(! *arg))
-     {
-        CRI("Failed to create stringshare");
-        return EINA_FALSE;
-     }
-   return EINA_TRUE;
-}
-
-static inline Eina_Bool
-_arg_bool_get(const msgpack_object_array *args,
-              unsigned int index,
-              Eina_Bool *arg)
-{
-   const msgpack_object *const obj = &(args->ptr[index]);
-   CHECK_TYPE(obj, MSGPACK_OBJECT_BOOLEAN, EINA_FALSE);
-   *arg = obj->via.boolean;
-   return EINA_TRUE;
-}
+const msgpack_object_array * array_of_args_extract(const msgpack_object_array *args, size_t at_index);
+Eina_Bool arg_t_int_get(const msgpack_object *obj, t_int *arg);
+Eina_Bool arg_uint_get(const msgpack_object *obj, unsigned int *arg);
+Eina_Bool arg_color_get(const msgpack_object *obj, union color *arg);
+Eina_Bool arg_stringshare_get(const msgpack_object *obj, Eina_Stringshare **arg);
+Eina_Bool arg_bool_get(const msgpack_object *obj, Eina_Bool *arg);
 
 
 /*****************************************************************************/
@@ -195,6 +155,19 @@ Eina_Bool nvim_event_mode_change(s_nvim *nvim, const msgpack_object_array *args)
 Eina_Bool option_set_init(void);
 void option_set_shutdown(void);
 Eina_Bool nvim_event_option_set(s_nvim *nvim, const msgpack_object_array *args);
+
+/*****************************************************************************/
+
+Eina_Bool event_linegrid_init(void);
+void event_linegrid_shutdown(void);
+Eina_Bool nvim_event_default_colors_set(s_nvim *nvim, const msgpack_object_array *args);
+Eina_Bool nvim_event_hl_attr_define(s_nvim *nvim, const msgpack_object_array *args);
+Eina_Bool nvim_event_hl_group_set(s_nvim *nvim, const msgpack_object_array *args);
+Eina_Bool nvim_event_grid_resize(s_nvim *nvim, const msgpack_object_array *args);
+Eina_Bool nvim_event_grid_clear(s_nvim *nvim, const msgpack_object_array *args);
+Eina_Bool nvim_event_grid_cursor_goto(s_nvim *nvim, const msgpack_object_array *args);
+Eina_Bool nvim_event_grid_line(s_nvim *nvim, const msgpack_object_array *args);
+Eina_Bool nvim_event_grid_scroll(s_nvim *nvim, const msgpack_object_array *args);
 
 /*****************************************************************************/
 

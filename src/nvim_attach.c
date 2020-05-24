@@ -82,20 +82,6 @@ _version_decode(s_nvim *nvim, const msgpack_object *args)
 
 
 static void
-_virtual_interface_setup(s_nvim *const nvim)
-{
-   /* Setting up the highliht group decoder virtual interface */
-   if (NVIM_VERSION_EQ(nvim, 0, 2, 0))
-     {
-        nvim->hl_group_decode = nvim_helper_highlight_group_decode_noop;
-        ERR("You are running Neovim 0.2.0, which has a bug that prevents the "
-            "cursor color to be deduced.");
-     }
-   else
-     nvim->hl_group_decode = nvim_helper_highlight_group_decode;
-}
-
-static void
 _ui_options_decode(s_nvim *nvim, const msgpack_object *args)
 {
   /* The ui_options object is a list like what is written below:
@@ -130,6 +116,14 @@ _ui_options_decode(s_nvim *nvim, const msgpack_object *args)
     nvim->features.popupmenu |= (_MSGPACK_STREQ(opt, "ext_popupmenu"));
   }
 
+  if (EINA_UNLIKELY(! nvim->features.linegrid))
+  {
+    gui_die(&nvim->gui,
+            "You are running neovim %u.%u.%u, which does not provide support "
+            "for the 'ext_linegrid' feature. Please upgrade neovim.",
+            nvim->version.major, nvim->version.minor, nvim->version.patch);
+  }
+
   return;
 fail:
   ERR("Failed to decode ui_options API");
@@ -152,24 +146,28 @@ static Eina_Bool
 _ui_attached_cb(
   s_nvim *const nvim,
   const msgpack_object_array *const args EINA_UNUSED,
-  msgpack_packer *const pk)
+  msgpack_packer *const pk,
+  const uint32_t req_id)
 {
-  msgpack_pack_nil(pk); /* Error */
-  msgpack_pack_nil(pk); /* Result */
-  nvim_flush(nvim);
-  /* The request has now been fully acknowledged *******************************/
+  /* The "vimenter" request will not happen again. Delete */
+  nvim_request_del("vimenter");
 
   /* Load the user configuration */
   nvim_helper_config_reload(nvim);
+
+  /* Now, generate the response: everything went fine */
+  msgpack_pack_array(pk, 4);
+  msgpack_pack_int(pk, 1);
+  msgpack_pack_uint32(pk, req_id);
+  msgpack_pack_nil(pk); /* Error */
+  msgpack_pack_nil(pk); /* Result */
+  nvim_flush(nvim);
 
   /* Okay, start running the GUI! */
   gui_ready_set(&nvim->gui);
 
   /* Notify the user that we are ready to roll */
   nvim_helper_autocmd_do(nvim, "EovimReady", NULL, NULL);
-
-  /* The "vimenter" request will not happen again. Delete */
-  nvim_request_del("vimenter");
   return EINA_TRUE;
 }
 
@@ -313,29 +311,8 @@ _api_decode_cb(s_nvim *nvim, void *data EINA_UNUSED, const msgpack_object *resul
   /****************************************************************************
   * Now that we have decoded the API information, use them!
   *****************************************************************************/
-
   INF("Running Neovim version %u.%u.%u",
       nvim->version.major, nvim->version.minor, nvim->version.patch);
-  if (EINA_UNLIKELY((nvim->version.major == 0) && (nvim->version.minor < 2)))
-  {
-    gui_die(&nvim->gui,
-            "You are running neovim %u.%u.%u, which is unsupported. "
-            "Please consider upgrading Neovim.",
-            nvim->version.major, nvim->version.minor, nvim->version.patch);
-  }
-  /* We are now sure that we are running at least 0.2.0. *********************/
-
-
-  // TODO - uncomment when new UI will be implemented
-  //if (nvim->features.linegrid)
-  //{ nvim_api_ui_ext_set(nvim, "ext_linegrid", EINA_TRUE); }
-  //if (nvim->features.multigrid)
-  //{ nvim_api_ui_ext_set(nvim, "ext_multigrid", EINA_TRUE); }
-
-  /* Now that we know Neovim's version, setup the virtual interface, that will
-   * prevent compatibilty issues */
-  _virtual_interface_setup(nvim);
-
 
   /****************************************************************************
    * Now that we are done with neovim's capabilities, time to load our initial
