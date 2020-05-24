@@ -193,6 +193,12 @@ _handle_notification(s_nvim *nvim,
         goto del_method;
      }
    const msgpack_object_array *const args_arr = &(args->ptr[2].via.array);
+
+   /* Find the method handler */
+   const struct method *const meth = nvim_event_method_find(method);
+   if (EINA_UNLIKELY(! meth))
+   { goto del_method; }
+
    /*
     * Go through the notification's commands. There are formatted of the form
     * [ command_name, Args... ]
@@ -219,7 +225,7 @@ _handle_notification(s_nvim *nvim,
              CRI("Failed to create stringshare from command object");
              continue; /* Try next element */
           }
-        const Eina_Bool ok = nvim_event_dispatch(nvim, method, command, cmd);
+        const Eina_Bool ok = nvim_event_method_dispatch(nvim, meth, command, cmd);
         if (EINA_UNLIKELY((! ok) &&
              (eina_log_domain_level_get("eovim") >= EINA_LOG_LEVEL_WARN)))
         {
@@ -230,6 +236,9 @@ _handle_notification(s_nvim *nvim,
         }
         eina_stringshare_del(command);
      }
+
+   /* Notify we are done processing the batch of functions for this method */
+   nvim_event_method_batch_end(nvim, meth);
 
    eina_stringshare_del(method);
    return EINA_TRUE;
@@ -258,8 +267,16 @@ _nvim_added_cb(void *const data,
    if (EINA_LIKELY(event != NULL))
    {
      const Ecore_Exe_Event_Add *const info = event;
-     INF("Process with PID %i was created", ecore_exe_pid_get(info->exe));
-     nvim_attach(data);
+
+     /* Hey, did you know that Edje actually launches a process... hello
+      * efreed! This has been going on for years... Now make sure we only
+      * talk to neovim, and nobody else */
+     const char *const tag = ecore_exe_tag_get(info->exe);
+     if (tag && (0 == strcmp(tag, "neovim")))
+     {
+       INF("Nvim process with PID %i was created", ecore_exe_pid_get(info->exe));
+       nvim_attach(data);
+     }
    }
 
    return ECORE_CALLBACK_PASS_ON;
@@ -517,17 +534,17 @@ nvim_new(const s_options *opts,
     * information from neovim unless we change mode. This is annoying. */
    nvim->mouse_enabled = EINA_TRUE;
 
-   nvim->decode = eina_ustrbuf_new();
-   if (EINA_UNLIKELY(! nvim->decode))
-     {
-        CRI("Failed to create unicode string buffer");
-        goto del_events;
-     }
-
    /* Initialze msgpack for RPC */
    msgpack_sbuffer_init(&nvim->sbuffer);
    msgpack_packer_init(&nvim->packer, &nvim->sbuffer, msgpack_sbuffer_write);
    msgpack_unpacker_init(&nvim->unpacker, 2048);
+
+   nvim->modes = eina_hash_stringshared_new(EINA_FREE_CB(&nvim_mode_free));
+   if (EINA_UNLIKELY(! nvim->modes))
+   {
+     CRI("Failed to create hash map");
+     goto del_events;
+   }
 
    /* Create the neovim process */
    nvim->exe = ecore_exe_pipe_run(
@@ -539,8 +556,9 @@ nvim_new(const s_options *opts,
    if (EINA_UNLIKELY(! nvim->exe))
      {
         CRI("Failed to execute nvim instance");
-        goto del_ustrbuf;
+        goto del_modes;
      }
+   ecore_exe_tag_set(nvim->exe, "neovim");
    DBG("Running %s", eina_strbuf_string_get(cmdline));
    eina_strbuf_free(cmdline);
 
@@ -551,19 +569,13 @@ nvim_new(const s_options *opts,
         CRI("Failed to set up the graphical user interface");
         goto del_process;
      }
-   if (opts->maximized)
-      gui_maximized_set(&nvim->gui, opts->maximized);
-   else if (opts->fullscreen)
-      gui_fullscreen_set(&nvim->gui, opts->fullscreen);
-   else
-      nvim->gui.must_resize = EINA_TRUE;
 
    return nvim;
 
 del_process:
    ecore_exe_kill(nvim->exe);
-del_ustrbuf:
-   eina_ustrbuf_free(nvim->decode);
+del_modes:
+   eina_hash_free(nvim->modes);
 del_events:
    _nvim_event_handlers_del(nvim);
 del_mem:
@@ -575,14 +587,14 @@ fail:
 }
 
 void
-nvim_free(s_nvim *nvim)
+nvim_free(s_nvim *const nvim)
 {
    if (nvim)
      {
         _nvim_event_handlers_del(nvim);
         msgpack_sbuffer_destroy(&nvim->sbuffer);
         msgpack_unpacker_destroy(&nvim->unpacker);
-        eina_ustrbuf_free(nvim->decode);
+        eina_hash_free(nvim->modes);
         free(nvim);
      }
 }
@@ -616,4 +628,22 @@ Eina_Bool
 nvim_mouse_enabled_get(const s_nvim *nvim)
 {
    return nvim->mouse_enabled;
+}
+
+struct mode *nvim_mode_new(void)
+{
+  struct mode *const mode = calloc(1, sizeof(*mode));
+  if (EINA_UNLIKELY(! mode))
+  { CRI("Failed to allocate memory of size %zu B", sizeof(*mode)); }
+  return mode;
+}
+
+void nvim_mode_free(struct mode *const mode)
+{
+  if (mode)
+  {
+    if (mode->name) { eina_stringshare_del(mode->name); }
+    if (mode->short_name) { eina_stringshare_del(mode->short_name); }
+    free(mode);
+  }
 }

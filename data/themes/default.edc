@@ -116,12 +116,14 @@ collections {
                color_class: "background";
             }
          }
+
          swallow { "eovim.main.view";
-            desc { "default";
-               rel1.to: "tabs_headings";
-               rel1.relative: 0.0 1.0;
-            }
+           desc { "default";
+             rel1.to: "eovim.tabline";
+             rel1.relative: 0.0 1.0;
+           }
          }
+
 
          /* CAPS LOCK WARNING.
           * ------------------------------------------------------------------

@@ -54,7 +54,7 @@ nvim_event_cmdline_show(s_nvim *nvim,
 
         /* The map will contain highlight attributes */
         //const msgpack_object_map *const map =
-        //   EOVIM_MSGPACK_MAP_EXTRACT(&cont->ptr[0], del_buf);
+        //   EOVIM_MSGPACK_MAP_EXTRACT(&cont->ptr[0], goto del_buf);
 
         /* Extract the content of the command-line */
         const msgpack_object *const cont_o = &(cont->ptr[1]);

@@ -8,13 +8,13 @@
 
 /**
  * Retrive a map from a msgpack object @a Obj. If @a Obj is not of type map,
- * then this macro jumps to the label @a Fail.
+ * then this macro executes code @p OnFail
  */
-#define EOVIM_MSGPACK_MAP_EXTRACT(Obj, Fail) \
+#define EOVIM_MSGPACK_MAP_EXTRACT(Obj, OnFail) \
    ({                                                                   \
     if (EINA_UNLIKELY((Obj)->type != MSGPACK_OBJECT_MAP)) {             \
          CRI("A map was expected, but we got 0x%x", (Obj)->type);       \
-         goto Fail; }                                                   \
+         OnFail; }                                                      \
     &((Obj)->via.map);                                                  \
    })
 

@@ -44,7 +44,7 @@ struct gui
    } cmdline;
 
    struct {
-      char *name; /**< Dynamically allocated */
+      Eina_Stringshare *name;
       unsigned int size;
    } font;
 
@@ -64,8 +64,6 @@ struct gui
 
    /** True when the caps lock warning is on, False otherwise */
    Eina_Bool capslock_warning;
-
-   Eina_Bool must_resize;
    unsigned int active_tab; /**< Identifier of the active tab */
 };
 
@@ -130,22 +128,15 @@ void gui_shutdown(void);
 Eina_Bool gui_add(s_gui *gui, s_nvim *nvim);
 void gui_del(s_gui *gui);
 void gui_resize(s_gui *gui, unsigned int cols, unsigned int rows);
-void gui_resized_confirm(s_gui *gui, unsigned int cols, unsigned int rows);
-void gui_clear(s_gui *gui);
-void gui_eol_clear(s_gui *gui);
-void gui_put(s_gui *gui, const Eina_Unicode *ustring, unsigned int size);
-void gui_cursor_goto(s_gui *gui, unsigned int to_x, unsigned int to_y);
-void gui_style_set(s_gui *gui, const s_termview_style *style);
-void gui_update_fg(s_gui *gui, t_int color);
-void gui_update_bg(s_gui *gui, t_int color);
-void gui_update_sp(s_gui *gui, t_int color);
-void gui_scroll_region_set(s_gui *gui, int x, int y, int w, int h);
-void gui_scroll(s_gui *gui, int scroll);
 void gui_busy_set(s_gui *gui, Eina_Bool busy);
-void gui_bg_color_set(s_gui *gui, int r, int g, int b, int a);
 void gui_config_show(s_gui *gui);
 void gui_config_hide(s_gui *gui);
 void gui_die(s_gui *gui, const char *fmt, ...) EINA_PRINTF(2, 3);
+void gui_default_colors_set(
+  s_gui *gui,
+  union color fg,
+  union color bg,
+  union color sp);
 
 void gui_completion_prepare(s_gui *gui, size_t items);
 void gui_completion_show(s_gui *gui, size_t max_word_len, size_t max_menu_len,
@@ -156,8 +147,6 @@ void gui_completion_add(s_gui *gui, s_completion *completion);
 void gui_completion_selected_set(s_gui *gui, int index);
 
 void gui_bell_ring(s_gui *gui);
-void gui_fullscreen_set(s_gui *gui, Eina_Bool fullscreen);
-void gui_maximized_set(s_gui *gui, Eina_Bool maximized);
 
 void gui_cmdline_show(s_gui *gui, const char *content,
                       const char *prompt, const char *firstc);

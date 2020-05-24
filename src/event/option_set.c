@@ -72,19 +72,12 @@ _guifont_set(s_nvim *const nvim, const msgpack_object *const value)
     goto clean;
   }
 
-  DBG("Using font '%s' with size '%lu'", str, fontsize);
   gui_font_set(gui, str, (unsigned int)fontsize);
-  gui_size_recalculate(gui);
-
-  /* Keep around the font characteristics */
-  free(gui->font.name);
-  gui->font.name = str;
-  gui->font.size = (unsigned int)fontsize;
-
+  free(str);
   return EINA_TRUE;
 
 clean:
-  free(sep);
+  free(str);
 fail:
   return EINA_FALSE;
 }
@@ -104,10 +97,17 @@ _guifontwide_set(s_nvim *nvim EINA_UNUSED, const msgpack_object *value EINA_UNUS
 }
 
 static Eina_Bool
-_linespace_set(s_nvim *nvim EINA_UNUSED, const msgpack_object *value EINA_UNUSED)
+_linespace_set(s_nvim *const nvim, const msgpack_object *const value)
 {
-   /* XXX unimplemented for now */
-   return EINA_TRUE;
+  if (EINA_UNLIKELY(value->type != MSGPACK_OBJECT_POSITIVE_INTEGER))
+  {
+    ERR("A positive integer is expected for 'linespace'");
+    return EINA_FALSE;
+  }
+
+  const uint64_t val = value->via.u64;
+  termview_linespace_set(nvim->gui.termview, (unsigned int)val);
+  return EINA_TRUE;
 }
 
 static Eina_Bool
