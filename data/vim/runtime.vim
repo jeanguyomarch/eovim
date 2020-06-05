@@ -3,11 +3,11 @@
 let g:eovim_running = 1
 
 function! Eovim(request, ...)
-   let l:file = "/dev/stdout"
+   let l:file = '/dev/stdout'
    if (a:0 == 0)
-      call writefile(msgpackdump([[2, "eovim", [[a:request]]]]), l:file, "ab")
+      call writefile(msgpackdump([[2, 'eovim', [[a:request]]]]), l:file, 'ab')
    else
-      call writefile(msgpackdump([[2, "eovim", [[a:request, a:000]]]]), l:file, "ab")
+      call writefile(msgpackdump([[2, 'eovim', [[a:request, a:000]]]]), l:file, 'ab')
    endif
 endfunction
 
