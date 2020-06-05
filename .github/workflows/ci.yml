@@ -30,3 +30,10 @@ jobs:
         cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_install ..
         cmake --build .
         cmake --build . --target install
+
+    - name: Lint Additional Neovim Runtime
+      uses: reviewdog/action-vint@v1
+      with:
+        github_token: ${{ secrets.github_token }}
+        level: error
+        reporter: github-pr-review
