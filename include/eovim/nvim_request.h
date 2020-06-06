@@ -25,8 +25,8 @@
  *
  * Then, call nvim_flush()
  */
-typedef Eina_Bool (*f_nvim_request_cb)(s_nvim *nvim, const msgpack_object_array *args,
-                                       msgpack_packer *pk, uint32_t req_id);
+typedef Eina_Bool (*f_nvim_request_cb)(struct nvim *nvim, const msgpack_object_array *args,
+				       msgpack_packer *pk, uint32_t req_id);
 
 Eina_Bool nvim_request_init(void);
 void nvim_request_shutdown(void);
@@ -34,8 +34,7 @@ void nvim_request_shutdown(void);
 Eina_Bool nvim_request_add(const char *request_name, f_nvim_request_cb func);
 void nvim_request_del(const char *request_name);
 
-Eina_Bool
-nvim_request_process(s_nvim *nvim, Eina_Stringshare *request,
-                     const msgpack_object_array *args, uint32_t req_id);
+Eina_Bool nvim_request_process(struct nvim *nvim, Eina_Stringshare *request,
+			       const msgpack_object_array *args, uint32_t req_id);
 
 #endif /* ! EOVIM_NVIM_REQUEST_H__ */

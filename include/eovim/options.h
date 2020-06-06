@@ -5,26 +5,24 @@
 
 #include "eovim/types.h"
 
-typedef struct
-{
-   s_geometry geometry;
+struct options {
+	struct geometry geometry;
 
-   const char *nvim_prog;
-   const char *theme;
+	const char *nvim_prog;
+	const char *theme;
 
-   Eina_Bool fullscreen;
-   Eina_Bool maximized; /**< Eovim will run in a maximized window */
-   Eina_Bool forbidden;
-} s_options;
+	Eina_Bool fullscreen;
+	Eina_Bool maximized; /**< Eovim will run in a maximized window */
+	Eina_Bool forbidden;
+};
 
-typedef enum
-{
-   OPTIONS_RESULT_ERROR,
-   OPTIONS_RESULT_QUIT,
-   OPTIONS_RESULT_CONTINUE,
-} e_options_result;
+enum options_result {
+	OPTIONS_RESULT_ERROR,
+	OPTIONS_RESULT_QUIT,
+	OPTIONS_RESULT_CONTINUE,
+};
 
-e_options_result options_parse(int argc, const char *argv[], s_options *opts);
-void options_defaults_set(s_options *opts);
+enum options_result options_parse(int argc, const char *argv[], struct options *opts);
+void options_defaults_set(struct options *opts);
 
 #endif /* ! __EOVIM_OPTIONS_H__ */

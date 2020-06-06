@@ -2,9 +2,8 @@
 
 #include "event.h"
 
-Eina_Bool
-nvim_event_eovim_reload(
-  s_nvim *const nvim, const msgpack_object_array *const args EINA_UNUSED)
+Eina_Bool nvim_event_eovim_reload(struct nvim *const nvim,
+				  const msgpack_object_array *const args EINA_UNUSED)
 {
-  return nvim_helper_config_reload(nvim);
+	return nvim_helper_config_reload(nvim);
 }
