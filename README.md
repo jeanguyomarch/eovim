@@ -26,7 +26,9 @@ value to the text-only neovim with a minimal runtime overhead. No need to spawn
 a web browser to use it! If you don't like the externalized UI, it can be
 turned off, or changed via themes.
 
-Have a problem/question/suggestion? Feel free to [open an issue][10]. Join the club!
+Have a problem/question/suggestion? Feel free to [open an issue][10]. Join the
+club!  You are more than welcome to contribute. The file
+[CONTRIBUTING.MD](CONTRIBUTING.md) describes the processes more into details.
 
 # Installation
 
