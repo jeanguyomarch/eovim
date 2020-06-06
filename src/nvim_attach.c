@@ -74,18 +74,18 @@ static void _version_decode(struct nvim *nvim, const msgpack_object *args)
 static void _ui_options_decode(struct nvim *nvim, const msgpack_object *args)
 {
 	/* The ui_options object is a list like what is written below:
-   *
-   *   [
-   *     "rgb",
-   *     "ext_cmdline",
-   *     "ext_popupmenu",
-   *     "ext_tabline",
-   *     "ext_wildmenu",
-   *     "ext_linegrid",
-   *     "ext_hlstate"
-   *   ]
-   *
-   */
+	 *
+	 *   [
+	 *     "rgb",
+	 *     "ext_cmdline",
+	 *     "ext_popupmenu",
+	 *     "ext_tabline",
+	 *     "ext_wildmenu",
+	 *     "ext_linegrid",
+	 *     "ext_hlstate"
+	 *   ]
+	 *
+	 */
 	if (EINA_UNLIKELY(args->type != MSGPACK_OBJECT_ARRAY)) {
 		ERR("An array was expected. Got type 0x%x", args->type);
 		return;
@@ -93,7 +93,7 @@ static void _ui_options_decode(struct nvim *nvim, const msgpack_object *args)
 	const msgpack_object_array *const arr = &(args->via.array);
 	for (uint32_t i = 0u; i < arr->size; i++) {
 		const msgpack_object *const o = &(arr->ptr[i]);
-		const msgpack_object_str *const opt = EOVIM_MSGPACK_STRING_OBJ_EXTRACT(o, fail);
+		const msgpack_object_str *const opt = MPACK_STRING_OBJ_EXTRACT(o, goto fail);
 
 		nvim->features.linegrid |= (_MSGPACK_STREQ(opt, "ext_linegrid"));
 		nvim->features.multigrid |= (_MSGPACK_STREQ(opt, "ext_multigrid"));
@@ -176,7 +176,7 @@ static void _eovim_runtime_loaded_cb(struct nvim *const nvim, void *const data,
 				     const msgpack_object *const result EINA_UNUSED)
 {
 	/* We re-use the strbuf previously used to compose the command that allows the
-   * registration of the VimEnter autocmd */
+	 * registration of the VimEnter autocmd */
 	Eina_Strbuf *const buf = data;
 
 	eina_strbuf_reset(buf);
@@ -184,7 +184,7 @@ static void _eovim_runtime_loaded_cb(struct nvim *const nvim, void *const data,
 		buf, "autocmd VimEnter * call rpcrequest(%" PRIu64 ", 'vimenter')", nvim->channel);
 
 	/* Create the vimenter request handler, so we can be notified after
-   * nvim_ui_attached has been processed */
+	 * nvim_ui_attached has been processed */
 	nvim_request_add("vimenter", _ui_attached_cb);
 
 	/* Request the registration of the vimenter autocmd */
@@ -226,9 +226,9 @@ static void _nvim_runtime_load(struct nvim *const nvim)
 static void _api_decode_cb(struct nvim *nvim, void *data EINA_UNUSED, const msgpack_object *result)
 {
 	/* We expect two arguments:
-   * 1) the channel ID.
-   * 2) a dictionary containing meta information - that's what we want
-   */
+	 * 1) the channel ID.
+	 * 2) a dictionary containing meta information - that's what we want
+	 */
 	if (EINA_UNLIKELY(result->type != MSGPACK_OBJECT_ARRAY)) {
 		ERR("An array is expected. Got type 0x%x", result->type);
 		return;
@@ -250,8 +250,8 @@ static void _api_decode_cb(struct nvim *nvim, void *data EINA_UNUSED, const msgp
 	const msgpack_object_map *const map = &(args->ptr[1].via.map);
 
 	/* Now that we have the map containing the API information, go through it to
-   * extract what we need. Currently, we are only interested in the "version"
-   * attribute */
+	 * extract what we need. Currently, we are only interested in the "version"
+	 * attribute */
 	for (uint32_t i = 0u; i < map->size; i++) {
 		const msgpack_object_kv *const kv = &(map->ptr[i]);
 		if (EINA_UNLIKELY(kv->key.type != MSGPACK_OBJECT_STR)) {
@@ -271,14 +271,14 @@ static void _api_decode_cb(struct nvim *nvim, void *data EINA_UNUSED, const msgp
 	}
 
 	/****************************************************************************
-  * Now that we have decoded the API information, use them!
-  *****************************************************************************/
+	 * Now that we have decoded the API information, use them!
+	 *****************************************************************************/
 	INF("Running Neovim version %u.%u.%u", nvim->version.major, nvim->version.minor,
 	    nvim->version.patch);
 
 	/****************************************************************************
-   * Now that we are done with neovim's capabilities, time to load our initial
-   * vimscript runtime, before the init.vim is sourced ***********************/
+	 * Now that we are done with neovim's capabilities, time to load our initial
+	 * vimscript runtime, before the init.vim is sourced ***********************/
 	_nvim_runtime_load(nvim);
 }
 

@@ -10,47 +10,46 @@ Eina_Bool nvim_event_cmdline_show(struct nvim *nvim, const msgpack_object_array 
 	CHECK_ARGS_COUNT(params, ==, 6);
 
 	/*
-    * The arguments of cmdline_show are:
-    *
-    * [0]: content
-    * [1]: cursor position (int)
-    * [2]: first character (string)
-    * [3]: prompt (string)
-    * [4]: indentation (int)
-    * [5]: level (int)
-    */
-	const msgpack_object_array *const content =
-		EOVIM_MSGPACK_ARRAY_EXTRACT(&params->ptr[0], fail);
-	const int64_t pos = EOVIM_MSGPACK_INT64_EXTRACT(&params->ptr[1], fail);
-	Eina_Stringshare *const firstc = EOVIM_MSGPACK_STRING_EXTRACT(&params->ptr[2], fail);
-	Eina_Stringshare *const prompt = EOVIM_MSGPACK_STRING_EXTRACT(&params->ptr[3], del_firstc);
-	const int64_t indent = EOVIM_MSGPACK_INT64_EXTRACT(&params->ptr[4], del_prompt);
+	 * The arguments of cmdline_show are:
+	 *
+	 * [0]: content
+	 * [1]: cursor position (int)
+	 * [2]: first character (string)
+	 * [3]: prompt (string)
+	 * [4]: indentation (int)
+	 * [5]: level (int)
+	 */
+	const msgpack_object_array *const content = MPACK_ARRAY_EXTRACT(&params->ptr[0], goto fail);
+	const int64_t pos = MPACK_INT64_EXTRACT(&params->ptr[1], goto fail);
+	Eina_Stringshare *const firstc = MPACK_STRING_EXTRACT(&params->ptr[2], goto fail);
+	Eina_Stringshare *const prompt = MPACK_STRING_EXTRACT(&params->ptr[3], goto del_firstc);
+	const int64_t indent = MPACK_INT64_EXTRACT(&params->ptr[4], goto del_prompt);
 	//const int64_t level =
-	//   EOVIM_MSGPACK_INT64_EXTRACT(&params->ptr[5], del_prompt);
+	//   MPACK_INT64_EXTRACT(&params->ptr[5], del_prompt);
 
 	/* Create the string buffer, which will hold the content of the cmdline */
 	Eina_Strbuf *const buf = eina_strbuf_new();
 	if (EINA_UNLIKELY(!buf)) {
 		CRI("Failed to allocate memory");
-		return EINA_FALSE;
+		goto del_prompt;
 	}
 
 	/* Add to the content of the command-line the number of spaces the text
-    * should be indented of */
+	 * should be indented of */
 	for (size_t i = 0; i < (size_t)indent; i++)
 		eina_strbuf_append_char(buf, ' ');
 
 	for (unsigned int i = 0; i < content->size; i++) {
 		const msgpack_object_array *const cont =
-			EOVIM_MSGPACK_ARRAY_EXTRACT(&content->ptr[i], del_buf);
+			MPACK_ARRAY_EXTRACT(&content->ptr[i], goto del_buf);
 
 		/* The map will contain highlight attributes */
 		//const msgpack_object_map *const map =
-		//   EOVIM_MSGPACK_MAP_EXTRACT(&cont->ptr[0], goto del_buf);
+		//   MPACK_MAP_EXTRACT(&cont->ptr[0], goto del_buf);
 
 		/* Extract the content of the command-line */
 		const msgpack_object *const cont_o = &(cont->ptr[1]);
-		EOVIM_MSGPACK_STRING_CHECK(cont_o, del_buf);
+		MPACK_STRING_CHECK(cont_o, goto del_buf);
 		const msgpack_object_str *const str = &(cont_o->via.str);
 		eina_strbuf_append_length(buf, str->ptr, str->size);
 	}
@@ -80,14 +79,12 @@ Eina_Bool nvim_event_cmdline_pos(struct nvim *nvim, const msgpack_object_array *
 	/* First argument if the position, second is the level. Level is not
     * handled for now.
     */
-	const int64_t pos = EOVIM_MSGPACK_INT64_EXTRACT(&params->ptr[0], fail);
+	const int64_t pos = MPACK_INT64_EXTRACT(&params->ptr[0], return EINA_FALSE);
 	//const int64_t level =
-	//   EOVIM_MSGPACK_INT64_EXTRACT(&params->ptr[1], fail);
+	//   MPACK_INT64_EXTRACT(&params->ptr[1], fail);
 
 	gui_cmdline_cursor_pos_set(&nvim->gui, (size_t)pos);
 	return EINA_TRUE;
-fail:
-	return EINA_FALSE;
 }
 
 Eina_Bool nvim_event_cmdline_special_char(struct nvim *nvim EINA_UNUSED,
@@ -131,20 +128,18 @@ Eina_Bool nvim_event_wildmenu_show(struct nvim *nvim, const msgpack_object_array
 	CHECK_ARGS_COUNT(params, ==, 1);
 	struct gui *const gui = &nvim->gui;
 
-	/* Go through all the items to be added to the wildmenu, and populate the
-    * UI interface */
+	/* Go through all the items to be added to the wildmenu, and populate
+	 * the UI interface */
 	const msgpack_object_array *const content =
-		EOVIM_MSGPACK_ARRAY_EXTRACT(&params->ptr[0], fail);
+		MPACK_ARRAY_EXTRACT(&params->ptr[0], return EINA_FALSE);
 	for (unsigned int i = 0; i < content->size; i++) {
 		Eina_Stringshare *const item =
-			EOVIM_MSGPACK_STRING_EXTRACT(&(content->ptr[i]), fail);
+			MPACK_STRING_EXTRACT(&(content->ptr[i]), return EINA_FALSE);
 		gui_wildmenu_append(gui, item);
 	}
 	gui_wildmenu_show(gui);
 
 	return EINA_TRUE;
-fail:
-	return EINA_FALSE;
 }
 
 Eina_Bool nvim_event_wildmenu_hide(struct nvim *nvim, const msgpack_object_array *args EINA_UNUSED)
@@ -159,9 +154,7 @@ Eina_Bool nvim_event_wildmenu_select(struct nvim *nvim, const msgpack_object_arr
 	ARRAY_OF_ARGS_EXTRACT(args, params);
 	CHECK_ARGS_COUNT(params, ==, 1);
 
-	const int64_t index = EOVIM_MSGPACK_INT64_EXTRACT(&params->ptr[0], fail);
+	const int64_t index = MPACK_INT64_EXTRACT(&params->ptr[0], return EINA_FALSE);
 	gui_wildmenu_select(&nvim->gui, index);
 	return EINA_TRUE;
-fail:
-	return EINA_FALSE;
 }

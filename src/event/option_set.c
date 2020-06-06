@@ -39,7 +39,7 @@ static Eina_Bool _emoji_set(struct nvim *nvim EINA_UNUSED, const msgpack_object 
 static Eina_Bool _guifont_set(struct nvim *const nvim, const msgpack_object *const value)
 {
 	struct gui *const gui = &nvim->gui;
-	const msgpack_object_str *const val = EOVIM_MSGPACK_STRING_OBJ_EXTRACT(value, fail);
+	const msgpack_object_str *const val = MPACK_STRING_OBJ_EXTRACT(value, goto fail);
 	if (val->size == 0) {
 		return EINA_TRUE;
 	}
@@ -182,11 +182,11 @@ Eina_Bool nvim_event_option_set(struct nvim *nvim, const msgpack_object_array *a
 	for (uint32_t i = 1u; i < args->size; i++) {
 		/* Get a pair (option name + option value) */
 		const msgpack_object_array *const opt =
-			EOVIM_MSGPACK_ARRAY_EXTRACT(&args->ptr[i], fail);
+			MPACK_ARRAY_EXTRACT(&args->ptr[i], goto fail);
 		CHECK_ARGS_COUNT(opt, ==, 2u);
 
 		/* Get the name of the option as a stringshare */
-		Eina_Stringshare *const key = EOVIM_MSGPACK_STRING_EXTRACT(&opt->ptr[0], fail);
+		Eina_Stringshare *const key = MPACK_STRING_EXTRACT(&opt->ptr[0], goto fail);
 
 		/* Find the handler for the option */
 		const f_opt_set func = eina_hash_find(_options, key);

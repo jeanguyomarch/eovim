@@ -1308,11 +1308,18 @@ struct termview_style *termview_style_get(Evas_Object *const obj, const t_int st
 	struct termview_style *style = eina_hash_find(sd->styles, &style_id);
 	if (style == NULL) {
 		style = _termview_style_new();
-		eina_hash_add(sd->styles, &style_id, style);
+		if (EINA_UNLIKELY(!style))
+			return NULL;
+		const Eina_Bool added = eina_hash_add(sd->styles, &style_id, style);
+		if (EINA_UNLIKELY(!added)) {
+			ERR("Failed to add style to hash table");
+			_termview_style_free(style);
+			return NULL;
+		}
 	}
 
-	/* If we requested a style, it is to modify it. So we implicitely request
-   * a style update that will occur at the next flush */
+	/* If we requested a style, it is to modify it. So we implicitely
+	 * request a style update that will occur at the next flush */
 	sd->pending_style_update = EINA_TRUE;
 	return style;
 }
