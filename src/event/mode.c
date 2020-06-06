@@ -41,7 +41,7 @@ PARAMETERS(GEN_DECODERS)
 static Eina_Bool _arg_cursor_shape_get(const msgpack_object *const obj,
 				       enum cursor_shape *const arg)
 {
-	const msgpack_object_str *const str = EOVIM_MSGPACK_STRING_OBJ_EXTRACT(obj, fail);
+	const msgpack_object_str *const str = MPACK_STRING_OBJ_EXTRACT(obj, return EINA_FALSE);
 	if (!strncmp(str->ptr, "block", str->size)) {
 		*arg = CURSOR_SHAPE_BLOCK;
 	} else if (!strncmp(str->ptr, "horizontal", str->size)) {
@@ -53,8 +53,6 @@ static Eina_Bool _arg_cursor_shape_get(const msgpack_object *const obj,
 		*arg = CURSOR_SHAPE_BLOCK;
 	}
 	return EINA_TRUE;
-fail:
-	return EINA_FALSE;
 }
 
 static Eina_Bool _arg_mouse_shape_get(const msgpack_object *const obj EINA_UNUSED,
@@ -82,7 +80,7 @@ static Eina_Bool _mode_info_set(struct nvim *const nvim, const msgpack_object_ar
 	/* Go through all the arguments. They are expected to be maps */
 	for (uint32_t i = 0; i < kw_params->size; i++) {
 		const msgpack_object_map *const map =
-			EOVIM_MSGPACK_MAP_EXTRACT(&kw_params->ptr[i], continue);
+			MPACK_MAP_EXTRACT(&kw_params->ptr[i], continue);
 		const msgpack_object *o_key, *o_val;
 		unsigned int it;
 
@@ -92,8 +90,10 @@ static Eina_Bool _mode_info_set(struct nvim *const nvim, const msgpack_object_ar
 			goto fail;
 		}
 
-		EOVIM_MSGPACK_MAP_ITER (map, it, o_key, o_val) {
-			Eina_Stringshare *const key = EOVIM_MSGPACK_STRING_EXTRACT(o_key, fail);
+		MPACK_MAP_ITER(map, it, o_key, o_val)
+		{
+			Eina_Stringshare *const key =
+				MPACK_STRING_EXTRACT(o_key, nvim_mode_free(mode); goto fail;);
 			const f_mode_decode func = eina_hash_find(_modes_params, key);
 			if (EINA_UNLIKELY(!func)) {
 				WRN("Unhandled attribute '%s'", key);

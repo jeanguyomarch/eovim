@@ -134,13 +134,11 @@ static Eina_Bool nvim_event_set_title(struct nvim *nvim, const msgpack_object_ar
 	ARRAY_OF_ARGS_EXTRACT(args, params);
 	CHECK_ARGS_COUNT(params, ==, 1);
 
-	Eina_Stringshare *const title = EOVIM_MSGPACK_STRING_EXTRACT(&params->ptr[0], fail);
+	Eina_Stringshare *const title = MPACK_STRING_EXTRACT(&params->ptr[0], return EINA_FALSE);
 	gui_title_set(&nvim->gui, title);
 	eina_stringshare_del(title);
 
 	return EINA_TRUE;
-fail:
-	return EINA_FALSE;
 }
 
 static Eina_Bool nvim_event_set_icon(struct nvim *nvim EINA_UNUSED,
@@ -175,10 +173,10 @@ static Eina_Bool nvim_event_popupmenu_show(struct nvim *nvim, const msgpack_obje
 		const msgpack_object_array *const completion = &(data->ptr[i].via.array);
 		CHECK_ARGS_COUNT(completion, ==, 4);
 
-		EOVIM_MSGPACK_STRING_CHECK(&completion->ptr[0], fail); /* word */
-		EOVIM_MSGPACK_STRING_CHECK(&completion->ptr[1], fail); /* kind */
-		EOVIM_MSGPACK_STRING_CHECK(&completion->ptr[2], fail); /* menu */
-		EOVIM_MSGPACK_STRING_CHECK(&completion->ptr[3], fail); /* info */
+		MPACK_STRING_CHECK(&completion->ptr[0], goto fail); /* word */
+		MPACK_STRING_CHECK(&completion->ptr[1], goto fail); /* kind */
+		MPACK_STRING_CHECK(&completion->ptr[2], goto fail); /* menu */
+		MPACK_STRING_CHECK(&completion->ptr[3], goto fail); /* info */
 
 		struct completion *const cmpl = nvim_completion_new(
 			completion->ptr[0].via.str.ptr, completion->ptr[0].via.str.size,
@@ -290,20 +288,21 @@ static Eina_Bool nvim_event_tabline_update(struct nvim *nvim, const msgpack_obje
 
 	for (unsigned int i = 0; i < tabs->size; i++) {
 		const msgpack_object *const o_tab = &tabs->ptr[i];
-		const msgpack_object_map *const map = EOVIM_MSGPACK_MAP_EXTRACT(o_tab, goto fail);
+		const msgpack_object_map *const map = MPACK_MAP_EXTRACT(o_tab, goto fail);
 		const msgpack_object *o_key, *o_val;
 		unsigned int it;
 
 		uint8_t tab_id = UINT8_MAX;
 		Eina_Stringshare *tab_name = NULL;
 
-		EOVIM_MSGPACK_MAP_ITER (map, it, o_key, o_val) {
+		MPACK_MAP_ITER(map, it, o_key, o_val)
+		{
 			const msgpack_object_str *const key =
-				EOVIM_MSGPACK_STRING_OBJ_EXTRACT(o_key, fail);
+				MPACK_STRING_OBJ_EXTRACT(o_key, goto fail);
 			if (!strncmp(key->ptr, "tab", key->size))
 				tab_id = TAB_INDEX_GET(o_val);
 			else if (!strncmp(key->ptr, "name", key->size))
-				tab_name = EOVIM_MSGPACK_STRING_EXTRACT(o_val, fail);
+				tab_name = MPACK_STRING_EXTRACT(o_val, goto fail);
 			else
 				ERR("Invalid key name");
 		}
