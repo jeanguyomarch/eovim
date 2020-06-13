@@ -24,11 +24,11 @@ struct module {
 static const struct module _modules[] = {
 #define MODULE(name_)                                                                              \
 	{                                                                                          \
-		.name = #name_, .init = name_##_init, .shutdown = name_##_shutdown                 \
+		.name = #name_, .init = &name_##_init, .shutdown = &name_##_shutdown               \
 	}
 
-	MODULE(keymap),	    MODULE(nvim_api), MODULE(nvim_request),
-	MODULE(nvim_event), MODULE(gui),      MODULE(termview),
+	MODULE(keymap),	      MODULE(nvim_api),	      MODULE(nvim_request), MODULE(nvim_event),
+	MODULE(gui_wildmenu), MODULE(gui_completion), MODULE(termview),
 
 #undef MODULE
 };

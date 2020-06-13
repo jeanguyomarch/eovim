@@ -26,8 +26,9 @@ void termview_cell_size_get(const Evas_Object *obj, unsigned int *w, unsigned in
 void termview_size_get(const Evas_Object *obj, unsigned int *cols, unsigned int *rows);
 void termview_clear(Evas_Object *obj);
 void termview_cursor_goto(Evas_Object *obj, unsigned int to_x, unsigned int to_y);
-void termview_cell_to_coords(const Evas_Object *obj, unsigned int cell_x, unsigned int cell_y,
-			     int *px, int *py);
+void termview_cell_geometry_get(const Evas_Object *obj, unsigned int cell_x, unsigned int cell_y,
+				int *px, int *py, int *pw, int *ph);
+
 void termview_cursor_mode_set(Evas_Object *obj, const struct mode *mode);
 void termview_cursor_visibility_set(Evas_Object *obj, Eina_Bool visible);
 

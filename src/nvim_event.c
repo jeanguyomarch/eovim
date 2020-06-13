@@ -148,81 +148,6 @@ static Eina_Bool nvim_event_set_icon(struct nvim *nvim EINA_UNUSED,
 	return EINA_TRUE;
 }
 
-static Eina_Bool nvim_event_popupmenu_show(struct nvim *nvim, const msgpack_object_array *args)
-{
-	CHECK_BASE_ARGS_COUNT(args, ==, 1);
-	ARRAY_OF_ARGS_EXTRACT(args, params);
-	CHECK_ARGS_COUNT(params, >=, 4);
-
-	const msgpack_object *const data_obj = &(params->ptr[0]);
-	CHECK_TYPE(data_obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
-	const msgpack_object_array *const data = &(data_obj->via.array);
-	struct gui *const gui = &nvim->gui;
-
-	t_int selected, row, col;
-	GET_ARG(params, 1, t_int, &selected);
-	GET_ARG(params, 2, t_int, &row);
-	GET_ARG(params, 3, t_int, &col);
-
-	gui_completion_prepare(gui, data->size);
-
-	size_t max_len_word = 0u;
-	size_t max_len_menu = 0u;
-	for (unsigned int i = 0u; i < data->size; i++) {
-		CHECK_TYPE(&data->ptr[i], MSGPACK_OBJECT_ARRAY, EINA_FALSE);
-		const msgpack_object_array *const completion = &(data->ptr[i].via.array);
-		CHECK_ARGS_COUNT(completion, ==, 4);
-
-		MPACK_STRING_CHECK(&completion->ptr[0], goto fail); /* word */
-		MPACK_STRING_CHECK(&completion->ptr[1], goto fail); /* kind */
-		MPACK_STRING_CHECK(&completion->ptr[2], goto fail); /* menu */
-		MPACK_STRING_CHECK(&completion->ptr[3], goto fail); /* info */
-
-		struct completion *const cmpl = nvim_completion_new(
-			completion->ptr[0].via.str.ptr, completion->ptr[0].via.str.size,
-			completion->ptr[1].via.str.ptr, completion->ptr[1].via.str.size,
-			completion->ptr[2].via.str.ptr, completion->ptr[2].via.str.size,
-			completion->ptr[3].via.str.ptr, completion->ptr[3].via.str.size);
-		if (EINA_LIKELY(cmpl != NULL)) {
-			/* FIXME - This is obviously wrong... the count of bytes does not
-              * equal to the number of characters...  */
-			max_len_word = MAX(max_len_word, completion->ptr[0].via.str.size);
-			max_len_menu = MAX(max_len_menu, completion->ptr[2].via.str.size);
-
-			gui_completion_add(gui, cmpl);
-		}
-	}
-
-	gui_completion_show(gui, max_len_word, max_len_menu, (int)selected, (unsigned int)col,
-			    (unsigned int)row);
-
-	return EINA_TRUE;
-fail:
-	return EINA_FALSE;
-}
-
-static Eina_Bool nvim_event_popupmenu_hide(struct nvim *nvim,
-					   const msgpack_object_array *args EINA_UNUSED)
-{
-	gui_completion_hide(&nvim->gui);
-	gui_completion_clear(&nvim->gui);
-	return EINA_TRUE;
-}
-
-static Eina_Bool nvim_event_popupmenu_select(struct nvim *nvim, const msgpack_object_array *args)
-{
-	CHECK_BASE_ARGS_COUNT(args, ==, 1);
-	ARRAY_OF_ARGS_EXTRACT(args, params);
-	CHECK_ARGS_COUNT(params, ==, 1);
-
-	t_int selected;
-	GET_ARG(params, 0, t_int, &selected);
-
-	gui_completion_selected_set(&nvim->gui, (int)selected);
-
-	return EINA_TRUE;
-}
-
 static Eina_Bool _tab_index_get(const msgpack_object *obj, uint8_t *index)
 {
 	/* It shall be of EXT type */
@@ -295,8 +220,7 @@ static Eina_Bool nvim_event_tabline_update(struct nvim *nvim, const msgpack_obje
 		uint8_t tab_id = UINT8_MAX;
 		Eina_Stringshare *tab_name = NULL;
 
-		MPACK_MAP_ITER(map, it, o_key, o_val)
-		{
+		MPACK_MAP_ITER (map, it, o_key, o_val) {
 			const msgpack_object_str *const key =
 				MPACK_STRING_OBJ_EXTRACT(o_key, goto fail);
 			if (!strncmp(key->ptr, "tab", key->size))
@@ -462,9 +386,6 @@ static Eina_Bool _method_redraw_init(e_method method_id)
 		CB_CTOR("cmdline_block_show", nvim_event_cmdline_block_show),
 		CB_CTOR("cmdline_block_append", nvim_event_cmdline_block_append),
 		CB_CTOR("cmdline_block_hide", nvim_event_cmdline_block_hide),
-		CB_CTOR("wildmenu_show", nvim_event_wildmenu_show),
-		CB_CTOR("wildmenu_hide", nvim_event_wildmenu_hide),
-		CB_CTOR("wildmenu_select", nvim_event_wildmenu_select),
 		CB_CTOR("option_set", nvim_event_option_set),
 		CB_CTOR("flush", nvim_event_flush),
 		CB_CTOR("default_colors_set", nvim_event_default_colors_set),

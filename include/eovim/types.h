@@ -9,6 +9,7 @@
 
 struct nvim;
 struct gui;
+struct wildmenu;
 struct geometry;
 struct options;
 
@@ -33,15 +34,6 @@ enum cursor_shape {
 	CURSOR_SHAPE_HORIZONTAL = 1,
 	CURSOR_SHAPE_VERTICAL = 2,
 	__CURSOR_SHAPE_LAST /* Sentinel */
-};
-
-struct completion {
-	const char *word;
-	const char *kind;
-	const char *menu;
-	const char *info;
-	/* Buffer containing the memory pointed to by word, kind, menu, info */
-	char mem[1];
 };
 
 struct geometry {

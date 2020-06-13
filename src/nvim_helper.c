@@ -1,9 +1,10 @@
 /* This file is part of Eovim, which is under the MIT License ****************/
 
-#include "eovim/nvim.h"
-#include "eovim/nvim_helper.h"
-#include "eovim/nvim_api.h"
-#include "eovim/log.h"
+#include <eovim/nvim.h>
+#include <eovim/nvim_helper.h>
+#include <eovim/msgpack_helper.h>
+#include <eovim/nvim_api.h>
+#include <eovim/log.h>
 #include <msgpack.h>
 
 Eina_Bool nvim_helper_autocmd_do(struct nvim *const nvim, const char *const event,
@@ -46,6 +47,37 @@ static void parse_ext_config(struct nvim *const nvim, void *const data,
 	nvim_api_ui_ext_set(nvim, key, param);
 }
 
+static void parse_completion_styles(struct nvim *const nvim, void *const data EINA_UNUSED,
+				    const msgpack_object *const result)
+{
+	const msgpack_object_map *const map = MPACK_MAP_EXTRACT(result, return );
+	const msgpack_object *o_key, *o_val;
+	unsigned int it;
+
+	MPACK_MAP_ITER (map, it, o_key, o_val) {
+		const msgpack_object_str *const k = MPACK_STRING_OBJ_EXTRACT(o_key, continue);
+		const msgpack_object_str *const v = MPACK_STRING_OBJ_EXTRACT(o_val, continue);
+		char *const key = strndup(k->ptr, k->size);
+		if (EINA_UNLIKELY(!key)) {
+			CRI("Failed to allocate memory");
+			continue;
+		}
+		char *const val = strndup(v->ptr, v->size);
+		if (EINA_UNLIKELY(!val)) {
+			CRI("Failed to allocate memory");
+			free(key);
+			continue;
+		}
+		const Eina_Bool ok = eina_hash_direct_add(nvim->kind_styles, key, val);
+		if (EINA_UNLIKELY(!ok)) {
+			ERR("Failed to add key-value to hash map");
+			free(key);
+			free(val);
+			continue;
+		}
+	}
+}
+
 Eina_Bool nvim_helper_config_reload(struct nvim *const nvim)
 {
 	struct gui *const gui = &nvim->gui;
@@ -60,8 +92,9 @@ Eina_Bool nvim_helper_config_reload(struct nvim *const nvim)
 
 	nvim_api_get_var(nvim, "eovim_ext_tabline", &parse_ext_config, "ext_tabline");
 	nvim_api_get_var(nvim, "eovim_ext_popupmenu", &parse_ext_config, "ext_popupmenu");
-	nvim_api_get_var(nvim, "eovim_ext_wildmenu", &parse_ext_config, "ext_wildmenu");
 	nvim_api_get_var(nvim, "eovim_ext_cmdline", &parse_ext_config, "ext_cmdline");
+
+	nvim_api_get_var(nvim, "eovim_theme_completion_styles", &parse_completion_styles, NULL);
 	//nvim_api_get_var(nvim, "eovim_ext_multigrid",
 	//  &parse_config_boolean, &gui->ext.multigrid);
 	return EINA_TRUE;

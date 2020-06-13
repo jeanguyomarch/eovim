@@ -80,7 +80,6 @@ static void _ui_options_decode(struct nvim *nvim, const msgpack_object *args)
 	 *     "ext_cmdline",
 	 *     "ext_popupmenu",
 	 *     "ext_tabline",
-	 *     "ext_wildmenu",
 	 *     "ext_linegrid",
 	 *     "ext_hlstate"
 	 *   ]
@@ -98,7 +97,6 @@ static void _ui_options_decode(struct nvim *nvim, const msgpack_object *args)
 		nvim->features.linegrid |= (_MSGPACK_STREQ(opt, "ext_linegrid"));
 		nvim->features.multigrid |= (_MSGPACK_STREQ(opt, "ext_multigrid"));
 		nvim->features.cmdline |= (_MSGPACK_STREQ(opt, "ext_cmdline"));
-		nvim->features.wildmenu |= (_MSGPACK_STREQ(opt, "ext_wildmenu"));
 		nvim->features.tabline |= (_MSGPACK_STREQ(opt, "ext_tabline"));
 		nvim->features.popupmenu |= (_MSGPACK_STREQ(opt, "ext_popupmenu"));
 	}

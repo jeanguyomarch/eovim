@@ -178,21 +178,6 @@ group { "eovim/cmdline";
    }
 }
 
-group { "eovim/wildmenu/item";
-   parts {
-      textblock { "text"; nomouse;
-         desc { "default";
-            text {
-               style: "cmdline";
-               min: 1 1;
-               align: 0.0 0.5;
-               ellipsis: 1.0;
-            }
-         }
-      }
-   }
-}
-
 group { "eovim/cmdline_cursor";
    min: 1 0;
    parts {

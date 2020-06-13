@@ -137,9 +137,6 @@ Eina_Bool nvim_event_cmdline_hide(struct nvim *nvim, const msgpack_object_array 
 Eina_Bool nvim_event_cmdline_block_show(struct nvim *nvim, const msgpack_object_array *args);
 Eina_Bool nvim_event_cmdline_block_append(struct nvim *nvim, const msgpack_object_array *args);
 Eina_Bool nvim_event_cmdline_block_hide(struct nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_wildmenu_show(struct nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_wildmenu_hide(struct nvim *nvim, const msgpack_object_array *args);
-Eina_Bool nvim_event_wildmenu_select(struct nvim *nvim, const msgpack_object_array *args);
 
 /*****************************************************************************/
 
@@ -166,6 +163,12 @@ Eina_Bool nvim_event_grid_clear(struct nvim *nvim, const msgpack_object_array *a
 Eina_Bool nvim_event_grid_cursor_goto(struct nvim *nvim, const msgpack_object_array *args);
 Eina_Bool nvim_event_grid_line(struct nvim *nvim, const msgpack_object_array *args);
 Eina_Bool nvim_event_grid_scroll(struct nvim *nvim, const msgpack_object_array *args);
+
+/*****************************************************************************/
+
+Eina_Bool nvim_event_popupmenu_show(struct nvim *nvim, const msgpack_object_array *args);
+Eina_Bool nvim_event_popupmenu_hide(struct nvim *nvim, const msgpack_object_array *args);
+Eina_Bool nvim_event_popupmenu_select(struct nvim *nvim, const msgpack_object_array *args);
 
 /*****************************************************************************/
 

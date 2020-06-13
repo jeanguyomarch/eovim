@@ -9,6 +9,8 @@
 #include "eovim/nvim_api.h"
 #include "eovim/nvim.h"
 
+#include "gui_private.h"
+
 #include <Edje.h>
 #include <Ecore_Input.h>
 
@@ -155,6 +157,16 @@ static void _termview_style_free(struct termview_style *const style)
 	free(style);
 }
 
+static Eina_Bool _kind_style_foreach(const Eina_Hash *const hash EINA_UNUSED, const void *const key,
+				     void *const data, void *const fdata)
+{
+	const char *const style = data;
+	const char *const kind = key;
+	struct termview *const sd = fdata;
+	eina_strbuf_append_printf(sd->style.text, " kind_%s='+ %s'", kind, style);
+	return EINA_TRUE;
+}
+
 static Eina_Bool _style_foreach(const Eina_Hash *const hash EINA_UNUSED, const void *const key,
 				void *const data, void *const fdata)
 {
@@ -219,6 +231,7 @@ static Eina_Bool _style_foreach(const Eina_Hash *const hash EINA_UNUSED, const v
 static void _termview_style_update(struct termview *const sd)
 {
 	Eina_Strbuf *const buf = sd->style.text;
+	struct gui *const gui = &sd->nvim->gui;
 	eina_strbuf_reset(buf);
 
 	sd->pending_style_update = EINA_FALSE;
@@ -231,6 +244,7 @@ static void _termview_style_update(struct termview *const sd)
 	eina_strbuf_append_char(buf, '\'');
 
 	eina_hash_foreach(sd->styles, &_style_foreach, sd);
+	eina_hash_foreach(gui->nvim->kind_styles, &_kind_style_foreach, sd);
 
 	//DBG("Style update: %s\n", eina_strbuf_string_get(buf));
 	evas_textblock_style_set(sd->style.object, eina_strbuf_string_get(buf));
@@ -238,6 +252,9 @@ static void _termview_style_update(struct termview *const sd)
 	/* The height of a "cell" may vary depending on the font, linegap, etc. */
 	evas_textblock_cursor_line_geometry_get(sd->cursors[0], NULL, NULL, NULL,
 						(int *)&sd->cell_h);
+
+	gui_wildmenu_style_set(gui->wildmenu, sd->style.object, sd->cell_w, sd->cell_h);
+	gui_completion_style_set(gui->completion, sd->style.object, sd->cell_w, sd->cell_h);
 
 	_relayout(sd);
 }
@@ -653,6 +670,9 @@ static void _termview_focus_in_cb(void *data, Evas *evas, Evas_Object *obj EINA_
 	if (sd->mode && sd->mode->blinkon != 0) {
 		edje_object_signal_emit(sd->cursor.ui, "eovim,blink,start", "eovim");
 	}
+
+	gui_wildmenu_style_set(gui->wildmenu, sd->style.object, sd->cell_w, sd->cell_h);
+	gui_completion_style_set(gui->completion, sd->style.object, sd->cell_w, sd->cell_h);
 }
 
 static void _termview_focus_out_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
@@ -1060,51 +1080,49 @@ void termview_redraw_end(Evas_Object *const obj)
 	const unsigned int to_y = sd->cursor.next_y;
 
 	/* Avoid useless computations */
-	if ((to_x == sd->cursor.x) && (to_y == sd->cursor.y) && (!sd->mode_changed)) {
+	if ((to_x == sd->cursor.x) && (to_y == sd->cursor.y) && (!sd->mode_changed))
 		return;
-	}
 
 	/* Before moving the cursor, we delete the character JUST BEFORE the cursor.
-   * It is the invisible separator, we want it removed before the cursor
-   * goes away */
+	 * It is the invisible separator, we want it removed before the cursor
+	 * goes away */
 	if (sd->cursor.sep_written) {
 		/* This is the situation:
-     *
-     * ,-- cursor.x
-     * |
-     * v
-     * +---+---+---+---+
-     * |   | < |   | = |
-     * +---+---+---+---+
-     *   ^       ^
-     *   |       '--- delete this
-     *   '--- delete this
-     */
+		 *
+		 * ,-- cursor.x
+		 * |
+		 * v
+		 * +---+---+---+---+
+		 * |   | < |   | = |
+		 * +---+---+---+---+
+		 *   ^       ^
+		 *   |       '--- delete this
+		 *   '--- delete this
+		 */
 		evas_textblock_cursor_char_delete(sd->cursor.cur);
 		evas_textblock_cursor_char_next(sd->cursor.cur);
 		evas_textblock_cursor_char_delete(sd->cursor.cur);
 	}
 
 	/* This is the situation:
-   *
-   * ,-- to_x
-   * |
-   * v
-   * +---+---+
-   * | < | = |
-   * +---+---+
-   * ^   ^
-   * |   '--- place a whitespace
-   * '-- place a whitespace
-   */
+	 *
+	 * ,-- to_x
+	 * |
+	 * v
+	 * +---+---+
+	 * | < | = |
+	 * +---+---+
+	 * ^   ^
+	 * |   '--- place a whitespace
+	 * '-- place a whitespace
+	 */
 
 	/* Move the cursor to position (to_x + 1, to_y). Note the to_x+1, very
-   * important! It is used to insert a whitespace */
+	 * important! It is used to insert a whitespace */
 	evas_textblock_cursor_copy(sd->cursors[to_y], sd->cursor.cur);
 	evas_textblock_cursor_paragraph_char_first(sd->cursor.cur);
-	for (unsigned int i = 0u; i <= to_x; i++) {
+	for (unsigned int i = 0u; i <= to_x; i++)
 		evas_textblock_cursor_char_next(sd->cursor.cur);
-	}
 
 	/* Insert the invisible separator at to_x+1 and to_x */
 	evas_textblock_cursor_text_append(sd->cursor.cur, INVISIBLE_SEP);
@@ -1206,15 +1224,18 @@ void termview_scroll(Evas_Object *const obj, const int top, const int bot, const
 	}
 }
 
-void termview_cell_to_coords(const Evas_Object *obj, unsigned int cell_x, unsigned int cell_y,
-			     int *px, int *py)
+void termview_cell_geometry_get(const Evas_Object *const obj, const unsigned int cell_x,
+				const unsigned int cell_y, int *const px, int *const py,
+				int *const pw, int *const ph)
 {
 	const struct termview *const sd = evas_object_smart_data_get(obj);
 
-	if (px)
-		*px = (int)(cell_x * sd->cell_w);
-	if (py)
-		*py = (int)(cell_y * sd->cell_h);
+	evas_textblock_cursor_copy(sd->cursors[cell_y], sd->tmp);
+	evas_textblock_cursor_paragraph_char_first(sd->tmp);
+	for (unsigned int i = 0u; i < cell_x; i++)
+		evas_textblock_cursor_char_next(sd->tmp);
+
+	evas_textblock_cursor_char_geometry_get(sd->tmp, px, py, pw, ph);
 }
 
 void termview_cursor_mode_set(Evas_Object *const obj, const struct mode *const mode)

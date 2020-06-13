@@ -471,6 +471,12 @@ struct nvim *nvim_new(const struct options *opts, const char *const args[])
 		goto del_events;
 	}
 
+	nvim->kind_styles = eina_hash_string_small_new(EINA_FREE_CB(&free));
+	if (EINA_UNLIKELY(!nvim->kind_styles)) {
+		CRI("Failed to create hash map");
+		goto del_modes;
+	}
+
 	/* Create the neovim process */
 	nvim->exe = ecore_exe_pipe_run(eina_strbuf_string_get(cmdline),
 				       ECORE_EXE_PIPE_READ | ECORE_EXE_PIPE_WRITE |
@@ -478,7 +484,7 @@ struct nvim *nvim_new(const struct options *opts, const char *const args[])
 				       nvim);
 	if (EINA_UNLIKELY(!nvim->exe)) {
 		CRI("Failed to execute nvim instance");
-		goto del_modes;
+		goto del_kind_styles;
 	}
 	ecore_exe_tag_set(nvim->exe, "neovim");
 	DBG("Running %s", eina_strbuf_string_get(cmdline));
@@ -494,6 +500,8 @@ struct nvim *nvim_new(const struct options *opts, const char *const args[])
 
 del_process:
 	ecore_exe_kill(nvim->exe);
+del_kind_styles:
+	eina_hash_free(nvim->kind_styles);
 del_modes:
 	eina_hash_free(nvim->modes);
 del_events:
@@ -512,6 +520,7 @@ void nvim_free(struct nvim *const nvim)
 		_nvim_event_handlers_del(nvim);
 		msgpack_sbuffer_destroy(&nvim->sbuffer);
 		msgpack_unpacker_destroy(&nvim->unpacker);
+		eina_hash_free(nvim->kind_styles);
 		eina_hash_free(nvim->modes);
 		free(nvim);
 	}
