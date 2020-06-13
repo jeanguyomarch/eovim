@@ -70,7 +70,7 @@ ForEachMacros:
   - 'EINA_ITERATOR_FOREACH'
   - 'EINA_INLIST_FOREACH'
   - 'EINA_INARRAY_FOREACH'
-  - 'EOVIM_MSGPACK_MAP_ITER'
+  - 'MPACK_MAP_ITER'
 
 
 #IncludeBlocks: Preserve # Unknown to clang-format-5.0
