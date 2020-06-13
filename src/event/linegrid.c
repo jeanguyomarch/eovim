@@ -105,8 +105,7 @@ Eina_Bool nvim_event_hl_attr_define(struct nvim *const nvim, const msgpack_objec
 		/* Iterate over each argument of the key-value map */
 		const msgpack_object *o_key, *o_val;
 		unsigned int it;
-		MPACK_MAP_ITER(map, it, o_key, o_val)
-		{
+		MPACK_MAP_ITER (map, it, o_key, o_val) {
 			Eina_Stringshare *const key = MPACK_STRING_EXTRACT(o_key, goto fail);
 			const f_hl_attr_decode func = eina_hash_find(_attributes, key);
 			if (EINA_UNLIKELY(!func)) {
@@ -126,7 +125,7 @@ fail:
 Eina_Bool nvim_event_hl_group_set(struct nvim *const nvim EINA_UNUSED,
 				  const msgpack_object_array *const args EINA_UNUSED)
 {
-	/* For now, we don't use tihs */
+	/* TODO For now, we don't use tihs -> use for wildmenu and completoin!!! */
 	return EINA_TRUE;
 }
 

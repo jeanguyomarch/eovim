@@ -39,13 +39,16 @@ struct nvim {
 	uint32_t request_id;
 
 	Eina_Hash *modes;
+
+	/* Map of strings that associates to a kind identifier (used by completion) to
+	 * a style string that is compatible with Evas_textblock */
+	Eina_Hash *kind_styles;
 	Eina_Bool mouse_enabled;
 
 	struct {
 		Eina_Bool linegrid;
 		Eina_Bool multigrid;
 		Eina_Bool cmdline;
-		Eina_Bool wildmenu;
 		Eina_Bool tabline;
 		Eina_Bool popupmenu;
 	} features;

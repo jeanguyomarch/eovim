@@ -15,9 +15,17 @@ let g:eovim_theme_bell_enabled = 0
 let g:eovim_theme_react_to_key_presses = 1
 let g:eovim_theme_react_to_caps_lock = 1
 
+let g:eovim_theme_completion_styles = {
+	\ 'default': 'font_weight=bold color=#ffffff',
+	\ 'm': 'color=#ff00ff',
+	\ 'v': 'color=#00ffff',
+	\ 'f': 'color=#ffff00',
+	\ 't': 'color=#0000ff',
+	\ 'd': 'color=#0000ff',
+	\}
+
 let g:eovim_ext_tabline = 1
 let g:eovim_ext_popupmenu = 1
-let g:eovim_ext_wildmenu = 1
 let g:eovim_ext_cmdline = 1
 let g:eovim_ext_multigrid = 0
 

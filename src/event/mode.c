@@ -90,8 +90,7 @@ static Eina_Bool _mode_info_set(struct nvim *const nvim, const msgpack_object_ar
 			goto fail;
 		}
 
-		MPACK_MAP_ITER(map, it, o_key, o_val)
-		{
+		MPACK_MAP_ITER (map, it, o_key, o_val) {
 			Eina_Stringshare *const key =
 				MPACK_STRING_EXTRACT(o_key, nvim_mode_free(mode); goto fail;);
 			const f_mode_decode func = eina_hash_find(_modes_params, key);

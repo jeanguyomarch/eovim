@@ -11,7 +11,6 @@ efl_version: 1 20;
 
 #define THEME_MSG_BG            0
 #define THEME_MSG_CMDLINE_INFO  1
-#define THEME_MSG_COMPLETION_KIND    2
 
 externals {
    external: "elm";
