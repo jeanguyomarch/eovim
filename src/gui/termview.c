@@ -283,7 +283,7 @@ static inline void _composition_reset(struct termview *sd)
 static inline void _composition_add(struct termview *sd, const Ecore_Event_Key *const key)
 {
 	/* Add the key as a stringshare in the seq list. Hence, starting the
-    * composition */
+	 * composition */
 	Eina_Stringshare *const shr = eina_stringshare_add(key->key);
 	sd->seq_compose = eina_list_append(sd->seq_compose, shr);
 }
@@ -299,7 +299,7 @@ static Eina_Bool _compose(struct termview *const sd, const Ecore_Event_Key *cons
 		char *res = NULL;
 
 		/* When composition is enabled, we want to skip modifiers, and only feed
-        * non-modified keys to the composition engine */
+		 * non-modified keys to the composition engine */
 		if (key->modifiers != 0u)
 			return EINA_TRUE;
 
@@ -347,7 +347,7 @@ static void _cursor_calc_vertical(struct termview *const sd, const int x, const 
 				  const int h)
 {
 	/* Place the cursor at (x,y) and set its width to mode->cell_percentage
-   * of a cell's width */
+	 * of a cell's width */
 	evas_object_move(sd->cursor.ui, x, y);
 	w = (w * (int)sd->mode->cell_percentage) / 100;
 	if (w <= 0)
@@ -359,7 +359,7 @@ static void _cursor_calc_horizontal(struct termview *const sd, const int x, cons
 				    const int w, const int h)
 {
 	/* Place the cursor at the bottom of (x,y) and set its height to
-   * mode->cell_percentage of a cell's height */
+	 * mode->cell_percentage of a cell's height */
 
 	int h2 = (h * (int)sd->mode->cell_percentage) / 100;
 	if (h2 <= 0)
@@ -448,8 +448,8 @@ static void _termview_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object
 		return;
 
 	/* At this point, we have actually moved the mouse while holding a mouse
-    * button, hence dragging. Send the event then update the current mouse
-    * position. */
+	 * button, hence dragging. Send the event then update the current mouse
+	 * position. */
 	_mouse_event(sd, "Drag", cx, cy, sd->mouse_drag.btn);
 
 	sd->mouse_drag.prev_cx = cx;
@@ -478,7 +478,7 @@ static void _termview_mouse_down_cb(void *data, Evas *e EINA_UNUSED, Evas_Object
 	_coords_to_cell(sd, ev->canvas.x, ev->canvas.y, &cx, &cy);
 
 	/* When pressing down the mouse, we just registered the first values thay
-    * may be used for dragging with the mouse. */
+	 * may be used for dragging with the mouse. */
 	sd->mouse_drag.prev_cx = cx;
 	sd->mouse_drag.prev_cy = cy;
 
@@ -554,18 +554,18 @@ static Eina_Bool _termview_key_down_cb(void *const data, const int type EINA_UNU
 #endif
 
 	/* Did we press the Caps_Lock key? We can either have enabled or disabled
-    * caps lock. */
+	 * caps lock. */
 	if (!strcmp(ev->key, caps)) /* Caps lock is pressed */
 	{
 		if (ev->modifiers & ECORE_EVENT_LOCK_CAPS) /* DISABLE */
 		{
 			/* If we press caps lock with prior caps locks, it means we
-              * just DISABLED the caps lock */
+			 * just DISABLED the caps lock */
 			gui_caps_lock_dismiss(gui);
 		} else /* ENABLE */
 		{
 			/* If we press caps lock without prior caps locks, it means we
-              * just ENABLED the caps lock */
+			 * just ENABLED the caps lock */
 			gui_caps_lock_alert(gui);
 		}
 	}
@@ -574,8 +574,8 @@ static Eina_Bool _termview_key_down_cb(void *const data, const int type EINA_UNU
 	if ((ev->string == NULL) && (keymap == NULL))
 		return ECORE_CALLBACK_PASS_ON;
 
-	/* Try the composition. When this function returns EINA_TRUE, it already
-    * worked out, nothing more to do. */
+	/* Try the composition. When this function returns EINA_TRUE, it
+	 * already worked out, nothing more to do. */
 	if (_compose(sd, ev))
 		return ECORE_CALLBACK_PASS_ON;
 
@@ -585,9 +585,9 @@ static Eina_Bool _termview_key_down_cb(void *const data, const int type EINA_UNU
 	const Eina_Bool shift = ev->modifiers & ECORE_EVENT_MODIFIER_SHIFT;
 
 	/* Register modifiers. Ctrl and shift are special: we enable composition
-    * only if the key is present in the keymap (it is a special key). We
-    * disregard shift alone, because it would just mean "uppercase" if alone;
-    * however when combined with the keymap, we will compose! */
+	 * only if the key is present in the keymap (it is a special key). We
+	 * disregard shift alone, because it would just mean "uppercase" if alone;
+	 * however when combined with the keymap, we will compose! */
 	const Eina_Bool compose = ctrl || super || alt || (shift && keymap);
 
 	if (compose) {
@@ -597,11 +597,11 @@ static Eina_Bool _termview_key_down_cb(void *const data, const int type EINA_UNU
 		}
 
 		/* Compose a string containing the textual representation of the
-         * special keys to be sent to neovim.
-         * Search :help META for details.
-         *
-         * We first compose the first part with the modifiers. E.g. <C-S-
-         */
+		 * special keys to be sent to neovim.
+		 * Search :help META for details.
+		 *
+		 * We first compose the first part with the modifiers. E.g. <C-S-
+		 */
 		buf[0] = '<';
 		send_size = 1;
 		if (!_add_modifier(buf, ctrl, 'C', &send_size)) {
@@ -689,28 +689,28 @@ static void _termview_focus_out_cb(void *data, Evas *e EINA_UNUSED, Evas_Object 
 static void _relayout(struct termview *const sd)
 {
 	/* This function sends the "relayout" smart callback, but only when all the
-   * required information are available!! This may not be the case at init
-   * time, because the font and dimensions are provided to eovim with
-   * asynchronous callbacks (hello RPC).
-   * At some key functions, we want to notify the gui that the lyout changed,
-   * but cannot completely yet, because we are missing information. In that
-   * case, we mark the relayout as "pending". When a new information is
-   * available, this will be called again.
-   */
+	 * required information are available!! This may not be the case at init
+	 * time, because the font and dimensions are provided to eovim with
+	 * asynchronous callbacks (hello RPC).
+	 * At some key functions, we want to notify the gui that the lyout changed,
+	 * but cannot completely yet, because we are missing information. In that
+	 * case, we mark the relayout as "pending". When a new information is
+	 * available, this will be called again.
+	 */
 	if (EINA_LIKELY(sd->cols && sd->rows && sd->style.font_name)) {
 		Eina_Rectangle *const geo = &sd->geometry;
 		evas_object_geometry_get(sd->object, &geo->x, &geo->y, NULL, NULL);
 
 		/* Height is a bit tricky, because it depends on the textblock itself.  So
-     * you can't just take the height of a row and multiply it by the number of
-     * rows. There will be some pixel differences...
-     *
-     * We most the last cursor to the last character, to make sure that we
-     * completely get the last line. We then calculate the exact height
-     * from a union of geometries.
-     *
-     * This is costly, but rarely performed.
-     */
+		 * you can't just take the height of a row and multiply it by the number of
+		 * rows. There will be some pixel differences...
+		 *
+		 * We most the last cursor to the last character, to make sure that we
+		 * completely get the last line. We then calculate the exact height
+		 * from a union of geometries.
+		 *
+		 * This is costly, but rarely performed.
+		 */
 		evas_textblock_cursor_paragraph_char_last(sd->cursors[sd->rows - 1]);
 		Eina_Iterator *const it = evas_textblock_cursor_range_simple_geometry_get(
 			sd->cursors[0], sd->cursors[sd->rows - 1]);
@@ -1163,41 +1163,41 @@ void termview_scroll(Evas_Object *const obj, const int top, const int bot, const
 	int start_line, end_line, step;
 	if (rows > 0) {
 		/* Here, we scroll text UPWARDS. Line N-1 is replaced by line N.
-     *
-     *
-     * top
-     *   '>+------------------+     +------------------+
-     *     | Line 0           |  ,> | Line 1           |
-     *     +------------------+ /   +------------------+
-     * (1) | Line 1           |' ,> | Line 2           |
-     *     +------------------+ /   +------------------+
-     * (2) | Line 2           |'    | xxxxxx           |
-     *  ,> +------------------+     +------------------+
-     * bot
-     *
-     * So we start at top+|rows|, because top replaces nothing.
-     *     top+rows will overwrite top.
-     *     top+rows+1 will overwrite top+rows+1
-     *     etc.
-     *
-     * One bot is reached (exclusive), we are done.
-     */
+		 *
+		 *
+		 * top
+		 *   '>+------------------+     +------------------+
+		 *     | Line 0           |  ,> | Line 1           |
+		 *     +------------------+ /   +------------------+
+		 * (1) | Line 1           |' ,> | Line 2           |
+		 *     +------------------+ /   +------------------+
+		 * (2) | Line 2           |'    | xxxxxx           |
+		 *  ,> +------------------+     +------------------+
+		 * bot
+		 *
+		 * So we start at top+|rows|, because top replaces nothing.
+		 *     top+rows will overwrite top.
+		 *     top+rows+1 will overwrite top+rows+1
+		 *     etc.
+		 *
+		 * One bot is reached (exclusive), we are done.
+		 */
 		start_line = top + rows;
 		end_line = bot;
 		step = +1;
 	} else {
 		/* Here, we scroll text DOWNWARDS. Line N+1 is replaced by line N.
-     *
-     *     +------------------+     +------------------+
-     * (2) | Line 0           |,    | xxxxxx           |
-     *     +------------------+ \   +------------------+
-     * (1) | Line 1           |, '> | Line 0           |
-     *     +------------------+ \   +------------------+
-     *     | Line 2           |  '> | Line 1           |
-     *     +------------------+     +------------------+
-     *
-     * We start at bot-1-|rows|
-     */
+		 *
+		 *     +------------------+     +------------------+
+		 * (2) | Line 0           |,    | xxxxxx           |
+		 *     +------------------+ \   +------------------+
+		 * (1) | Line 1           |, '> | Line 0           |
+		 *     +------------------+ \   +------------------+
+		 *     | Line 2           |  '> | Line 1           |
+		 *     +------------------+     +------------------+
+		 *
+		 * We start at bot-1-|rows|
+		 */
 		assert(rows < 0); /* <--- Frienly reminder */
 		start_line = bot - 1 + rows;
 		end_line = top - 1; /* Make the range exclusive */
@@ -1205,9 +1205,9 @@ void termview_scroll(Evas_Object *const obj, const int top, const int bot, const
 	}
 
 	/* We have four working cursors
-   * c1 and c2 delimit the line portion to be copied
-   * c3 and c4 delimit the line portion to be replaced
-   */
+	 * c1 and c2 delimit the line portion to be copied
+	 * c3 and c4 delimit the line portion to be replaced
+	 */
 	for (int from_line = start_line; from_line != end_line; from_line += step) {
 		const int to_line = from_line - rows;
 		if ((unsigned int)to_line >= sd->rows) {
@@ -1244,8 +1244,8 @@ void termview_cursor_mode_set(Evas_Object *const obj, const struct mode *const m
 	EINA_SAFETY_ON_FALSE_RETURN((unsigned)mode->cursor_shape <= 2);
 
 	/* Set sd->cursor_calc to the appropriate function that will calculate
-   * the resizing and positionning of the cursor. We also keep track of
-   * the mode. */
+	 * the resizing and positionning of the cursor. We also keep track of
+	 * the mode. */
 	struct termview *const sd = evas_object_smart_data_get(obj);
 	const f_cursor_calc funcs[] = {
 		[CURSOR_SHAPE_BLOCK] = &_cursor_calc_block,
