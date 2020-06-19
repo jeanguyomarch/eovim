@@ -38,6 +38,19 @@ static Eina_Bool _emoji_set(struct nvim *nvim EINA_UNUSED, const msgpack_object 
 
 static Eina_Bool _guifont_set(struct nvim *const nvim, const msgpack_object *const value)
 {
+	/* See the wiki for details on what is accepted and what is not. The evas_textblock
+	 * will parse a subset of the fontconfig format:
+	 *   https://www.freedesktop.org/software/fontconfig/fontconfig-user.html
+	 *
+	 * We expect something like:
+	 *   DejaVu\ Sans\ Mono-xxx:style=Book
+	 *   ^~~~~~~~~~~~~~~~~^^^,^^~~~~~~~~~~~ fontconfig styles
+	 *     font_name       | |
+	 *     a single dash --' '-- font size
+	 *
+	 * We will pass to the textblock as the font name: font_name + fontconfig styles
+	 * The font size is silently extracted.
+	 */
 	struct gui *const gui = &nvim->gui;
 	const msgpack_object_str *const val = MPACK_STRING_OBJ_EXTRACT(value, goto fail);
 	if (val->size == 0) {
@@ -51,23 +64,32 @@ static Eina_Bool _guifont_set(struct nvim *const nvim, const msgpack_object *con
 		goto fail;
 	}
 
-	/* We are now trying to find a pattern such as: FontName:FontSize */
-	char *sep = strchr(str, ':');
-	if (EINA_UNLIKELY(!sep)) /* TODO: real message */
-	{
-		ERR("invalid guifont='%s'. Expected: Fontname:Fontsize'", str);
+	/* We are now trying to find a pattern such as: FontName-FontSize:Extra */
+	char *const sep = strchr(str, '-');
+	if (EINA_UNLIKELY(!sep)) {
+		/* TODO: real message */
+		ERR("invalid guifont='%s'. Expected: Fontname-Fontsize[:extra]'", str);
 		goto clean;
 	}
-	*sep = '\0';
-	sep++; /* <--- now points to the start of fontsize */
 
 	/* Parse the fontsize. We forbid a subset of fantasist sizes to both
-   * catch parsing failures (returned value would be ULONG_MAX) and to
-   * prevent invalid use of other APIs */
+	 * catch parsing failures (returned value would be ULONG_MAX) and to
+	 * prevent invalid use of other APIs */
 	char *end = sep;
-	const unsigned long fontsize = strtoul(sep, &end, 10);
-	if ((fontsize > UINT_MAX) || (*end != '\0')) {
-		ERR("Failed to parse fontsize '%s'", sep);
+	const unsigned long fontsize = strtoul(sep + 1, &end, 10);
+	if (fontsize > UINT_MAX) {
+		ERR("Font size in '%s' (%lu) is too big", str, fontsize);
+		goto clean;
+	} else if (*end == '\0') {
+		/* No extra parameter, isolate the font name */
+		*sep = '\0';
+	} else if (*end == ':') {
+		/* Extra parameters: append them to the fontname */
+		const char *const endstr = str + val->size + 1;
+		assert(endstr > end);
+		memcpy(sep, end, (size_t)(endstr - end));
+	} else {
+		ERR("Failed to parse the font size in '%s'", str);
 		goto clean;
 	}
 
