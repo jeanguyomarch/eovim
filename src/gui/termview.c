@@ -14,11 +14,6 @@
 #include <Edje.h>
 #include <Ecore_Input.h>
 
-enum { THEME_MSG_BLINK_SET = 0,
-       THEME_MSG_COLOR_SET = 1,
-       THEME_MSG_MAY_BLINK_SET = 2,
-};
-
 static Evas_Smart *_smart = NULL;
 static Evas_Smart_Class _parent_sc = EVAS_SMART_CLASS_INIT_NULL;
 
@@ -28,7 +23,6 @@ static Evas_Smart_Class _parent_sc = EVAS_SMART_CLASS_INIT_NULL;
 static const char INVISIBLE_SEP[] = "\xe2\x81\xa3";
 
 struct termview;
-typedef void (*f_cursor_calc)(struct termview *, int, int, int, int);
 
 static void _relayout(struct termview *sd);
 
@@ -66,7 +60,6 @@ struct termview {
 	Evas_Object *sizing_textgrid;
 
 	struct {
-		Evas_Object *ui; /**< Edje object */
 		Evas_Textblock_Cursor *cur;
 		unsigned int x;
 		unsigned int y;
@@ -77,9 +70,6 @@ struct termview {
 		/* This is set to true when the cursor has written a invisible
 		 * space. It should be at (x,y) */
 		Eina_Bool sep_written;
-
-		/* Writing position */
-		f_cursor_calc calc;
 	} cursor;
 
 	unsigned int cell_w;
@@ -95,8 +85,6 @@ struct termview {
 		unsigned int prev_cx; /**< Previous X position */
 		unsigned int prev_cy; /**< Previous Y position */
 	} mouse_drag;
-
-	const struct mode *mode;
 
 	Eina_List *seq_compose;
 
@@ -161,9 +149,9 @@ static Eina_Bool _kind_style_foreach(const Eina_Hash *const hash EINA_UNUSED, co
 				     void *const data, void *const fdata)
 {
 	const char *const style = data;
-	const char *const kind = key;
+	const unsigned int kind_id = gui_style_hash(key);
 	struct termview *const sd = fdata;
-	eina_strbuf_append_printf(sd->style.text, " kind_%s='+ %s'", kind, style);
+	eina_strbuf_append_printf(sd->style.text, " kind_%u='+ %s'", kind_id, style);
 	return EINA_TRUE;
 }
 
@@ -228,8 +216,9 @@ static Eina_Bool _style_foreach(const Eina_Hash *const hash EINA_UNUSED, const v
 	return EINA_TRUE;
 }
 
-static void _termview_style_update(struct termview *const sd)
+void termview_style_update(Evas_Object *const obj)
 {
+	struct termview *const sd = evas_object_smart_data_get(obj);
 	Eina_Strbuf *const buf = sd->style.text;
 	struct gui *const gui = &sd->nvim->gui;
 	eina_strbuf_reset(buf);
@@ -262,8 +251,7 @@ static void _termview_style_update(struct termview *const sd)
 static void _keys_send(struct termview *sd, const char *keys, unsigned int size)
 {
 	nvim_api_input(sd->nvim, keys, size);
-	if (sd->nvim->gui.theme.react_to_key_presses)
-		edje_object_signal_emit(sd->cursor.ui, "key,down", "eovim");
+	gui_cursor_key_pressed(&sd->nvim->gui);
 }
 
 static inline Eina_Bool _composing_is(const struct termview *sd)
@@ -333,40 +321,6 @@ static Eina_Bool _compose(struct termview *const sd, const Ecore_Event_Key *cons
 
 	/* Delegate the key to the caller */
 	return EINA_FALSE;
-}
-
-static void _cursor_calc_block(struct termview *const sd, const int x, const int y, const int w,
-			       const int h)
-{
-	/* Place the cursor at (x,y) and set its size to a cell */
-	evas_object_move(sd->cursor.ui, x, y);
-	evas_object_resize(sd->cursor.ui, w, h);
-}
-
-static void _cursor_calc_vertical(struct termview *const sd, const int x, const int y, int w,
-				  const int h)
-{
-	/* Place the cursor at (x,y) and set its width to mode->cell_percentage
-	 * of a cell's width */
-	evas_object_move(sd->cursor.ui, x, y);
-	w = (w * (int)sd->mode->cell_percentage) / 100;
-	if (w <= 0)
-		w = 1; /* We don't want an invisible cursor */
-	evas_object_resize(sd->cursor.ui, w, h);
-}
-
-static void _cursor_calc_horizontal(struct termview *const sd, const int x, const int y,
-				    const int w, const int h)
-{
-	/* Place the cursor at the bottom of (x,y) and set its height to
-	 * mode->cell_percentage of a cell's height */
-
-	int h2 = (h * (int)sd->mode->cell_percentage) / 100;
-	if (h2 <= 0)
-		h2 = 1; /* We don't want an invisible cursor */
-
-	evas_object_move(sd->cursor.ui, x, y + h - h2);
-	evas_object_resize(sd->cursor.ui, w, h2);
 }
 
 static void _coords_to_cell(const struct termview *sd, int px, int py, unsigned int *cell_x,
@@ -651,39 +605,21 @@ static Eina_Bool _termview_key_down_cb(void *const data, const int type EINA_UNU
 static void _termview_focus_in_cb(void *data, Evas *evas, Evas_Object *obj EINA_UNUSED,
 				  void *event EINA_UNUSED)
 {
-	Edje_Message_Int msg = { .val = 1 }; /* may_blink := TRUE */
 	struct termview *const sd = data;
 	struct gui *const gui = &(sd->nvim->gui);
 
 	/* When entering back on the Eovim window, the user may have pressed
-    * Caps_Lock outside of Eovim's context. So we have to make sure when
-    * entering Eovim again, that we are on the same page with the input
-    * events. */
+	 * Caps_Lock outside of Eovim's context. So we have to make sure when
+	 * entering Eovim again, that we are on the same page with the input
+	 * events. */
 	const Evas_Lock *const lock = evas_key_lock_get(evas);
 	if (evas_key_lock_is_set(lock, "Caps_Lock"))
 		gui_caps_lock_alert(gui);
 	else
 		gui_caps_lock_dismiss(gui);
 
-	edje_object_message_send(sd->cursor.ui, EDJE_MESSAGE_INT, THEME_MSG_MAY_BLINK_SET, &msg);
-	edje_object_signal_emit(sd->cursor.ui, "focus,in", "eovim");
-	if (sd->mode && sd->mode->blinkon != 0) {
-		edje_object_signal_emit(sd->cursor.ui, "eovim,blink,start", "eovim");
-	}
-
 	gui_wildmenu_style_set(gui->wildmenu, sd->style.object, sd->cell_w, sd->cell_h);
 	gui_completion_style_set(gui->completion, sd->style.object, sd->cell_w, sd->cell_h);
-}
-
-static void _termview_focus_out_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
-				   void *event EINA_UNUSED)
-{
-	Edje_Message_Int msg = { .val = 0 }; /* may_blink := FALSE */
-
-	struct termview *const sd = data;
-	edje_object_message_send(sd->cursor.ui, EDJE_MESSAGE_INT, THEME_MSG_MAY_BLINK_SET, &msg);
-	edje_object_signal_emit(sd->cursor.ui, "eovim,blink,stop", "eovim");
-	edje_object_signal_emit(sd->cursor.ui, "focus,out", "eovim");
 }
 
 static void _relayout(struct termview *const sd)
@@ -748,7 +684,6 @@ static void _smart_add(Evas_Object *obj)
 	evas_object_smart_data_set(obj, sd);
 	_parent_sc.add(obj);
 	evas_object_event_callback_add(obj, EVAS_CALLBACK_FOCUS_IN, _termview_focus_in_cb, sd);
-	evas_object_event_callback_add(obj, EVAS_CALLBACK_FOCUS_OUT, _termview_focus_out_cb, sd);
 	evas_object_event_callback_add(obj, EVAS_CALLBACK_MOUSE_MOVE, _termview_mouse_move_cb, sd);
 	evas_object_event_callback_add(obj, EVAS_CALLBACK_MOUSE_DOWN, _termview_mouse_down_cb, sd);
 	evas_object_event_callback_add(obj, EVAS_CALLBACK_MOUSE_UP, _termview_mouse_up_cb, sd);
@@ -786,13 +721,6 @@ static void _smart_add(Evas_Object *obj)
 	sd->tmp = evas_object_textblock_cursor_new(sd->textblock);
 
 	/* Cursor setup */
-	sd->cursor.ui = o = edje_object_add(evas);
-	sd->cursor.calc = _cursor_calc_block; /* Cursor will be a block by default */
-	edje_object_file_set(o, main_edje_file_get(), "eovim/cursor");
-	evas_object_pass_events_set(o, EINA_TRUE);
-	evas_object_propagate_events_set(o, EINA_FALSE);
-	evas_object_smart_member_add(o, obj);
-	evas_object_show(o);
 	sd->cursor.cur = evas_object_textblock_cursor_new(sd->textblock);
 }
 
@@ -801,7 +729,6 @@ static void _smart_del(Evas_Object *obj)
 	struct termview *const sd = evas_object_smart_data_get(obj);
 	evas_textblock_style_free(sd->style.object);
 	eina_strbuf_free(sd->style.text);
-	evas_object_del(sd->cursor.ui);
 	eina_strbuf_free(sd->line);
 	if (sd->cells) {
 		free(sd->cells[0]);
@@ -1018,7 +945,7 @@ void termview_flush(Evas_Object *const obj)
 	Eina_Strbuf *const line = sd->line;
 
 	if (sd->pending_style_update) {
-		_termview_style_update(sd);
+		termview_style_update(obj);
 	}
 
 	for (unsigned int i = 0u; i < sd->rows; i++) {
@@ -1125,17 +1052,22 @@ void termview_redraw_end(Evas_Object *const obj)
 		evas_textblock_cursor_char_next(sd->cursor.cur);
 
 	/* Insert the invisible separator at to_x+1 and to_x */
-	evas_textblock_cursor_text_append(sd->cursor.cur, INVISIBLE_SEP);
-	evas_textblock_cursor_char_prev(sd->cursor.cur);
-	evas_textblock_cursor_text_append(sd->cursor.cur, INVISIBLE_SEP);
-	sd->cursor.sep_written = EINA_TRUE;
+	if (sd->nvim->gui.theme.cursor_cuts_ligatures) {
+		evas_textblock_cursor_text_append(sd->cursor.cur, INVISIBLE_SEP);
+		evas_textblock_cursor_char_prev(sd->cursor.cur);
+		evas_textblock_cursor_text_append(sd->cursor.cur, INVISIBLE_SEP);
+		sd->cursor.sep_written = EINA_TRUE;
+	} else
+		evas_textblock_cursor_char_prev(sd->cursor.cur);
 
 	int ox, oy;
 	evas_object_geometry_get(sd->textblock, &ox, &oy, NULL, NULL);
 
 	int y = 0, h = 0;
 	evas_textblock_cursor_char_geometry_get(sd->cursor.cur, NULL, &y, NULL, &h);
-	sd->cursor.calc(sd, (int)(to_x * sd->cell_w) + ox, y + oy, (int)sd->cell_w, h);
+	if (!gui_cmdline_enabled_get(&sd->nvim->gui))
+		gui_cursor_calc(&sd->nvim->gui, (int)(to_x * sd->cell_w) + ox, y + oy,
+				(int)sd->cell_w, h);
 
 	/* Update the cursor's current position */
 	sd->cursor.x = to_x;
@@ -1241,68 +1173,18 @@ void termview_cell_geometry_get(const Evas_Object *const obj, const unsigned int
 void termview_cursor_mode_set(Evas_Object *const obj, const struct mode *const mode)
 {
 	EINA_SAFETY_ON_NULL_RETURN(mode);
-	EINA_SAFETY_ON_FALSE_RETURN((unsigned)mode->cursor_shape <= 2);
 
-	/* Set sd->cursor_calc to the appropriate function that will calculate
-	 * the resizing and positionning of the cursor. We also keep track of
-	 * the mode. */
 	struct termview *const sd = evas_object_smart_data_get(obj);
-	const f_cursor_calc funcs[] = {
-		[CURSOR_SHAPE_BLOCK] = &_cursor_calc_block,
-		[CURSOR_SHAPE_HORIZONTAL] = &_cursor_calc_horizontal,
-		[CURSOR_SHAPE_VERTICAL] = &_cursor_calc_vertical,
-	};
-
-	/* Update the blink parameters *********************************************/
-	{
-		Edje_Message_Float_Set *msg;
-		msg = alloca(sizeof(*msg) + (sizeof(double) * 3));
-		msg->count = 3;
-		msg->val[0] = (double)mode->blinkwait / 1000.0;
-		msg->val[1] = (double)mode->blinkon / 1000.0;
-		msg->val[2] = (double)mode->blinkoff / 1000.0;
-
-		/* If we requested the cursor to blink, make it blink */
-		if (mode->blinkon != 0) {
-			/* If the cursor was blinking, we stop the blinking */
-			if (sd->mode && sd->mode->blinkon) {
-				edje_object_signal_emit(sd->cursor.ui, "eovim,blink,stop", "eovim");
-			}
-			edje_object_message_send(sd->cursor.ui, EDJE_MESSAGE_FLOAT_SET,
-						 THEME_MSG_BLINK_SET, msg);
-			edje_object_signal_emit(sd->cursor.ui, "eovim,blink,start", "eovim");
-		} else {
-			edje_object_signal_emit(sd->cursor.ui, "eovim,blink,stop", "eovim");
-		}
-	}
+	struct gui *const gui = &sd->nvim->gui;
+	cursor_mode_set(gui->cursor, mode);
 
 	/* Update the cursor's color settings **************************************/
 	struct termview_style *const style = eina_hash_find(sd->styles, &mode->attr_id);
-	if (style != NULL && style->fg_color.value != COLOR_DEFAULT) {
-		Edje_Message_Int_Set *msg;
-		msg = alloca(sizeof(*msg) + (sizeof(int) * 3));
-		msg->count = 3;
-		msg->val[0] = style->fg_color.r;
-		msg->val[1] = style->fg_color.g;
-		msg->val[2] = style->fg_color.b;
-
-		edje_object_message_send(sd->cursor.ui, EDJE_MESSAGE_INT_SET, THEME_MSG_COLOR_SET,
-					 msg);
-	}
+	if (style != NULL)
+		cursor_color_set(gui->cursor, style->fg_color);
 
 	/* Register the new mode and update the cursor calculation function. */
-	sd->mode = mode;
-	sd->cursor.calc = funcs[mode->cursor_shape];
 	sd->mode_changed = EINA_TRUE;
-}
-
-void termview_cursor_visibility_set(Evas_Object *obj, Eina_Bool visible)
-{
-	struct termview *const sd = evas_object_smart_data_get(obj);
-	if (visible)
-		evas_object_show(sd->cursor.ui);
-	else
-		evas_object_hide(sd->cursor.ui);
 }
 
 void termview_default_colors_set(Evas_Object *const obj, const union color fg, const union color bg,
@@ -1339,10 +1221,13 @@ struct termview_style *termview_style_get(Evas_Object *const obj, const t_int st
 		}
 	}
 
-	/* If we requested a style, it is to modify it. So we implicitely
-	 * request a style update that will occur at the next flush */
-	sd->pending_style_update = EINA_TRUE;
 	return style;
+}
+
+void termview_style_changed(Evas_Object *const obj)
+{
+	struct termview *const sd = evas_object_smart_data_get(obj);
+	sd->pending_style_update = EINA_TRUE;
 }
 
 void termview_font_set(Evas_Object *const obj, Eina_Stringshare *const font_name,

@@ -30,9 +30,9 @@ void termview_cell_geometry_get(const Evas_Object *obj, unsigned int cell_x, uns
 				int *px, int *py, int *pw, int *ph);
 
 void termview_cursor_mode_set(Evas_Object *obj, const struct mode *mode);
-void termview_cursor_visibility_set(Evas_Object *obj, Eina_Bool visible);
 
 struct termview_style *termview_style_get(Evas_Object *obj, t_int style_id);
+void termview_style_update(Evas_Object *obj);
 
 void termview_scroll(Evas_Object *obj, int top, int bot, int left, int right, int rows);
 
@@ -46,5 +46,7 @@ void termview_line_edit(Evas_Object *obj, unsigned int row, unsigned int col, co
 void termview_flush(Evas_Object *obj);
 void termview_linespace_set(Evas_Object *obj, unsigned int linespace);
 void termview_redraw_end(Evas_Object *obj);
+
+void termview_style_changed(Evas_Object *obj);
 
 #endif /* ! __EOVIM_TERMVIEW_H__ */

@@ -84,4 +84,12 @@
 		(Obj)->via.i64;                                                                    \
 	})
 
+static inline Eina_Bool _msgpack_streq(const msgpack_object_str *const str, const char *const with,
+				       const size_t len)
+{
+	return 0 == strncmp(str->ptr, with, MIN(str->size, len));
+}
+#define _MSGPACK_STREQ(MsgPackStr, StaticStr)                                                      \
+	_msgpack_streq(MsgPackStr, "" StaticStr "", sizeof(StaticStr) - 1u)
+
 #endif /* ! __MPACK_HELPER_H__ */

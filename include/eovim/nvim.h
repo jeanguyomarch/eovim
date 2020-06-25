@@ -40,9 +40,14 @@ struct nvim {
 
 	Eina_Hash *modes;
 
+	Eina_Hash *hl_groups;
+
 	/* Map of strings that associates to a kind identifier (used by completion) to
 	 * a style string that is compatible with Evas_textblock */
 	Eina_Hash *kind_styles;
+	/* Map of strings that associates a cmdline prompt to
+	 * a style string that is compatible with Evas_textblock */
+	Eina_Hash *cmdline_styles;
 	Eina_Bool mouse_enabled;
 
 	struct {

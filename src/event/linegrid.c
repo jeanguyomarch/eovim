@@ -52,9 +52,8 @@ Eina_Bool nvim_event_default_colors_set(struct nvim *const nvim,
 	CHECK_BASE_ARGS_COUNT(args, >=, 1);
 
 	const msgpack_object_array *const params = array_of_args_extract(args, args->size - 1);
-	if (!params) {
+	if (!params)
 		return EINA_FALSE;
-	}
 	CHECK_ARGS_COUNT(params, >=, 3);
 
 	union color fg;
@@ -69,15 +68,34 @@ Eina_Bool nvim_event_default_colors_set(struct nvim *const nvim,
 	return EINA_TRUE;
 }
 
+static Eina_Bool hi_name_set(struct nvim *const nvim, const t_int id,
+			     const msgpack_object *const hi_name)
+{
+	Eina_Stringshare *const key = MPACK_STRING_EXTRACT(hi_name, return EINA_FALSE);
+	const struct termview_style *const style = termview_style_get(nvim->gui.termview, id);
+	if (EINA_UNLIKELY(!style)) {
+		ERR("Failed find style with id %" PRIi64, id);
+		return EINA_FALSE;
+	}
+
+	eina_hash_set(nvim->hl_groups, key, style);
+	return EINA_TRUE;
+}
+
 Eina_Bool nvim_event_hl_attr_define(struct nvim *const nvim, const msgpack_object_array *const args)
 {
 	/* We expect this:
 	 *  ["hl_attr_define", id, rgb_attr, cterm_attr, info]
 	 *
 	 * For example:
-	 *  ["hl_attr_define", [1, {}, {}, []],
+	 *  ["hl_attr_define", [1, {}, {}, [<INFO>]],
 	 *     [2, {"foreground"=>13882323, "background"=>11119017},
 	 *          {"foreground"=>7, "background"=>242}, []] ... ]
+	 *
+	 * where <INFO> is  something like:
+	 * 	{"kind"=>"ui", "ui_name"=>"NormalFloat", "hi_name"=>"Pmenu", "id"=>396}
+	 *
+	 * Note that the "id" shall be the same than in the hl_attr_define.
 	 *
 	 * All arguments but "id" are optional.
 	 * We ignore cterm_attr.
@@ -90,6 +108,7 @@ Eina_Bool nvim_event_hl_attr_define(struct nvim *const nvim, const msgpack_objec
 	for (uint32_t i = 1u; i < args->size; i++) {
 		const msgpack_object_array *const opt =
 			MPACK_ARRAY_EXTRACT(&args->ptr[i], goto fail);
+		CHECK_ARGS_COUNT(opt, >=, 4);
 
 		/* First argument is the ID */
 		t_int id;
@@ -108,14 +127,30 @@ Eina_Bool nvim_event_hl_attr_define(struct nvim *const nvim, const msgpack_objec
 		MPACK_MAP_ITER (map, it, o_key, o_val) {
 			Eina_Stringshare *const key = MPACK_STRING_EXTRACT(o_key, goto fail);
 			const f_hl_attr_decode func = eina_hash_find(_attributes, key);
-			if (EINA_UNLIKELY(!func)) {
+			if (EINA_UNLIKELY(!func))
 				WRN("Unhandled attribute '%s'", key);
-			} else {
+			else
 				ret &= func(o_val, style);
-			}
 			eina_stringshare_del(key);
 		}
+
+		/* Extract the 'info' argument */
+		const msgpack_object_array *const info_arr =
+			MPACK_ARRAY_EXTRACT(&opt->ptr[3], goto fail);
+		if (EINA_UNLIKELY(info_arr->size == 0)) {
+			ERR("Unexpected empty array");
+			continue;
+		}
+		const msgpack_object_map *const info =
+			MPACK_MAP_EXTRACT(&info_arr->ptr[info_arr->size - 1], continue);
+		MPACK_MAP_ITER (info, it, o_key, o_val) {
+			const msgpack_object_str *const key =
+				MPACK_STRING_OBJ_EXTRACT(o_key, goto fail);
+			if (_MSGPACK_STREQ(key, "hi_name"))
+				ret &= hi_name_set(nvim, id, o_val);
+		}
 	}
+	termview_style_changed(nvim->gui.termview);
 
 	return ret;
 fail:
@@ -125,7 +160,6 @@ fail:
 Eina_Bool nvim_event_hl_group_set(struct nvim *const nvim EINA_UNUSED,
 				  const msgpack_object_array *const args EINA_UNUSED)
 {
-	/* TODO For now, we don't use tihs -> use for wildmenu and completoin!!! */
 	return EINA_TRUE;
 }
 
@@ -256,12 +290,10 @@ Eina_Bool nvim_event_grid_line(struct nvim *const nvim, const msgpack_object_arr
 				MPACK_STRING_OBJ_EXTRACT(&info->ptr[0], goto fail);
 			t_int repeat = INT64_C(1);
 
-			if (info->size >= 2) {
+			if (info->size >= 2)
 				GET_ARG(info, 1, t_int, &style_id);
-			}
-			if (info->size >= 3) {
+			if (info->size >= 3)
 				GET_ARG(info, 2, t_int, &repeat);
-			}
 
 			termview_line_edit(nvim->gui.termview, (unsigned int)row, (unsigned int)col,
 					   str->ptr, (size_t)str->size, (uint32_t)style_id,

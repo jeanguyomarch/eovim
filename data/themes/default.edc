@@ -9,15 +9,12 @@
 efl_version: 1 20;
 #endif
 
-#define THEME_MSG_BG            0
-#define THEME_MSG_CMDLINE_INFO  1
-
 externals {
    external: "elm";
 }
 
 color_classes {
-   color_class { name: "background";
+   color_class { name: "eovim.background";
       color: 128 128 128 255;
    }
    color_class { name: "cursor_off";
@@ -35,25 +32,17 @@ color_classes {
    color_class { name: "cursor_full";
       color: 255 255 255 255;
    }
+
+   color_class { name: "eovim.cmdline.info_bg";
+   }
 }
 
-#define CMDLINE_INFO_STYLE(Color) \
-   "font_weight=Bold text_class=cmdline color="Color" left_margin=8 right_margin=8"
 styles {
    style { name: "cmdline";
-      base: "color=#bcbcbc wrap=word left_margin=2 right_margin=2 text_class=cmdline";
+      base: "font=Sans font_size=14 color=#ffffff wrap=word left_margin=2 right_margin=2";
    }
-   style { name: "cmdline_slash_info";
-      base: CMDLINE_INFO_STYLE("#ffffa7");
-   }
-   style { name: "cmdline_interro_info";
-      base: CMDLINE_INFO_STYLE("#ffcca7");
-   }
-   style { name: "cmdline_colomn_info";
-      base: CMDLINE_INFO_STYLE("#ffa7d9");
-   }
-   style { name: "cmdline_default_info";
-      base: CMDLINE_INFO_STYLE("#a7a7ff");
+   style { name: "cmdline_info";
+      base: "font=Sans font_size=14 font_weight=Bold color=#ffffff left_margin=8 right_margin=8";
    }
 }
 
@@ -71,26 +60,13 @@ collections {
             source: "bell.wav";
          }
       }
-      script {
-         public bg_r, bg_g, bg_b, bg_a;
-
-         public message(Msg_Type:type, id, ...) {
-            if (id == THEME_MSG_BG) {
-               new r = getarg(2);
-               new g = getarg(3);
-               new b = getarg(4);
-               new a = getarg(5);
-               set_color_class("background", r, g, b, a);
-            }
-         }
-      }
 
       parts {
          rect { "tabs_headings"; nomouse;
             desc { "default";
                rel2.relative: 1.0 0.0;
                align: 0.5 0.0;
-               color_class: "background";
+               color_class: "eovim.background";
             }
             desc { "active";
                inherit: "default";
@@ -112,7 +88,7 @@ collections {
          rect { "eovim.background"; nomouse;
             desc { "default";
                rel.to: "eovim.main.view";
-               color_class: "background";
+               color_class: "eovim.background";
             }
          }
 
@@ -309,7 +285,11 @@ collections {
             target: "eovim.wildmenu";
             target: "wildmenu_shadow";
             target: "wildmenu_bar";
+	    after: "cmdline_shown";
          }
+	 program { name: "cmdline_shown";
+            action: SIGNAL_EMIT "eovim,cmdline,shown" "eovim";
+	 }
          program { signal: "eovim,cmdline,hide"; source: "eovim";
             action: STATE_SET "hidden";
             target: "eovim.cmdline";

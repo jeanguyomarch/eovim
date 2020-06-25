@@ -16,19 +16,9 @@ struct gui {
 
 	struct wildmenu *wildmenu;
 	struct completion *completion;
-
+	struct cursor *cursor;
 	struct popupmenu *active_popup;
-
-	struct {
-		Evas_Object *menu;
-		Evas_Object *table;
-		Evas_Object *spacer;
-		Elm_Object_Item *sel_item;
-		size_t items_count;
-		ssize_t sel_index;
-		size_t cpos; /**< Cursor position */
-		Eina_Bool nvim_sel_event; /**< Nvim initiated a selection */
-	} cmdline;
+	struct cmdline *cmdline;
 
 	struct {
 		Eina_Stringshare *name;
@@ -42,6 +32,7 @@ struct gui {
 		Eina_Bool bell_enabled;
 		Eina_Bool react_to_key_presses;
 		Eina_Bool react_to_caps_lock;
+		Eina_Bool cursor_cuts_ligatures;
 	} theme;
 
 	struct nvim *nvim;
@@ -91,7 +82,8 @@ void gui_default_colors_set(struct gui *gui, union color fg, union color bg, uni
 
 void gui_bell_ring(struct gui *gui);
 
-void gui_cmdline_show(struct gui *gui, const char *content, const char *prompt, const char *firstc);
+void gui_cmdline_show(struct gui *gui, const char *content, Eina_Stringshare *prompt,
+		      Eina_Stringshare *firstc);
 void gui_cmdline_hide(struct gui *gui);
 
 void gui_size_recalculate(struct gui *gui);
@@ -116,5 +108,6 @@ Eina_Bool gui_caps_lock_warning_get(const struct gui *gui);
 
 void gui_ready_set(struct gui *gui);
 void gui_mode_update(struct gui *gui, const struct mode *mode);
+Eina_Bool gui_cmdline_enabled_get(const struct gui *gui);
 
 #endif /* ! __EOVIM_GUI_H__ */

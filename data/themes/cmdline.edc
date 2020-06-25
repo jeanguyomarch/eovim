@@ -4,65 +4,10 @@
  * This file is to be included by default.edc
  */
 
-color_classes {
-   /*========================================================================
-    * Color classes for the command-line info panel
-    *========================================================================*/
-   color_class { name: "cmdline_slash";
-      color: 127 127 0 255;
-   }
-   color_class { name: "cmdline_interro";
-      color: 127 53 0 255;
-   }
-   color_class { name: "cmdline_colomn";
-      color: 127 0 72 255;
-   }
-   color_class { name: "cmdline_default";
-      color: 0 0 127 255;
-   }
-}
-
 group { "eovim/cmdline_info";
    images {
       image: "button_normal.png" COMP;
       image: "inset_shadow.png" COMP;
-   }
-   script {
-      public message(Msg_Type:type, id, ...) {
-         if (id == THEME_MSG_CMDLINE_INFO) {
-            /* Get the prompt (aka. first character) */
-            new info[128];
-            getsarg(2, info, 128);
-
-            /* Determine which color class shall be applied */
-            new buf[32];
-            switch (info[0]) {
-               case '/':
-               strcat(buf, "cmdline_slash");
-               case ':':
-               strcat(buf, "cmdline_colomn");
-               case '?':
-               strcat(buf, "cmdline_interro");
-               default:
-               strcat(buf, "cmdline_default");
-            }
-
-            /* Change the background of the prompt */
-            new part_bg = PART:"bg_fill";
-            custom_state(part_bg, "default", 0.0);
-            set_state_val(part_bg, STATE_COLOR_CLASS, buf);
-            set_state(part_bg, "custom", 0.0);
-
-            /* Now change the text style by appending '_info' to buf,
-             * then the text itself. */
-            new part_txt = PART:"text";
-            strcat(buf, "_info");
-            custom_state(part_txt, "default", 0.0);
-            set_state_val(part_txt, STATE_TEXT_STYLE, buf);
-            set_state_val(part_txt, STATE_TEXT, info);
-            set_state(part_txt, "custom", 0.0);
-         }
-      }
    }
    parts {
       image { "base"; nomouse;
@@ -77,7 +22,7 @@ group { "eovim/cmdline_info";
       }
       rect { "bg_fill"; nomouse;
          desc { "default";
-            color_class: "cmdline_default";
+            color_class: "eovim.cmdline.info_bg";
             rel.to: "bg_outline";
          }
       }
@@ -93,7 +38,7 @@ group { "eovim/cmdline_info";
       textblock { "text"; nomouse;
          desc { "default";
             text {
-               style: "cmdline_default_info";
+               style: "cmdline_info";
                min: 1 1;
                align: 0.5 0.5;
                ellipsis: 1.0;
@@ -143,11 +88,6 @@ group { "eovim/cmdline";
          select_mode: DEFAULT;
          cursor_mode: BEFORE;
 
-         /* Cursor of the cmdline entry */
-         source4: "eovim/cmdline_cursor";
-
-         /* TODO: source4: */
-
          desc { "default";
             rel1.to: "base";
             rel2.to: "select_line";
@@ -174,48 +114,6 @@ group { "eovim/cmdline";
             image.border: 7 7 7 7;
             fill.smooth : 0;
          }
-      }
-   }
-}
-
-group { "eovim/cmdline_cursor";
-   min: 1 0;
-   parts {
-      rect { "cursor"; nomouse;
-         desc { "default";
-            min: 1 12;
-            color: 255 255 255 255;
-         }
-         desc { "hidden";
-            inherit: "default";
-            color: 0 0 0 0;
-         }
-      }
-   }
-
-   // These programs are used to blink the cursor. They're
-   // started by the "load" signal, emitted when the EDJ file is loaded.
-   // It's a infinite loop between "default" and "hidden" states of
-   // the "cursor" part.
-   programs {
-      program { name: "cursor_hide"; signal: "load"; source: "";
-         action: STATE_SET "hidden" 0.0;
-         target: "cursor";
-         transition: SINUSOIDAL 0.2;
-         after: "cursor_hide_timer";
-      }
-      program { name: "cursor_hide_timer";
-         in: 0.2 0.0;
-         after: "cursor_show";
-      }
-      program { name: "cursor_show";
-         action: STATE_SET "default" 0.0;
-         target: "cursor";
-         after: "cursor_show_timer";
-      }
-      program { name: "cursor_show_timer";
-         in: 0.5 0.0;
-         after: "cursor_hide";
       }
    }
 }
