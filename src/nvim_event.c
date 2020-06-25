@@ -8,46 +8,6 @@
 #include "eovim/gui.h"
 #include "event/event.h"
 
-/* Lookup table of stringshared keywords. At init time, it points to const
- * strings. After init, all entries will point to the associated stringshares
- */
-Eina_Stringshare *nvim_event_keywords[__KW_LAST] = {
-	[KW_FOREGROUND] = "foreground",
-	[KW_BACKGROUND] = "background",
-	[KW_SPECIAL] = "special",
-	[KW_REVERSE] = "reverse",
-	[KW_ITALIC] = "italic",
-	[KW_BOLD] = "bold",
-	[KW_UNDERLINE] = "underline",
-	[KW_UNDERCURL] = "undercurl",
-	[KW_CURSOR_SHAPE] = "cursor_shape",
-	[KW_CELL_PERCENTAGE] = "cell_percentage",
-	[KW_BLINKWAIT] = "blinkwait",
-	[KW_BLINKON] = "blinkon",
-	[KW_BLINKOFF] = "blinkoff",
-	[KW_HL_ID] = "hl_id",
-	[KW_ID_LM] = "id_lm",
-	[KW_NAME] = "name",
-	[KW_SHORT_NAME] = "short_name",
-	[KW_MOUSE_SHAPE] = "mouse_shape",
-	[KW_MODE_NORMAL] = "normal",
-	[KW_ARABICSHAPE] = "arabicshape",
-	[KW_AMBIWIDTH] = "ambiwidth",
-	[KW_EMOJI] = "emoji",
-	[KW_GUIFONT] = "guifont",
-	[KW_GUIFONTSET] = "guifontset",
-	[KW_GUIFONTWIDE] = "guifontwide",
-	[KW_LINESPACE] = "linespace",
-	[KW_SHOWTABLINE] = "showtabline",
-	[KW_TERMGUICOLORS] = "termguicolors",
-	[KW_EXT_POPUPMENU] = "ext_popupmenu",
-	[KW_EXT_TABLINE] = "ext_tabline",
-	[KW_EXT_CMDLINE] = "ext_cmdline",
-	[KW_EXT_WILDMENU] = "ext_wildmenu",
-	[KW_EXT_LINEGRID] = "ext_linegrid",
-	[KW_EXT_HLSTATE] = "ext_hlstate",
-};
-
 struct method {
 	Eina_Stringshare *name; /**< Name of the method */
 	Eina_Hash *callbacks; /**< Table of callbacks associated with the method */
@@ -454,19 +414,10 @@ fail:
 
 Eina_Bool nvim_event_init(void)
 {
-	int i;
-	for (i = 0; i < __KW_LAST; i++) {
-		nvim_event_keywords[i] = eina_stringshare_add(nvim_event_keywords[i]);
-		if (EINA_UNLIKELY(!nvim_event_keywords[i])) {
-			CRI("Failed to create stringshare");
-			goto fail;
-		}
-	}
-
 	/* Initialize the "redraw" method */
 	if (EINA_UNLIKELY(!_method_redraw_init(E_METHOD_REDRAW))) {
 		CRI("Failed to setup the redraw method");
-		goto del_methods;
+		goto fail;
 	}
 
 	/* Initialize the "eovim" method */
@@ -503,8 +454,6 @@ del_methods:
 	for (size_t j = 0u; j < EINA_C_ARRAY_LENGTH(_methods); j++)
 		_method_free(&(_methods[j]));
 fail:
-	for (i--; i >= 0; i--)
-		eina_stringshare_del(nvim_event_keywords[i]);
 	return EINA_FALSE;
 }
 
@@ -513,8 +462,6 @@ void nvim_event_shutdown(void)
 	event_linegrid_shutdown();
 	option_set_shutdown();
 	mode_shutdown();
-	for (unsigned int i = 0; i < __KW_LAST; i++)
-		eina_stringshare_del(nvim_event_keywords[i]);
 	for (unsigned int i = 0; i < EINA_C_ARRAY_LENGTH(_methods); i++)
 		_method_free(&(_methods[i]));
 }
