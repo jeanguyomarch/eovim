@@ -47,7 +47,7 @@ Eina_Bool nvim_event_default_colors_set(struct nvim *const nvim,
 	 * We don't care about cterm_bg and cterm_fg
 	 *
 	 * But note that we can have several arrays of "default colors". We
-	 * will always use the last one
+	 * will always use the last one.
 	 */
 	CHECK_BASE_ARGS_COUNT(args, >=, 1);
 
@@ -56,13 +56,13 @@ Eina_Bool nvim_event_default_colors_set(struct nvim *const nvim,
 		return EINA_FALSE;
 	CHECK_ARGS_COUNT(params, >=, 3);
 
-	union color fg;
-	union color bg;
-	union color sp;
+	union color fg = { .value = 0 };
+	union color bg = { .value = 0 };
+	union color sp = { .value = 0 };
 
-	GET_ARG(params, 0, color, &fg);
-	GET_ARG(params, 1, color, &bg);
-	GET_ARG(params, 2, color, &sp);
+	GET_OPT_ARG(params, 0, color, &fg);
+	GET_OPT_ARG(params, 1, color, &bg);
+	GET_OPT_ARG(params, 2, color, &sp);
 
 	gui_default_colors_set(&nvim->gui, fg, bg, sp);
 	return EINA_TRUE;
