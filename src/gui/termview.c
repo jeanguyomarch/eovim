@@ -19,8 +19,21 @@ static Evas_Smart_Class _parent_sc = EVAS_SMART_CLASS_INIT_NULL;
 
 /* This is the invisible separator. A zero-width space character that
  * allows to split ligatures without changing underlying VISUAL REPRESENTATION
- * of the text. */
+ * of the text.
+ *
+ * It is the unicode U+2063 (http://www.unicode-symbol.com/u/2063.html) that is
+ * preferred, as this is the "invisible separator".
+ * Note however that EFL before 1.24 have a bug (?) that causes the textblock
+ * rendering to be completely broken when this character is encountered.
+ * Surprisingly, it does not complain for U+2065 (http://www.unicode-symbol.com/u/2065.html),
+ * which is an invalid codepoint! However, this makes it behave exactly as EFL >= 1.24,
+ * so we will go for that...
+ */
+#ifdef EFL_VERSION_1_24
 static const char INVISIBLE_SEP[] = "\xe2\x81\xa3";
+#else
+static const char INVISIBLE_SEP[] = "\xe2\x81\xa5";
+#endif
 
 struct termview;
 
