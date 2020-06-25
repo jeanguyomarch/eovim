@@ -11,13 +11,6 @@
 #include <eovim/log.h>
 #include <eovim/main.h>
 
-static inline Eina_Bool _msgpack_streq(const msgpack_object_str *str, const char *with, size_t len)
-{
-	return 0 == strncmp(str->ptr, with, MIN(str->size, len));
-}
-#define _MSGPACK_STREQ(MsgPackStr, StaticStr)                                                      \
-	_msgpack_streq(MsgPackStr, "" StaticStr "", sizeof(StaticStr) - 1u)
-
 static unsigned int _version_fragment_decode(const msgpack_object *version)
 {
 	/* A version shall be a positive integer that shall be contained within an

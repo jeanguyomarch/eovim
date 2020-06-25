@@ -110,8 +110,9 @@ Eina_Bool nvim_api_ui_attach(struct nvim *nvim, unsigned int width, unsigned int
 
 	/* Pack the only option to be always enabled */
 	const char *const keys[] = {
-		"rgb", "ext_linegrid",
-		//"ext_hlstate",
+		"rgb",
+		"ext_linegrid",
+		"ext_hlstate",
 	};
 
 	msgpack_pack_map(pk, EINA_C_ARRAY_LENGTH(keys));

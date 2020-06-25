@@ -36,6 +36,11 @@ struct popupmenu {
 	Eina_Bool sel_done; /**< When Eovim triggered a selection */
 };
 
+static inline unsigned int gui_style_hash(const char *const style)
+{
+	return (unsigned int)eina_hash_superfast(style, (int)strlen(style));
+}
+
 Evas_Object *gui_layout_item_add(Evas_Object *parent, const char *group);
 
 void popupmenu_setup(struct popupmenu *pop, struct gui *gui,
@@ -57,5 +62,26 @@ struct completion *gui_completion_add(struct gui *gui);
 void gui_completion_style_set(struct completion *cmpl, const Evas_Textblock_Style *style,
 			      unsigned int cell_w, unsigned int cell_h);
 void gui_completion_del(struct completion *cmpl);
+
+struct cmdline *cmdline_add(struct gui *gui);
+void cmdline_del(struct cmdline *cmd);
+
+/*****************************************************************************
+ * Cursor Internal API
+ *****************************************************************************/
+
+struct cursor *cursor_add(struct gui *gui);
+void cursor_del(struct cursor *cur);
+void cursor_blink_disable(struct cursor *cur);
+void cursor_color_set(struct cursor *cur, union color color);
+void cursor_mode_set(struct cursor *cur, const struct mode *mode);
+void cursor_focus_set(struct cursor *cur, Eina_Bool focused);
+void gui_cursor_calc(struct gui *gui, int x, int y, int w, int h);
+void gui_cursor_key_pressed(struct gui *gui);
+
+static inline void color_class_set(const char *const name, const union color col)
+{
+	edje_color_class_set(name, col.r, col.g, col.b, col.a, 0, 0, 0, 0, 0, 0, 0, 0);
+}
 
 #endif /* ! EOVIM_GUI_PRIVATE_H__ */

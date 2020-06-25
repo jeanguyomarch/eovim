@@ -71,9 +71,9 @@ const char *main_edje_file_get(void)
 static void __attribute__((constructor)) __constructor(void)
 {
 	setenv("EINA_LOG_BACKTRACE", "-1", 0);
+	eina_log_domain_level_set("efreet_cache", 0);
 #ifdef NDEBUG
 	eina_log_domain_level_set("eina_safety", 0);
-	eina_log_domain_level_set("efreet_cache", 0);
 #endif
 }
 

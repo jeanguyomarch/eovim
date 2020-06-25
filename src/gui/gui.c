@@ -10,22 +10,20 @@
 
 #include "gui_private.h"
 
-enum { THEME_MSG_BG = 0,
-       THEME_MSG_CMDLINE_INFO = 1,
-};
-
 static void _tabs_shown_cb(void *data, Evas_Object *obj, const char *emission, const char *source);
 
 static void _focus_in_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
 {
 	struct gui *const gui = data;
 	evas_object_focus_set(gui->termview, EINA_TRUE);
+	cursor_focus_set(gui->cursor, EINA_TRUE);
 }
 
 static void _focus_out_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
 {
 	struct gui *const gui = data;
 	evas_object_focus_set(gui->termview, EINA_FALSE);
+	cursor_focus_set(gui->cursor, EINA_FALSE);
 }
 
 static void _win_close_cb(void *data, Evas_Object *obj EINA_UNUSED, void *info EINA_UNUSED)
@@ -83,6 +81,10 @@ Eina_Bool gui_add(struct gui *gui, struct nvim *nvim)
 	 * Termview GUI objects
 	 * ===================================================================== */
 
+	gui->cursor = cursor_add(gui);
+
+	gui->cmdline = cmdline_add(gui);
+
 	gui->termview = termview_add(gui->layout, nvim);
 	evas_object_smart_callback_add(gui->termview, "relayout", _termview_relayout_cb, gui);
 	evas_object_hide(gui->termview);
@@ -101,7 +103,7 @@ Eina_Bool gui_add(struct gui *gui, struct nvim *nvim)
 
 	gui_font_set(gui, "Courier", 14);
 
-	elm_layout_signal_emit(gui->layout, "eovim,cmdline,hide", "eovim");
+	gui_cmdline_hide(gui);
 	evas_object_show(gui->layout);
 	evas_object_show(gui->win);
 	return EINA_TRUE;
@@ -116,6 +118,8 @@ fail:
 void gui_del(struct gui *gui)
 {
 	EINA_SAFETY_ON_NULL_RETURN(gui);
+	cursor_del(gui->cursor);
+	cmdline_del(gui->cmdline);
 	eina_inarray_free(gui->tabs);
 	evas_object_del(gui->win);
 }
@@ -162,7 +166,6 @@ void gui_font_set(struct gui *const gui, const char *const font_name, const unsi
 	DBG("Using font '%s' with size '%u'", font_name, font_size);
 	if (name_changed || (font_size != gui->font.size)) {
 		gui->font.size = font_size;
-		edje_text_class_set("cmdline", gui->font.name, (int)font_size);
 		termview_font_set(gui->termview, gui->font.name, gui->font.size);
 	}
 }
@@ -175,15 +178,7 @@ void gui_default_colors_set(struct gui *const gui, const union color fg, const u
 
 	/* TODO: mutualize this */
 	gui->default_fg.value = fg.value;
-
-	/* Set the background through the Edje theme */
-	Edje_Message_Int_Set *const msg = alloca(sizeof(*msg) + (sizeof(int) * 4));
-	msg->count = 4;
-	msg->val[0] = bg.r;
-	msg->val[1] = bg.g;
-	msg->val[2] = bg.b;
-	msg->val[3] = bg.a;
-	edje_object_message_send(gui->edje, EDJE_MESSAGE_INT_SET, THEME_MSG_BG, msg);
+	color_class_set("eovim.background", bg);
 }
 
 void gui_busy_set(struct gui *gui, Eina_Bool busy)
@@ -247,40 +242,6 @@ void gui_title_set(struct gui *gui, const char *title)
 void gui_mode_update(struct gui *gui, const struct mode *mode)
 {
 	termview_cursor_mode_set(gui->termview, mode);
-}
-
-void gui_cmdline_show(struct gui *gui, const char *content, const char *prompt, const char *firstc)
-{
-	EINA_SAFETY_ON_NULL_RETURN(firstc);
-
-	const Eina_Bool use_prompt = (firstc[0] == '\0');
-	const char *const prompt_signal =
-		(use_prompt) ? "eovim,cmdline,prompt,custom" : "eovim,cmdline,prompt,builtin";
-	const Edje_Message_String msg = {
-		.str = (char *)(use_prompt ? prompt : firstc),
-	};
-
-	termview_cursor_visibility_set(gui->termview, EINA_FALSE);
-	edje_object_message_send(gui->edje, EDJE_MESSAGE_STRING, THEME_MSG_CMDLINE_INFO,
-				 (void *)(&msg));
-	edje_object_part_text_unescaped_set(gui->edje, "eovim.cmdline:eovim.cmdline.text", content);
-
-	/* Show the completion panel */
-	elm_layout_signal_emit(gui->layout, prompt_signal, "eovim");
-	elm_layout_signal_emit(gui->layout, "eovim,cmdline,show", "eovim");
-}
-
-void gui_cmdline_hide(struct gui *gui)
-{
-	elm_layout_signal_emit(gui->layout, "eovim,cmdline,hide", "eovim");
-	termview_cursor_visibility_set(gui->termview, EINA_TRUE);
-}
-
-void gui_cmdline_cursor_pos_set(struct gui *gui, size_t pos)
-{
-	gui->cmdline.cpos = pos;
-	edje_object_part_text_cursor_pos_set(gui->edje, "eovim.cmdline:eovim.cmdline.text",
-					     EDJE_CURSOR_MAIN, (int)pos);
 }
 
 /*============================================================================*

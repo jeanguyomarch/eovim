@@ -117,11 +117,12 @@ static Evas_Object *completion_resuable_content_get(void *const data, Evas_Objec
 	 * The word is displayed with a very light glow.
 	 */
 	if (cmpl->has_kind) {
-		if (item->kind[0] != '\0')
+		if (item->kind[0] != '\0') {
+			const unsigned int style = gui_style_hash(item->kind);
 			eina_strbuf_append_printf(
-				buf, "<kind_default><kind_%s>%s</kind_%s></kind_default> ",
-				item->kind, item->kind, item->kind);
-		else
+				buf, "<kind_default><kind_%u>%s</kind_%u></kind_default> ", style,
+				item->kind, style);
+		} else
 			eina_strbuf_append_length(buf, "  ", 2);
 	}
 	eina_strbuf_append_printf(buf, "<style=glow glow_color=#%06" PRIx32 "10>%s</>",

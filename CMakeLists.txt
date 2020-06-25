@@ -71,6 +71,8 @@ add_executable(eovim
    "${SRC_DIR}/nvim.c"
    "${SRC_DIR}/keymap.c"
    "${SRC_DIR}/gui/gui.c"
+   "${SRC_DIR}/gui/cmdline.c"
+   "${SRC_DIR}/gui/cursor.c"
    "${SRC_DIR}/gui/termview.c"
    "${SRC_DIR}/gui/completion.c"
    "${SRC_DIR}/gui/wildmenu.c"
