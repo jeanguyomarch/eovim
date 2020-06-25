@@ -374,7 +374,7 @@ Eina_Bool event_linegrid_init(void)
 			goto fail;
 		}
 
-		if (EINA_UNLIKELY(!eina_hash_add(_attributes, str, attrs[i].func))) {
+		if (EINA_UNLIKELY(!eina_hash_direct_add(_attributes, str, attrs[i].func))) {
 			CRI("Failed to add item in hash");
 			eina_stringshare_del(str);
 			goto fail;

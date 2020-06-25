@@ -14,6 +14,24 @@ static Eina_Hash *_options = NULL;
  */
 typedef Eina_Bool (*f_opt_set)(struct nvim *nvim, const msgpack_object *value);
 
+#define OPTIONS(X)                                                                                 \
+	X(arabicshape, _arabicshape_set)                                                           \
+	X(ambiwidth, _ambiwidth_set)                                                               \
+	X(emoji, _emoji_set)                                                                       \
+	X(guifont, _guifont_set)                                                                   \
+	X(guifontset, _guifontset_set)                                                             \
+	X(guifontwide, _guifontwide_set)                                                           \
+	X(linespace, _linespace_set)                                                               \
+	X(showtabline, _showtabline_set)                                                           \
+	X(termguicolors, _termguicolors_set)                                                       \
+	X(ext_popupmenu, _ext_popupmenu_set)                                                       \
+	X(ext_tabline, _ext_tabline_set)                                                           \
+	X(ext_cmdline, _ext_cmdline_set)                                                           \
+	X(ext_wildmenu, _ext_wildmenu_set)                                                         \
+	X(ext_linegrid, _ext_linegrid_set)                                                         \
+	X(ext_hlstate, _ext_hlstate_set)                                                           \
+	/**/
+
 /*****************************************************************************/
 
 static Eina_Bool _arabicshape_set(struct nvim *nvim EINA_UNUSED,
@@ -233,25 +251,6 @@ fail:
 	return EINA_FALSE;
 }
 
-typedef struct {
-	Eina_Stringshare *const opt; /**< Name of the option */
-	const f_opt_set func; /**< Callback */
-} s_opt;
-
-#define OPT(Keyword, Func)                                                                         \
-	{                                                                                          \
-		.opt = KW(Keyword), .func = (Func)                                                 \
-	}
-
-static Eina_Bool _option_add(const s_opt *opt)
-{
-	const Eina_Bool ok = eina_hash_direct_add(_options, opt->opt, opt->func);
-	if (EINA_UNLIKELY(!ok)) {
-		ERR("Failed to register option '%s' in options table", opt->opt);
-	}
-	return ok;
-}
-
 Eina_Bool option_set_init(void)
 {
 	_options = eina_hash_stringshared_new(NULL);
@@ -260,26 +259,33 @@ Eina_Bool option_set_init(void)
 		return EINA_FALSE;
 	}
 
-	const s_opt opts[] = {
-		OPT(KW_ARABICSHAPE, _arabicshape_set),
-		OPT(KW_AMBIWIDTH, _ambiwidth_set),
-		OPT(KW_EMOJI, _emoji_set),
-		OPT(KW_GUIFONT, _guifont_set),
-		OPT(KW_GUIFONTSET, _guifontset_set),
-		OPT(KW_GUIFONTWIDE, _guifontwide_set),
-		OPT(KW_LINESPACE, _linespace_set),
-		OPT(KW_SHOWTABLINE, _showtabline_set),
-		OPT(KW_TERMGUICOLORS, _termguicolors_set),
-		OPT(KW_EXT_POPUPMENU, _ext_popupmenu_set),
-		OPT(KW_EXT_TABLINE, _ext_tabline_set),
-		OPT(KW_EXT_CMDLINE, _ext_cmdline_set),
-		OPT(KW_EXT_WILDMENU, _ext_wildmenu_set),
-		OPT(KW_EXT_LINEGRID, _ext_linegrid_set),
-		OPT(KW_EXT_HLSTATE, _ext_hlstate_set),
+	struct opt {
+		const char *const name;
+		const f_opt_set func;
 	};
-	for (size_t i = 0u; i < EINA_C_ARRAY_LENGTH(opts); i++)
-		if (EINA_UNLIKELY(!_option_add(&opts[i])))
+
+	const struct opt opts[] = {
+#define GEN_OPT(Kw, Func)                                                                          \
+	{                                                                                          \
+		.name = #Kw,                                                                       \
+		.func = &Func,                                                                     \
+	},
+		OPTIONS(GEN_OPT)
+#undef GEN_OPT
+	};
+
+	for (size_t i = 0u; i < EINA_C_ARRAY_LENGTH(opts); i++) {
+		Eina_Stringshare *const str = eina_stringshare_add(opts[i].name);
+		if (EINA_UNLIKELY(!str)) {
+			CRI("Failed to create stringshare");
 			goto fail;
+		}
+		if (EINA_UNLIKELY(!eina_hash_direct_add(_options, str, opts[i].func))) {
+			CRI("Failed to add item in hash");
+			eina_stringshare_del(str);
+			goto fail;
+		}
+	}
 
 	return EINA_TRUE;
 fail:
