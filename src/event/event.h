@@ -108,6 +108,15 @@ extern Eina_Stringshare *nvim_event_keywords[__KW_LAST];
 		}                                                                                  \
 	} while (0)
 
+#define GET_OPT_ARG(Args, Index, Type, Get)                                                        \
+	do {                                                                                       \
+		if (EINA_UNLIKELY((Index) >= (Args)->size)) {                                      \
+			ERR("Out of bounds index");                                                \
+			return EINA_FALSE;                                                         \
+		}                                                                                  \
+		arg_##Type##_get(&((Args)->ptr[Index]), (Get));                                    \
+	} while (0)
+
 #define ARRAY_OF_ARGS_EXTRACT(Args, Ret)                                                           \
 	const msgpack_object_array *const Ret = array_of_args_extract((Args), 1);                  \
 	if (EINA_UNLIKELY(!Ret)) {                                                                 \
