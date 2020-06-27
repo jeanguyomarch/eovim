@@ -2,7 +2,6 @@
 
 #include <eovim/types.h>
 #include <eovim/gui.h>
-#include <eovim/nvim_completion.h>
 #include <eovim/nvim.h>
 #include <eovim/main.h>
 #include <eovim/log.h>

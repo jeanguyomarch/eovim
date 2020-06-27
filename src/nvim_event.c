@@ -1,11 +1,10 @@
 /* This file is part of Eovim, which is under the MIT License ****************/
 
-#include "eovim/types.h"
-#include "eovim/nvim.h"
-#include "eovim/nvim_completion.h"
-#include "eovim/nvim_event.h"
-#include "eovim/msgpack_helper.h"
-#include "eovim/gui.h"
+#include <eovim/types.h>
+#include <eovim/nvim.h>
+#include <eovim/nvim_event.h>
+#include <eovim/msgpack_helper.h>
+#include <eovim/gui.h>
 #include "event/event.h"
 
 struct method {
