@@ -135,9 +135,6 @@ static Eina_Bool _ui_attached_cb(struct nvim *const nvim,
 	msgpack_pack_nil(pk); /* Result */
 	nvim_flush(nvim);
 
-	/* Okay, start running the GUI! */
-	gui_ready_set(&nvim->gui);
-
 	/* Notify the user that we are ready to roll */
 	nvim_helper_autocmd_do(nvim, "EovimReady", NULL, NULL);
 	return EINA_TRUE;
@@ -266,6 +263,9 @@ static void _api_decode_cb(struct nvim *nvim, void *data EINA_UNUSED, const msgp
 	 *****************************************************************************/
 	INF("Running Neovim version %u.%u.%u", nvim->version.major, nvim->version.minor,
 	    nvim->version.patch);
+
+	/* Okay, start running the GUI! */
+	gui_ready_set(&nvim->gui);
 
 	/****************************************************************************
 	 * Now that we are done with neovim's capabilities, time to load our initial
