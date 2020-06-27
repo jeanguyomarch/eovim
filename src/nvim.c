@@ -582,12 +582,10 @@ struct mode *nvim_mode_new(void)
 void nvim_mode_free(struct mode *const mode)
 {
 	if (mode) {
-		if (mode->name) {
+		if (mode->name)
 			eina_stringshare_del(mode->name);
-		}
-		if (mode->short_name) {
+		if (mode->short_name)
 			eina_stringshare_del(mode->short_name);
-		}
 		free(mode);
 	}
 }

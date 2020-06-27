@@ -56,6 +56,7 @@ void popupmenu_style_changed(struct popupmenu *pop, const Evas_Textblock_Style *
 Evas_Object *popupmenu_item_use(const struct popupmenu *pop, Evas_Object *parent, Evas_Object *obj);
 
 struct wildmenu *gui_wildmenu_add(struct gui *gui);
+void gui_wildmenu_del(struct wildmenu *wm);
 void gui_wildmenu_style_set(struct wildmenu *wm, const Evas_Textblock_Style *style,
 			    unsigned int cell_w, unsigned int cell_h);
 struct completion *gui_completion_add(struct gui *gui);
