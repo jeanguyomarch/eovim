@@ -5,6 +5,37 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Support for line space
+- Support for ligatures
+- Support for undercurl
+- Support for underline with different colors than the foreground
+- Linegrid and highlight groups support
+
+### Removed
+
+- Plugin architecture
+- Eovimrc specific file
+- Prefs widget: configuration is now through vimscript
+- Config file: configuration is now through vimscript
+- Ad-hoc msgpack scripts
+
+### Changed
+
+- Updated suport for wildmenu
+- Command-line, popupmenu has been overhauled
+- Better integration of eovim through vimscript
+- Font can now be specified as a fontconfig format string
+
+
+### Fixed
+
+- EFL 1.23 support
+- Fix EFL detection when building eovim
+- Honor non-blinking cursors
+
+
 ## [0.1.3] - 2019-01-04
 
 ### Added
