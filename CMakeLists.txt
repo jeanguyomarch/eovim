@@ -89,7 +89,6 @@ add_executable(eovim
    "${SRC_DIR}/nvim_attach.c"
    "${SRC_DIR}/nvim_helper.c"
    "${SRC_DIR}/nvim_request.c"
-   "${SRC_DIR}/options.c"
 )
 target_include_directories(eovim
    SYSTEM PRIVATE

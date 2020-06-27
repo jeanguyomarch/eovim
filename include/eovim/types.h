@@ -10,7 +10,6 @@
 struct nvim;
 struct gui;
 struct wildmenu;
-struct geometry;
 struct options;
 
 typedef int64_t t_int;
@@ -34,11 +33,6 @@ enum cursor_shape {
 	CURSOR_SHAPE_HORIZONTAL = 1,
 	CURSOR_SHAPE_VERTICAL = 2,
 	__CURSOR_SHAPE_LAST /* Sentinel */
-};
-
-struct geometry {
-	unsigned int w;
-	unsigned int h;
 };
 
 struct version {
@@ -67,6 +61,16 @@ struct mode {
     * but do nothing with it. */
 	unsigned int hl_id;
 	unsigned int hl_lm;
+};
+
+struct options {
+	Eina_Rectangle geometry;
+
+	char *nvim;
+	char *theme;
+
+	Eina_Bool fullscreen;
+	Eina_Bool maximized; /**< Eovim will run in a maximized window */
 };
 
 #endif /* ! __EOVIM_TYPES_H__ */

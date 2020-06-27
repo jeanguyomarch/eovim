@@ -1,14 +1,16 @@
 /* This file is part of Eovim, which is under the MIT License ****************/
 
-#include "eovim/keymap.h"
-#include "eovim/nvim.h"
-#include "eovim/nvim_api.h"
-#include "eovim/nvim_request.h"
-#include "eovim/nvim_event.h"
-#include "eovim/termview.h"
-#include "eovim/main.h"
-#include "eovim/log.h"
-#include "eovim/options.h"
+#include <eovim/keymap.h>
+#include <eovim/nvim.h>
+#include <eovim/nvim_api.h>
+#include <eovim/version.h>
+#include <eovim/nvim_request.h>
+#include <eovim/nvim_event.h>
+#include <eovim/termview.h>
+#include <eovim/main.h>
+#include <eovim/log.h>
+
+#include <Ecore_Getopt.h>
 
 int _eovim_log_domain = -1;
 
@@ -31,6 +33,28 @@ static const struct module _modules[] = {
 	MODULE(gui_wildmenu), MODULE(gui_completion), MODULE(termview),
 
 #undef MODULE
+};
+
+static const Ecore_Getopt options_desc = {
+	"eovim",
+	"%prog [options] [file...]",
+	EOVIM_VERSION,
+	"(c) 2017-2020 Jean Guyomarc'h and others",
+	"MIT",
+	"The Enlightened Neovim - a GUI client for Neovim written with the EFL\n\n"
+	"Unknown options will be directly forwarded to neovim.",
+	EINA_FALSE, /* Not strict */
+	{ ECORE_GETOPT_STORE_STR('\0', "nvim", "Path to the Neovim program"),
+	  ECORE_GETOPT_STORE_STR('t', "theme", "Path to the Edje theme"),
+	  ECORE_GETOPT_STORE_TRUE('M', "maximized", "Start eovim in a maximized window"),
+	  ECORE_GETOPT_STORE_TRUE('F', "fullscreen", "Start eovim in a fullscreen window"),
+	  ECORE_GETOPT_CALLBACK_ARGS(
+		  'g', "geometry",
+		  "Set the initial dimensions of the window (e.g. 120x40 for a 120x40 cells window)",
+		  "COLUMNSxROWS", &ecore_getopt_callback_size_parse, NULL),
+	  ECORE_GETOPT_VERSION('V', "version"), ECORE_GETOPT_COPYRIGHT('C', "copyright"),
+	  ECORE_GETOPT_LICENSE('L', "license"), ECORE_GETOPT_HELP('h', "help"),
+	  ECORE_GETOPT_SENTINEL }
 };
 
 static Eina_Bool _edje_file_init(const char *theme)
@@ -80,9 +104,26 @@ static void __attribute__((constructor)) __constructor(void)
 EAPI_MAIN int elm_main(int argc, char **argv);
 EAPI_MAIN int elm_main(int argc, char **argv)
 {
+	struct options opts = {
+		.geometry = { 0, 0, 120, 40 },
+		.nvim = "nvim",
+		.theme = "default",
+		.fullscreen = EINA_FALSE,
+		.maximized = EINA_FALSE,
+	};
+	Eina_Bool quit = EINA_FALSE;
+	Ecore_Getopt_Value values[] = { ECORE_GETOPT_VALUE_STR(opts.nvim),
+					ECORE_GETOPT_VALUE_STR(opts.theme),
+					ECORE_GETOPT_VALUE_BOOL(opts.maximized),
+					ECORE_GETOPT_VALUE_BOOL(opts.fullscreen),
+					ECORE_GETOPT_VALUE_PTR_CAST(opts.geometry),
+					ECORE_GETOPT_VALUE_BOOL(quit),
+					ECORE_GETOPT_VALUE_BOOL(quit),
+					ECORE_GETOPT_VALUE_BOOL(quit),
+					ECORE_GETOPT_VALUE_BOOL(quit),
+					ECORE_GETOPT_VALUE_NONE };
+
 	int return_code = EXIT_FAILURE;
-	struct options opts;
-	options_defaults_set(&opts);
 
 	/* First step: initialize the logging framework */
 	_eovim_log_domain = eina_log_domain_register("eovim", EINA_COLOR_RED);
@@ -91,21 +132,13 @@ EAPI_MAIN int elm_main(int argc, char **argv)
 		goto end;
 	}
 
-	/* Do the getopts */
-	const enum options_result opts_res = options_parse(argc, (const char **)argv, &opts);
-	switch (opts_res) {
-	case OPTIONS_RESULT_QUIT:
+	const int args = ecore_getopt_parse(&options_desc, values, argc, argv);
+	if (args < 0) {
+		CRI("Failed to parser command-line options");
+		goto log_unregister;
+	}
+	if (quit) {
 		return_code = EXIT_SUCCESS;
-		goto log_unregister;
-
-	case OPTIONS_RESULT_ERROR:
-		goto log_unregister;
-
-	case OPTIONS_RESULT_CONTINUE:
-		break;
-
-	default:
-		CRI("Wtf?! Enum value out of switch");
 		goto log_unregister;
 	}
 
@@ -142,7 +175,7 @@ EAPI_MAIN int elm_main(int argc, char **argv)
 	/*=========================================================================
     * Create the Neovim handler
     *========================================================================*/
-	struct nvim *const nvim = nvim_new(&opts, (const char *const *)argv);
+	struct nvim *const nvim = nvim_new(&opts, (const char *const *)argv + args);
 	if (EINA_UNLIKELY(!nvim)) {
 		CRI("Failed to create a NeoVim instance");
 		goto modules_shutdown;
