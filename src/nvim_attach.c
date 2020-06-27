@@ -150,8 +150,8 @@ static Eina_Bool _ui_attached_cb(struct nvim *const nvim,
 static void _vimenter_registered_cb(struct nvim *const nvim, void *const data EINA_UNUSED,
 				    const msgpack_object *const result EINA_UNUSED)
 {
-	const struct geometry *const geo = &nvim->opts->geometry;
-	nvim_api_ui_attach(nvim, geo->w, geo->h, NULL, NULL);
+	const Eina_Rectangle *const geo = &nvim->opts->geometry;
+	nvim_api_ui_attach(nvim, (unsigned)geo->w, (unsigned)geo->h, NULL, NULL);
 }
 
 /******************************************************************************

@@ -3,10 +3,9 @@
 #ifndef __EOVIM_NVIM_H__
 #define __EOVIM_NVIM_H__
 
-#include "eovim/types.h"
-#include "eovim/options.h"
-#include "eovim/nvim_helper.h"
-#include "eovim/gui.h"
+#include <eovim/types.h>
+#include <eovim/nvim_helper.h>
+#include <eovim/gui.h>
 
 #include <Eina.h>
 #include <Ecore.h>

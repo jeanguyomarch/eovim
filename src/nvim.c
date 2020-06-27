@@ -431,12 +431,9 @@ struct nvim *nvim_new(const struct options *opts, const char *const args[])
 		CRI("Failed to create strbuf");
 		goto fail;
 	}
-	ok = eina_strbuf_append_printf(cmdline, "\"%s\"", opts->nvim_prog);
-	ok &= eina_strbuf_append(cmdline, " --embed");
-
-	for (const char *arg = *args; arg != NULL; arg = *(++args)) {
+	ok = eina_strbuf_append_printf(cmdline, "\"%s\" --embed", opts->nvim);
+	for (const char *arg = *args; arg != NULL; arg = *(++args))
 		ok &= eina_strbuf_append_printf(cmdline, " \"%s\"", arg);
-	}
 	if (EINA_UNLIKELY(!ok)) {
 		CRI("Failed to correctly format the command line");
 		goto del_strbuf;
