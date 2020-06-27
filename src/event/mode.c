@@ -137,8 +137,12 @@ Eina_Bool nvim_event_mode_change(struct nvim *const nvim, const msgpack_object_a
 		Eina_Stringshare *name;
 		GET_ARG(params, 0, stringshare, &name);
 		const struct mode *const mode = eina_hash_find(nvim->modes, name);
-		gui_mode_update(&nvim->gui, mode);
 		eina_stringshare_del(name);
+		if (EINA_UNLIKELY(!mode)) {
+			ERR("Failed to find mode '%s'", name);
+			continue;
+		}
+		gui_mode_update(&nvim->gui, mode);
 	}
 	return EINA_TRUE;
 }

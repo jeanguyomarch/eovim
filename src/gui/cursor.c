@@ -83,9 +83,8 @@ void cursor_mode_set(struct cursor *const cur, const struct mode *const mode)
 		edje_object_message_send(cur->edje, EDJE_MESSAGE_FLOAT_SET, THEME_MSG_BLINK_SET,
 					 msg);
 		edje_object_signal_emit(cur->edje, "eovim,blink,start", "eovim");
-	} else {
+	} else
 		edje_object_signal_emit(cur->edje, "eovim,blink,stop", "eovim");
-	}
 
 	cur->mode = mode;
 }

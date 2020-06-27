@@ -120,6 +120,8 @@ void gui_del(struct gui *gui)
 	EINA_SAFETY_ON_NULL_RETURN(gui);
 	cursor_del(gui->cursor);
 	cmdline_del(gui->cmdline);
+	gui_wildmenu_del(gui->wildmenu);
+	gui_completion_del(gui->completion);
 	eina_inarray_free(gui->tabs);
 	evas_object_del(gui->win);
 }

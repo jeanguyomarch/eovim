@@ -742,6 +742,7 @@ static void _smart_del(Evas_Object *obj)
 	evas_textblock_style_free(sd->style.object);
 	eina_strbuf_free(sd->style.text);
 	eina_strbuf_free(sd->line);
+	eina_hash_free(sd->styles);
 	if (sd->cells) {
 		free(sd->cells[0]);
 		free(sd->cells);
