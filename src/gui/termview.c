@@ -117,6 +117,7 @@ struct termview {
 
 	Eina_Rectangle geometry;
 	Eina_Bool pending_style_update;
+	Eina_Bool need_nvim_resize;
 	Eina_Bool mode_changed;
 
 	/***************************************************************************
@@ -235,9 +236,8 @@ void termview_style_update(Evas_Object *const obj)
 	struct termview *const sd = evas_object_smart_data_get(obj);
 	Eina_Strbuf *const buf = sd->style.text;
 	struct gui *const gui = &sd->nvim->gui;
-	eina_strbuf_reset(buf);
 
-	sd->pending_style_update = EINA_FALSE;
+	eina_strbuf_reset(buf);
 	eina_strbuf_append_printf(buf, "DEFAULT='font=\\'%s\\' font_size=%u color=#%06x wrap=none",
 				  sd->style.font_name, sd->style.font_size,
 				  sd->style.default_fg.value & 0xFFFFFF);
@@ -259,7 +259,20 @@ void termview_style_update(Evas_Object *const obj)
 	gui_wildmenu_style_set(gui->wildmenu, sd->style.object, sd->cell_w, sd->cell_h);
 	gui_completion_style_set(gui->completion, sd->style.object, sd->cell_w, sd->cell_h);
 
+	if (sd->need_nvim_resize) {
+		int w, h;
+		evas_object_geometry_get(sd->object, NULL, NULL, &w, &h);
+		if (w && h) {
+			const unsigned int cols = (unsigned)w / sd->cell_w;
+			const unsigned int rows = (unsigned)h / sd->cell_h;
+			nvim_api_ui_try_resize(sd->nvim, cols, rows);
+		}
+	}
+
 	_relayout(sd);
+
+	sd->pending_style_update = EINA_FALSE;
+	sd->need_nvim_resize = EINA_FALSE;
 }
 
 static void _keys_send(struct termview *sd, const char *keys, unsigned int size)
@@ -1212,8 +1225,6 @@ void termview_default_colors_set(Evas_Object *const obj, const union color fg, c
 struct termview_style *termview_style_get(Evas_Object *const obj, const t_int style_id)
 {
 	struct termview *const sd = evas_object_smart_data_get(obj);
-
-	/* TODO check errors */
 	struct termview_style *style = eina_hash_find(sd->styles, &style_id);
 	if (style == NULL) {
 		style = _termview_style_new();
@@ -1226,7 +1237,6 @@ struct termview_style *termview_style_get(Evas_Object *const obj, const t_int st
 			return NULL;
 		}
 	}
-
 	return style;
 }
 
@@ -1240,6 +1250,8 @@ void termview_font_set(Evas_Object *const obj, Eina_Stringshare *const font_name
 		       const unsigned int font_size)
 {
 	struct termview *const sd = evas_object_smart_data_get(obj);
+	const unsigned int old_cell_w = sd->cell_w;
+	const unsigned int old_cell_h = sd->cell_h;
 
 	eina_stringshare_replace(&sd->style.font_name, font_name);
 	sd->style.font_size = font_size;
@@ -1248,6 +1260,7 @@ void termview_font_set(Evas_Object *const obj, Eina_Stringshare *const font_name
 				      (int)sd->style.font_size);
 	evas_object_textgrid_cell_size_get(sd->sizing_textgrid, (int *)&sd->cell_w,
 					   (int *)&sd->cell_h);
+	sd->need_nvim_resize = (old_cell_w != sd->cell_w) || (old_cell_h != sd->cell_h);
 	sd->pending_style_update = EINA_TRUE;
 }
 
@@ -1256,4 +1269,5 @@ void termview_linespace_set(Evas_Object *const obj, const unsigned int linespace
 	struct termview *const sd = evas_object_smart_data_get(obj);
 	sd->style.line_gap = linespace;
 	sd->pending_style_update = EINA_TRUE;
+	sd->need_nvim_resize = EINA_TRUE;
 }
