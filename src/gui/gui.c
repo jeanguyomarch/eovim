@@ -216,6 +216,17 @@ void gui_bell_ring(struct gui *gui)
 		elm_layout_signal_emit(gui->layout, "eovim,bell,ring", "eovim");
 }
 
+static void _maximized_cb(void *const data, Evas_Object *const obj EINA_UNUSED,
+			  void *const info EINA_UNUSED)
+{
+	/* We actually want a fullscreen windows. This callback is called when during
+	 * the maximization of the window. We unregister this callback, so it is not called
+	 * ever again, and actually trigger the fullscreen */
+	struct gui *const gui = data;
+	evas_object_smart_callback_del_full(gui->win, "resize", &_maximized_cb, data);
+	elm_win_fullscreen_set(gui->win, EINA_TRUE);
+}
+
 void gui_ready_set(struct gui *const gui)
 {
 	elm_layout_content_set(gui->layout, "eovim.main.view", gui->termview);
@@ -225,10 +236,14 @@ void gui_ready_set(struct gui *const gui)
 
 	/* For maximize and fullscreen, we just update the window's dimensions.
 	 * When the resizing is finished, we will notify neovim */
-	if (opts->maximized) {
+	if (opts->maximized)
 		elm_win_maximized_set(gui->win, EINA_TRUE);
-	} else if (opts->fullscreen) {
-		elm_win_fullscreen_set(gui->win, EINA_TRUE);
+	else if (opts->fullscreen) {
+		/* This is not a typo, we really **maximize** the window. I'm not sure why, but
+		 * if we fullscreen at this point, we never trigger resize functions. But if
+		 * we first maximize and then fullscreen, we are good to go! */
+		elm_win_maximized_set(gui->win, EINA_TRUE);
+		evas_object_smart_callback_add(gui->win, "resize", &_maximized_cb, gui);
 	}
 }
 
