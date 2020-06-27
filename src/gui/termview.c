@@ -212,18 +212,19 @@ static Eina_Bool _style_foreach(const Eina_Hash *const hash EINA_UNUSED, const v
 					  style->fg_color.value & 0xFFFFFF);
 	}
 
-	if (style->underline) {
+	const uint32_t sp = (style->sp_color.value == COLOR_DEFAULT) ? sd->style.default_sp.value :
+								       style->sp_color.value;
+	if (style->underline)
 		eina_strbuf_append_printf(buf,
-					  " underline=on underline_type=dashed"
+					  " underline=on"
 					  " underline_color=#%06" PRIx32,
-					  style->sp_color.value & 0xFFFFFF);
-	} else if (style->undercurl) {
+					  sp & 0xFFFFFF);
+	else if (style->undercurl)
 		eina_strbuf_append_printf(buf,
 					  " underline=dashed underline_type=dashed"
 					  " underline_dash_color=#%06" PRIx32
 					  " underline_dash_width=4 underline_dash_gap=2",
-					  style->sp_color.value & 0xFFFFFF);
-	}
+					  sp & 0xFFFFFF);
 	eina_strbuf_append_char(buf, '\'');
 
 	return EINA_TRUE;
