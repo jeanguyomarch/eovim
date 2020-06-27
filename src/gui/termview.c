@@ -666,17 +666,15 @@ static void _relayout(struct termview *const sd)
 			sd->cursors[0], sd->cursors[sd->rows - 1]);
 		Eina_Rectangle frame = EINA_RECTANGLE_INIT;
 		Eina_Rectangle *rect;
-		EINA_ITERATOR_FOREACH (it, rect) {
+		EINA_ITERATOR_FOREACH (it, rect)
 			eina_rectangle_union(&frame, rect);
-		}
 		eina_iterator_free(it);
 
 		geo->w = (int)(sd->cell_w * sd->cols);
 		geo->h = frame.h;
 
-		if (sd->may_send_relayout) {
+		if (sd->may_send_relayout)
 			evas_object_smart_callback_call(sd->object, "relayout", geo);
-		}
 	}
 }
 
@@ -749,9 +747,8 @@ static void _smart_del(Evas_Object *obj)
 		free(sd->cells);
 	}
 	free(sd->line_has_changed);
-	for (unsigned int i = 0u; i < sd->rows; i++) {
+	for (unsigned int i = 0u; i < sd->rows; i++)
 		evas_textblock_cursor_free(sd->cursors[i]);
-	}
 	free(sd->cursors);
 	ecore_event_handler_del(sd->key_down_handler);
 	_composition_reset(sd);
@@ -761,9 +758,8 @@ static void _smart_resize(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
 {
 	struct termview *const sd = evas_object_smart_data_get(obj);
 
-	if (!sd->cell_w || !sd->cell_h) {
+	if (!sd->cell_w || !sd->cell_h)
 		return;
-	}
 
 	const unsigned int cols = (unsigned int)w / sd->cell_w;
 	const unsigned int rows = (unsigned int)h / sd->cell_h;
@@ -897,9 +893,8 @@ void termview_clear(Evas_Object *const obj)
 	/* We add paragraph separators (<ps>) for each line. This allows a much
    * faster textblock lookup. We add an extra space before to avoid internal
    * textblock errors (is this a bug?) */
-	for (unsigned int i = 0u; i < sd->rows; i++) {
+	for (unsigned int i = 0u; i < sd->rows; i++)
 		evas_object_textblock_text_markup_prepend(sd->cursors[0], " </ps>");
-	}
 
 	/* One cursor per paragraph */
 	evas_textblock_cursor_paragraph_first(sd->cursors[0]);
@@ -958,19 +953,16 @@ void termview_flush(Evas_Object *const obj)
 	struct termview *const sd = evas_object_smart_data_get(obj);
 	Eina_Strbuf *const line = sd->line;
 
-	if (sd->pending_style_update) {
+	if (sd->pending_style_update)
 		termview_style_update(obj);
-	}
 
 	for (unsigned int i = 0u; i < sd->rows; i++) {
-		if (!sd->line_has_changed[i]) {
+		if (!sd->line_has_changed[i])
 			continue;
-		}
 		const struct cell *const row = sd->cells[i];
 
-		if (sd->cursor.y == i) {
+		if (sd->cursor.y == i)
 			sd->cursor.sep_written = EINA_FALSE;
-		}
 
 		uint32_t last_style = 0;
 		for (unsigned int col = 0u; col < sd->cols; col++) {
@@ -990,9 +982,8 @@ void termview_flush(Evas_Object *const obj)
 			eina_strbuf_append_length(line, c->utf8, c->bytes);
 			last_style = c->style_id;
 		}
-		if (last_style != 0) {
+		if (last_style != 0)
 			eina_strbuf_append_printf(line, "</X%" PRIx32 ">", last_style);
-		}
 
 		Evas_Textblock_Cursor *const start = sd->cursors[i];
 		Evas_Textblock_Cursor *const end = sd->tmp;
