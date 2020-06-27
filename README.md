@@ -1,4 +1,4 @@
-[![Neovim](data/images/eovim_banner.png)](https://phab.enlightenment.org/w/projects/eovim/)
+[![Neovim](data/images/eovim_banner.png)][6]
 
 
 Eovim is the Enlightened Neovim. That's just an [EFL][1] GUI client for
@@ -10,14 +10,9 @@ Eovim is the Enlightened Neovim. That's just an [EFL][1] GUI client for
 [![Coverity Scan Build](https://scan.coverity.com/projects/13836/badge.svg)](https://scan.coverity.com/projects/13836)
 
 Eovim is still in development, but it is stable enough to be used for your daily programming.
+See [the Wiki][6] for details.
 
-# Screenshots
-
-[![Screenshot](https://phab.enlightenment.org/file/data/4dnksyycnc2otmptswgy/PHID-FILE-jcyfful2wqtxzm3ednvb/Screenshot_from_2017-12-31_12-01-28.png)][9]
-[![Screenshot](https://phab.enlightenment.org/file/data/mggrhqzd6dl3t3nbmswa/PHID-FILE-mvi65ftut5dbutuowvws/Screenshot_from_2017-12-27_22-59-42.png)][9]
-
-Have a look at [the Enlightenment Wiki][8] for more.
-
+[![Overview](https://raw.githubusercontent.com/wiki/jeanguyomarch/eovim/img/eovim.gif)][6]
 
 # Why Eovim?
 
@@ -89,11 +84,11 @@ logo. Eovim's logo should be understood as a tribute to Neovim.
 [1]: https://www.enlightenment.org
 [2]: https://neovim.io
 [3]: https://github.com/msgpack/msgpack-c
-[4]: https://www.enlightenment.org/about-terminology
+
 [5]: https://cmake.org/
 [6]: https://github.com/jeanguyomarch/eovim/wiki
 [7]: https://raw.githubusercontent.com/neovim/neovim.github.io/master/logos/neovim-logo-600x173.png
-[8]: https://phab.enlightenment.org/w/projects/eovim/#screenshots
-[9]: https://phab.enlightenment.org/w/projects/eovim/
+
+
 [10]: https://github.com/jeanguyomarch/eovim/issues/new
 [11]: https://github.com/jeanguyomarch/eovim/wiki/Developing-Eovim
