@@ -262,11 +262,10 @@ void termview_style_update(Evas_Object *const obj)
 	if (sd->need_nvim_resize) {
 		int w, h;
 		evas_object_geometry_get(sd->object, NULL, NULL, &w, &h);
-		if (w && h) {
-			const unsigned int cols = (unsigned)w / sd->cell_w;
-			const unsigned int rows = (unsigned)h / sd->cell_h;
+		const unsigned int cols = (unsigned)w / sd->cell_w;
+		const unsigned int rows = (unsigned)h / sd->cell_h;
+		if (cols && rows)
 			nvim_api_ui_try_resize(sd->nvim, cols, rows);
-		}
 	}
 
 	_relayout(sd);
