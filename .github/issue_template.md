@@ -1,3 +1,5 @@
 - `eovim --version`:
-- `nvim --version | head -n1`:
-- `edje_cc --version`:
+
+```
+Please paste here the output of the command above.
+```

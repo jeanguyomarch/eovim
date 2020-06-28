@@ -112,12 +112,13 @@ EAPI_MAIN int elm_main(int argc, char **argv)
 		.maximized = EINA_FALSE,
 	};
 	Eina_Bool quit = EINA_FALSE;
+	Eina_Bool version = EINA_FALSE;
 	Ecore_Getopt_Value values[] = { ECORE_GETOPT_VALUE_STR(opts.nvim),
 					ECORE_GETOPT_VALUE_STR(opts.theme),
 					ECORE_GETOPT_VALUE_BOOL(opts.maximized),
 					ECORE_GETOPT_VALUE_BOOL(opts.fullscreen),
 					ECORE_GETOPT_VALUE_PTR_CAST(opts.geometry),
-					ECORE_GETOPT_VALUE_BOOL(quit),
+					ECORE_GETOPT_VALUE_BOOL(version),
 					ECORE_GETOPT_VALUE_BOOL(quit),
 					ECORE_GETOPT_VALUE_BOOL(quit),
 					ECORE_GETOPT_VALUE_BOOL(quit),
@@ -135,6 +136,31 @@ EAPI_MAIN int elm_main(int argc, char **argv)
 	const int args = ecore_getopt_parse(&options_desc, values, argc, argv);
 	if (args < 0) {
 		CRI("Failed to parser command-line options");
+		goto log_unregister;
+	}
+	if (version) {
+		printf("\n"
+#ifdef EFL_VERSION_MICRO
+		       "Compiled with EFL %i.%i.%i\n"
+#else /* Yes, I know...... */
+		       "Compiled with EFL %i.%i\n"
+#endif
+		       "Compiled with msgpack %s\n"
+		       "Linked with EFL %i.%i.%i\n"
+		       "Linked with msgpack %s\n",
+		       EFL_VERSION_MAJOR, EFL_VERSION_MINOR,
+#ifdef EFL_VERSION_MICRO
+		       EFL_VERSION_MICRO,
+#endif
+		       MSGPACK_VERSION, eina_version->major, eina_version->minor,
+		       eina_version->micro, msgpack_version());
+
+		char buf[4096];
+		snprintf(buf, sizeof(buf), "\"%s\" --version", opts.nvim);
+		printf("\nNeovim (program: '%s') version:\n\n", opts.nvim);
+		return_code = system(buf);
+		if (return_code != EXIT_SUCCESS)
+			CRI("Failed to execute command '%s': %s", buf, strerror(errno));
 		goto log_unregister;
 	}
 	if (quit) {
