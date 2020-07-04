@@ -153,8 +153,9 @@ void gui_completion_append(struct gui *const gui, const char *const word, const 
 	 * we will truncate with an ellipsis. I know this is fundamentally incorrect, because
 	 * we should compute the actual width, but this is quite complex to do, and this
 	 * heuristic will cover most of the cases (none I will ever face... I guess) */
-	const int len =
-		eina_unicode_utf8_get_len(item->word) + eina_unicode_utf8_get_len(item->menu);
+	const int len = eina_unicode_utf8_get_len(item->word) +
+			eina_unicode_utf8_get_len(item->menu) +
+			eina_unicode_utf8_get_len(item->kind);
 
 	cmpl->max_len = MAX(cmpl->max_len, len);
 	cmpl->has_kind |= (kind_size != 0);
