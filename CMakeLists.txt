@@ -14,6 +14,8 @@ include(CheckTypeSize)
 set(CMAKE_MODULE_PATH
    "${CMAKE_MODULE_PATH}${CMAKE_SOURCE_DIR}/cmake/Modules")
 
+option(WITH_WERROR "Treat compiler warnings as errors" OFF)
+
 include(compiler_warnings)
 include(git_commit)
 
