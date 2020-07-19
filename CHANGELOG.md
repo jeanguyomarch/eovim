@@ -5,6 +5,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.2.0] - 2020-07-25
+
 ### Added
 
 - Support for line space
@@ -27,6 +29,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Command-line, popupmenu has been overhauled
 - Better integration of eovim through vimscript
 - Font can now be specified as a fontconfig format string
+- Remove ad-hoc getopts, in favor of `Ecore_Getopt`
+- The `--version` now displays a great level of details
 
 
 ### Fixed
@@ -127,7 +131,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Initial theme (default).
 
 
-[Unreleased]: https://github.com/jeanguyomarch/eovim/compare/v0.1.3...master
+[Unreleased]: https://github.com/jeanguyomarch/eovim/compare/v0.2.0...master
 [0.1.1]: https://github.com/jeanguyomarch/eovim/compare/v0.1.0...v0.1.1
 [0.1.2]: https://github.com/jeanguyomarch/eovim/compare/v0.1.1...v0.1.2
 [0.1.3]: https://github.com/jeanguyomarch/eovim/compare/v0.1.2...v0.1.3
+[0.2.0]: https://github.com/jeanguyomarch/eovim/compare/v0.1.3...v0.2.0
