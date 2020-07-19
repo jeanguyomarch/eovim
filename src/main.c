@@ -140,6 +140,7 @@ EAPI_MAIN int elm_main(int argc, char **argv)
 	}
 	if (version) {
 		printf("\n"
+		       "Build Type: %s\n\n"
 #ifdef EFL_VERSION_MICRO
 		       "Compiled with EFL %i.%i.%i\n"
 #else /* Yes, I know...... */
@@ -148,7 +149,7 @@ EAPI_MAIN int elm_main(int argc, char **argv)
 		       "Compiled with msgpack %s\n"
 		       "Linked with EFL %i.%i.%i\n"
 		       "Linked with msgpack %s\n",
-		       EFL_VERSION_MAJOR, EFL_VERSION_MINOR,
+		       EOVIM_BUILD_TYPE, EFL_VERSION_MAJOR, EFL_VERSION_MINOR,
 #ifdef EFL_VERSION_MICRO
 		       EFL_VERSION_MICRO,
 #endif
