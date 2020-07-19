@@ -1,7 +1,6 @@
 function (add_nazi_compiler_warnings Target)
   if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
-     target_compile_options(${Target}
-        PRIVATE
+      list(APPEND warnings
         -Weverything
         -Wno-reserved-id-macro
         -Wno-padded
@@ -12,8 +11,7 @@ function (add_nazi_compiler_warnings Target)
         -Wno-bad-function-cast
      )
   elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
-     target_compile_options(${Target}
-        PRIVATE
+     list(APPEND warnings
         -Wall
         -Wextra
         -Wshadow
@@ -28,6 +26,11 @@ function (add_nazi_compiler_warnings Target)
         -Wformat=2
      )
   endif ()
+  if (WITH_WERROR)
+    list(APPEND warnings -Werror)
+  endif ()
+
+  target_compile_options(${Target} PRIVATE ${warnings})
 
   set_property(
      TARGET ${Target}
