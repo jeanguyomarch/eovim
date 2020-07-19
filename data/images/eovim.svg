@@ -11,12 +11,12 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="210mm"
-   height="297mm"
-   viewBox="0 0 744.09448819 1052.3622047"
+   width="237.74045mm"
+   height="206.61546mm"
+   viewBox="0 0 842.38741 732.10204"
    id="svg4163"
    version="1.1"
-   inkscape:version="0.91 r13725"
+   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
    sodipodi:docname="eovim.svg">
   <defs
      id="defs4165">
@@ -186,6 +186,16 @@
          offset="100%"
          id="stop11-5" />
     </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient-1"
+       id="linearGradient844"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0,-0.46142398,2.1672042,0,27.357127,825.07649)"
+       x1="167.95833"
+       y1="-0.46142399"
+       x2="167.95833"
+       y2="335.45523" />
   </defs>
   <sodipodi:namedview
      id="base"
@@ -195,15 +205,15 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.49497475"
-     inkscape:cx="-178.42022"
-     inkscape:cy="573.03372"
+     inkscape:cx="354.89508"
+     inkscape:cy="334.17658"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:window-width="1918"
-     inkscape:window-height="1038"
+     inkscape:window-height="1016"
      inkscape:window-x="0"
-     inkscape:window-y="40"
+     inkscape:window-y="27"
      inkscape:window-maximized="0" />
   <metadata
      id="metadata4168">
@@ -219,36 +229,37 @@
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer1"
+     transform="translate(88.03026,-96.331596)">
     <path
        inkscape:connector-curvature="0"
-       style="fill:url(#linearGradient-1)"
+       style="fill:url(#linearGradient844)"
        sketch:type="MSShapeGroup"
        id="Left---green"
-       d="m 182.92754,825.07649 -156.570413,-155 728.000013,10e-6 -154.76208,154.99999 -416.66752,0 z" />
+       d="m 182.92754,825.07649 -156.570413,-155 728.000013,10e-6 -154.76208,154.99999 z" />
     <path
        inkscape:connector-curvature="0"
        style="fill:url(#linearGradient-1-7)"
        sketch:type="MSShapeGroup"
        id="Left---green-1"
-       d="m 597.34848,100.15132 156.5704,155 -728.000003,-1e-5 154.762083,-154.99999 416.66752,0 z" />
+       d="m 597.34848,100.15132 156.5704,155 -728.000003,-1e-5 154.762083,-154.99999 z" />
     <path
        inkscape:connector-curvature="0"
        style="fill:url(#linearGradient-2)"
        sketch:type="MSShapeGroup"
        id="Right---blue"
-       d="M 27.060397,670.45123 184,828.43364 180.81879,100.43363 25.999997,255.21369 l 1.0604,415.23754 z" />
+       d="M 27.060397,670.45123 184,828.43364 180.81879,100.43363 25.999997,255.21369 Z" />
     <path
        inkscape:connector-curvature="0"
        style="fill:url(#linearGradient-1-29)"
        sketch:type="MSShapeGroup"
        id="Left---green-4"
-       d="M 123.41375,478.37688 -88.03026,300.93221 739.79421,414.04483 597.21535,543.11637 123.41375,478.37688 Z" />
+       d="M 123.41375,478.37688 -88.03026,300.93221 739.79421,414.04483 597.21535,543.11637 Z" />
     <path
        inkscape:connector-curvature="0"
        style="fill:url(#linearGradient-2-35)"
        sketch:type="MSShapeGroup"
        id="Right---blue-1"
-       d="m 750.61997,193.81147 -156.9396,-97.479874 3.18121,449.197874 154.81879,-95.50395 -1.0604,-256.21405 z" />
+       d="M 750.61997,193.81147 593.68037,96.331596 596.86158,545.52947 751.68037,450.02552 Z" />
   </g>
 </svg>

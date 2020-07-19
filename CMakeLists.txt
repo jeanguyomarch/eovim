@@ -140,7 +140,9 @@ install(
    DESTINATION "share/applications"
 )
 install(
-   FILES "${CMAKE_SOURCE_DIR}/data/images/eovim.png"
+   FILES
+   "${CMAKE_SOURCE_DIR}/data/images/eovim.png"
+   "${CMAKE_SOURCE_DIR}/data/images/eovim.svg"
    DESTINATION "share/icons"
 )
 
