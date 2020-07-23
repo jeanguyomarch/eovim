@@ -312,9 +312,18 @@ static Eina_Bool _compose(struct termview *const sd, const Ecore_Event_Key *cons
 	if (_composing_is(sd)) {
 		char *res = NULL;
 
+		/* We discard LOCK modifiers as they do not interest us. We only
+                 * want to filter modifiers sucj as shift, ctrl, etc.
+                 * Filtering LOCK-only keys actually result in completely blocking
+                 * input during composition if something like "num lock" is ON. */
+		const unsigned int modifiers =
+			key->modifiers & (unsigned)(~ECORE_EVENT_LOCK_SCROLL) &
+			(unsigned)(~ECORE_EVENT_LOCK_NUM) & (unsigned)(~ECORE_EVENT_LOCK_CAPS) &
+			(unsigned)(~ECORE_EVENT_LOCK_SHIFT);
+
 		/* When composition is enabled, we want to skip modifiers, and only feed
-		 * non-modified keys to the composition engine */
-		if (key->modifiers != 0u)
+		 * non-modified keys to the composition engine. */
+		if (modifiers != 0u)
 			return EINA_TRUE;
 
 		/* Add the current key to the composition list, and compute */
