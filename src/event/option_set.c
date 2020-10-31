@@ -143,7 +143,7 @@ static Eina_Bool _linespace_set(struct nvim *const nvim, const msgpack_object *c
 	}
 
 	const uint64_t val = value->via.u64;
-	termview_linespace_set(nvim->gui.termview, (unsigned int)val);
+	gui_linespace_set(&nvim->gui, (unsigned int)val);
 	return EINA_TRUE;
 }
 

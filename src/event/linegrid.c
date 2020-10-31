@@ -3,7 +3,7 @@
 #include "event.h"
 
 /** Function type used to decode an attribute */
-typedef Eina_Bool (*f_hl_attr_decode)(const msgpack_object *, struct termview_style *);
+typedef Eina_Bool (*f_hl_attr_decode)(const msgpack_object *, struct style *);
 
 /** Hash table that maps attributes names to decoding functions */
 static Eina_Hash *_attributes;
@@ -12,7 +12,7 @@ static Eina_Hash *_attributes;
  * code. I'm not usually a fan of generating codes via macros, but I think
  * there is real gain here
  *
- *  Keyword             DecodeFunc              Field Name (of struct termview_style)
+ *  Keyword             DecodeFunc              Field Name (of struct style)
  */
 #define ATTRIBUTES(X)                                                                              \
 	X(foreground, arg_color_get, fg_color)                                                     \
@@ -28,7 +28,7 @@ static Eina_Hash *_attributes;
 
 #define GEN_DECODERS(Kw, DecodeFunc, FieldName)                                                    \
 	static Eina_Bool _attr_##Kw##_cb(const msgpack_object *const obj,                          \
-					 struct termview_style *const style)                       \
+					 struct style *const style)                       \
 	{                                                                                          \
 		return DecodeFunc(obj, &style->FieldName);                                         \
 	}
@@ -72,7 +72,7 @@ static Eina_Bool hi_name_set(struct nvim *const nvim, const t_int id,
 			     const msgpack_object *const hi_name)
 {
 	Eina_Stringshare *const key = MPACK_STRING_EXTRACT(hi_name, return EINA_FALSE);
-	const struct termview_style *const style = termview_style_get(nvim->gui.termview, id);
+	const struct style *const style = gui_style_get(&nvim->gui, id);
 	if (EINA_UNLIKELY(!style)) {
 		ERR("Failed find style with id %" PRIi64, id);
 		return EINA_FALSE;
@@ -93,7 +93,7 @@ Eina_Bool nvim_event_hl_attr_define(struct nvim *const nvim, const msgpack_objec
 	 *          {"foreground"=>7, "background"=>242}, []] ... ]
 	 *
 	 * where <INFO> is  something like:
-	 * 	{"kind"=>"ui", "ui_name"=>"NormalFloat", "hi_name"=>"Pmenu", "id"=>396}
+	 *	{"kind"=>"ui", "ui_name"=>"NormalFloat", "hi_name"=>"Pmenu", "id"=>396}
 	 *
 	 * Note that the "id" shall be the same than in the hl_attr_define.
 	 *
@@ -115,7 +115,7 @@ Eina_Bool nvim_event_hl_attr_define(struct nvim *const nvim, const msgpack_objec
 		GET_ARG(opt, 0, t_int, &id);
 
 		/* Grab the style to be changed */
-		struct termview_style *const style = termview_style_get(nvim->gui.termview, id);
+		struct style *const style = gui_style_get(&nvim->gui, id);
 		if (EINA_UNLIKELY(!style))
 			goto fail;
 
@@ -150,7 +150,7 @@ Eina_Bool nvim_event_hl_attr_define(struct nvim *const nvim, const msgpack_objec
 				ret &= hi_name_set(nvim, id, o_val);
 		}
 	}
-	termview_style_changed(nvim->gui.termview);
+	gui_style_update_defer(&nvim->gui);
 
 	return ret;
 fail:
@@ -181,12 +181,12 @@ Eina_Bool nvim_event_grid_resize(struct nvim *const nvim, const msgpack_object_a
 		t_int grid_id, width, height;
 		GET_ARG(opt, 0, t_int, &grid_id);
 		/* TODO: for now, we don't implement multi_grid, so we just consider the
-		 * grid ID ALWAYS refers to THE termview */
+		 * grid ID ALWAYS refers to THE grid */
 		EINA_SAFETY_ON_FALSE_RETURN_VAL(grid_id == 1, EINA_FALSE);
 		GET_ARG(opt, 1, t_int, &width);
 		GET_ARG(opt, 2, t_int, &height);
 
-		termview_matrix_set(nvim->gui.termview, (unsigned)width, (unsigned)height);
+		grid_matrix_set(nvim->gui.grid, (unsigned)width, (unsigned)height);
 	}
 	return EINA_TRUE;
 
@@ -212,9 +212,9 @@ Eina_Bool nvim_event_grid_clear(struct nvim *const nvim, const msgpack_object_ar
 		t_int grid_id;
 		GET_ARG(opt, 0, t_int, &grid_id);
 		/* TODO: for now, we don't implement multi_grid, so we just consider the
-		 * grid ID ALWAYS refers to THE termview */
+		 * grid ID ALWAYS refers to THE grid */
 		EINA_SAFETY_ON_FALSE_RETURN_VAL(grid_id == 1, EINA_FALSE);
-		termview_clear(nvim->gui.termview);
+		grid_clear(nvim->gui.grid);
 	}
 	return EINA_TRUE;
 
@@ -239,11 +239,11 @@ Eina_Bool nvim_event_grid_cursor_goto(struct nvim *const nvim,
 	t_int grid_id, row, col;
 	GET_ARG(opt, 0, t_int, &grid_id);
 	/* TODO: for now, we don't implement multi_grid, so we just consider the
-	 * grid ID ALWAYS refers to THE termview */
+	 * grid ID ALWAYS refers to THE grid */
 	EINA_SAFETY_ON_FALSE_RETURN_VAL(grid_id == 1, EINA_FALSE);
 	GET_ARG(opt, 1, t_int, &row);
 	GET_ARG(opt, 2, t_int, &col);
-	termview_cursor_goto(nvim->gui.termview, (unsigned)col, (unsigned)row);
+	grid_cursor_goto(nvim->gui.grid, (unsigned)col, (unsigned)row);
 
 	return EINA_TRUE;
 
@@ -270,7 +270,7 @@ Eina_Bool nvim_event_grid_line(struct nvim *const nvim, const msgpack_object_arr
 		t_int grid_id, row, col;
 		GET_ARG(opt, 0, t_int, &grid_id);
 		/* TODO: for now, we don't implement multi_grid, so we just
-		 * consider the grid ID ALWAYS refers to THE termview */
+		 * consider the grid ID ALWAYS refers to THE grid */
 		EINA_SAFETY_ON_FALSE_RETURN_VAL(grid_id == 1, EINA_FALSE);
 		GET_ARG(opt, 1, t_int, &row);
 		GET_ARG(opt, 2, t_int, &col);
@@ -295,7 +295,7 @@ Eina_Bool nvim_event_grid_line(struct nvim *const nvim, const msgpack_object_arr
 			if (info->size >= 3)
 				GET_ARG(info, 2, t_int, &repeat);
 
-			termview_line_edit(nvim->gui.termview, (unsigned int)row, (unsigned int)col,
+			grid_line_edit(nvim->gui.grid, (unsigned int)row, (unsigned int)col,
 					   str->ptr, (size_t)str->size, (uint32_t)style_id,
 					   (size_t)repeat);
 
@@ -325,7 +325,7 @@ Eina_Bool nvim_event_grid_scroll(struct nvim *const nvim, const msgpack_object_a
 		t_int grid_id, top, bot, left, right, rows, cols;
 		GET_ARG(opt, 0, t_int, &grid_id);
 		/* TODO: for now, we don't implement multi_grid, so we just
-		 * consider the grid ID ALWAYS refers to THE termview */
+		 * consider the grid ID ALWAYS refers to THE grid */
 		EINA_SAFETY_ON_FALSE_RETURN_VAL(grid_id == 1, EINA_FALSE);
 		GET_ARG(opt, 1, t_int, &top);
 		GET_ARG(opt, 2, t_int, &bot);
@@ -335,7 +335,7 @@ Eina_Bool nvim_event_grid_scroll(struct nvim *const nvim, const msgpack_object_a
 		GET_ARG(opt, 6, t_int, &cols);
 		EINA_SAFETY_ON_FALSE_RETURN_VAL(cols == 0, EINA_FALSE);
 
-		termview_scroll(nvim->gui.termview, (int)top, (int)bot, (int)left, (int)right,
+		grid_scroll(nvim->gui.grid, (int)top, (int)bot, (int)left, (int)right,
 				(int)rows);
 	}
 	return EINA_TRUE;

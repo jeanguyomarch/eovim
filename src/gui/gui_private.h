@@ -10,6 +10,7 @@
 struct gui;
 struct wildmenu;
 struct completion;
+struct grid;
 
 struct popupmenu_interface {
 	void (*const hide)(struct popupmenu *);
@@ -79,6 +80,37 @@ void cursor_mode_set(struct cursor *cur, const struct mode *mode);
 void cursor_focus_set(struct cursor *cur, Eina_Bool focused);
 void gui_cursor_calc(struct gui *gui, int x, int y, int w, int h);
 void gui_cursor_key_pressed(struct gui *gui);
+
+
+/*****************************************************************************
+ * Grid Internal API
+ *****************************************************************************/
+
+
+struct grid *grid_add(struct gui *gui);
+void grid_del(struct grid *sd);
+void grid_matrix_set(struct grid *sd, unsigned int cols, unsigned int rows);
+void grid_cell_size_get(const struct grid *sd, unsigned int *w, unsigned int *h);
+void grid_size_get(const struct grid *sd, unsigned int *cols, unsigned int *rows);
+void grid_clear(struct grid *sd);
+void grid_cursor_goto(struct grid *sd, unsigned int to_x, unsigned int to_y);
+void grid_cell_geometry_get(const struct grid *sd, unsigned int cell_x, unsigned int cell_y,
+		int *px, int *py, int *pw, int *ph);
+void grid_cursor_mode_set(struct grid *sd, const struct mode *mode);
+struct grid_style *grid_style_get(struct grid *sd, t_int style_id);
+void grid_style_update(struct grid *sd);
+void grid_scroll(struct grid *sd, int top, int bot, int left, int right, int rows);
+void grid_focus_in(struct grid *sd);
+void grid_default_colors_set(struct grid *sd, union color fg, union color bg, union color sp);
+void grid_font_set(struct grid *sd, Eina_Stringshare *font_name, unsigned int font_size);
+void grid_line_edit(struct grid *sd, unsigned int row, unsigned int col, const char *text,
+			size_t text_len, t_int style_id, size_t repeat);
+void grid_flush(struct grid *sd);
+void grid_linespace_set(struct grid *sd, unsigned int linespace);
+void grid_redraw_end(struct grid *sd);
+void grid_style_changed(struct grid *sd);
+void grid_linespace_set(struct grid *sd, unsigned int linespace);
+Evas_Object *grid_textblock_get(const struct grid *sd);
 
 static inline void color_class_set(const char *const name, const union color col)
 {

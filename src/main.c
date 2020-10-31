@@ -1,12 +1,10 @@
 /* This file is part of Eovim, which is under the MIT License ****************/
 
-#include <eovim/keymap.h>
 #include <eovim/nvim.h>
 #include <eovim/nvim_api.h>
 #include <eovim/version.h>
 #include <eovim/nvim_request.h>
 #include <eovim/nvim_event.h>
-#include <eovim/termview.h>
 #include <eovim/main.h>
 #include <eovim/log.h>
 
@@ -29,8 +27,7 @@ static const struct module _modules[] = {
 		.name = #name_, .init = &name_##_init, .shutdown = &name_##_shutdown               \
 	}
 
-	MODULE(keymap),	      MODULE(nvim_api),	      MODULE(nvim_request), MODULE(nvim_event),
-	MODULE(gui_wildmenu), MODULE(gui_completion), MODULE(termview),
+	MODULE(gui_wildmenu), MODULE(gui_completion),
 
 #undef MODULE
 };

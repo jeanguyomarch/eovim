@@ -28,7 +28,7 @@ static struct method _methods[__E_METHOD_LAST];
 static Eina_Bool nvim_event_flush(struct nvim *const nvim,
 				  const msgpack_object_array *const args EINA_UNUSED)
 {
-	termview_flush(nvim->gui.termview);
+	gui_flush(&nvim->gui);
 	return EINA_TRUE;
 }
 
@@ -314,7 +314,7 @@ static void _method_free(struct method *method)
 
 static Eina_Bool _nvim_event_redraw_end(struct nvim *const nvim)
 {
-	termview_redraw_end(nvim->gui.termview);
+	gui_redraw_end(&nvim->gui);
 	return EINA_TRUE;
 }
 

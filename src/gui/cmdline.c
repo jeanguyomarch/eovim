@@ -4,7 +4,6 @@
 #include <eovim/log.h>
 #include <eovim/nvim.h>
 #include <eovim/gui.h>
-#include <eovim/termview.h>
 
 #include "gui_private.h"
 
@@ -47,7 +46,7 @@ void gui_cmdline_show(struct gui *const gui, const char *const content,
 		}
 	}
 
-	const struct termview_style *const style = eina_hash_find(nvim->hl_groups, hi_group);
+	const struct grid_style *const style = eina_hash_find(nvim->hl_groups, hi_group);
 	if (EINA_UNLIKELY(!style)) {
 		ERR("Failed to find group for '%s'", hi_group);
 		goto end;

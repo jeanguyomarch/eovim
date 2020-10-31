@@ -9,19 +9,66 @@
 
 #include "gui_private.h"
 
+#define FOREACH_GRID(Gui, Variable) \
+	Eina_List *list___; \
+	struct grid *Variable; \
+	EINA_LIST_FOREACH((Gui)->grids, list___, Variable)
+
+
 static void _tabs_shown_cb(void *data, Evas_Object *obj, const char *emission, const char *source);
 
-static void _focus_in_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
+
+
+static void _caps_lock_alert(struct gui *const gui)
+{
+	if (!gui->capslock_warning) {
+		/* Don't show the capslock alert in theme if deactivated */
+		if (gui->theme.react_to_caps_lock)
+			elm_layout_signal_emit(gui->layout, "eovim,capslock,on", "eovim");
+
+		/* Tell neovim we activated caps lock */
+		nvim_helper_autocmd_do(gui->nvim, "EovimCapsLockOn", NULL, NULL);
+		gui->capslock_warning = EINA_TRUE;
+	}
+}
+
+static void _caps_lock_dismiss(struct gui *const gui)
+{
+	if (gui->capslock_warning) {
+		/* Don't hide the capslock alert in theme if deactivated */
+		if (gui->theme.react_to_caps_lock)
+			elm_layout_signal_emit(gui->layout, "eovim,capslock,off", "eovim");
+
+		/* Tell neovim we deactivated caps lock */
+		nvim_helper_autocmd_do(gui->nvim, "EovimCapsLockOff", NULL, NULL);
+		gui->capslock_warning = EINA_FALSE;
+	}
+}
+
+static void _focus_in_cb(void *const data, Evas_Object *const obj EINA_UNUSED, void *const event EINA_UNUSED)
 {
 	struct gui *const gui = data;
-	evas_object_focus_set(gui->termview, EINA_TRUE);
 	cursor_focus_set(gui->cursor, EINA_TRUE);
+
+	/* XXX this is a transcient function call. */
+	struct grid *const first_grid = eina_list_data_get(gui->grids);
+	//evas_object_focus_set(gui->termview, EINA_TRUE);
+	grid_focus_in(first_grid);
+
+	/* When entering back on the Eovim window, the user may have pressed
+	 * Caps_Lock outside of Eovim's context. So we have to make sure when
+	 * entering Eovim again, that we are on the same page with the input
+	 * events. */
+	const Evas_Lock *const lock = evas_key_lock_get(gui->evas);
+	if (evas_key_lock_is_set(lock, "Caps_Lock"))
+		_caps_lock_alert(gui);
+	else
+		_caps_lock_dismiss(gui);
 }
 
 static void _focus_out_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
 {
 	struct gui *const gui = data;
-	evas_object_focus_set(gui->termview, EINA_FALSE);
 	cursor_focus_set(gui->cursor, EINA_FALSE);
 }
 
@@ -35,14 +82,6 @@ static void _win_close_cb(void *data, Evas_Object *obj EINA_UNUSED, void *info E
 	struct nvim *const nvim = data;
 	const char cmd[] = ":quitall!";
 	nvim_api_command(nvim, cmd, sizeof(cmd) - 1, NULL, NULL);
-}
-
-static void _termview_relayout_cb(void *const data, Evas_Object *const obj EINA_UNUSED,
-				  void *const info)
-{
-	struct gui *const gui = data;
-	const Eina_Rectangle *const geo = info;
-	evas_object_resize(gui->win, geo->x + geo->w, geo->y + geo->h);
 }
 
 Eina_Bool gui_add(struct gui *gui, struct nvim *nvim)
@@ -62,6 +101,8 @@ Eina_Bool gui_add(struct gui *gui, struct nvim *nvim)
 	elm_win_autodel_set(gui->win, EINA_TRUE);
 	evas_object_smart_callback_add(gui->win, "delete,request", _win_close_cb, nvim);
 
+	gui->evas = evas_object_evas_get(gui->win);
+
 	/* Main Layout setup */
 	gui->layout = gui_layout_item_add(gui->win, "eovim/main");
 	if (EINA_UNLIKELY(!gui->layout)) {
@@ -76,6 +117,30 @@ Eina_Bool gui_add(struct gui *gui, struct nvim *nvim)
 	evas_object_smart_callback_add(gui->win, "focus,out", _focus_out_cb, gui);
 	evas_object_smart_callback_add(gui->win, "focus,out", _focus_out_cb, gui);
 
+	// XXX Leaks on failure.
+	gui->style.kind_styles = eina_hash_stringshared_new(EINA_FREE_CB(&eina_stringshare_del));
+	if (EINA_UNLIKELY(!gui->style.kind_styles)) {
+		CRI("Failed to create hash map");
+		goto fail;
+	}
+	gui->style.cmdline_styles = eina_hash_stringshared_new(EINA_FREE_CB(&eina_stringshare_del));
+	if (EINA_UNLIKELY(!gui->style.cmdline_styles)) {
+		CRI("Failed to create hash map");
+		goto fail;
+	}
+	gui->style.hl_groups = eina_hash_stringshared_new(NULL);
+	if (EINA_UNLIKELY(!gui->style.hl_groups)) {
+		CRI("Failed to create hash map");
+		goto fail;
+	}
+
+	/* A 1x1 cell matrix to retrieve the font size. Always invisible */
+	gui->sizing_textgrid = evas_object_textgrid_add(gui->evas);
+	evas_object_size_hint_weight_set(gui->sizing_textgrid, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	evas_object_size_hint_align_set(gui->sizing_textgrid, EVAS_HINT_FILL, EVAS_HINT_FILL);
+	evas_object_textgrid_size_set(gui->sizing_textgrid, 1, 1);
+
+
 	/* ========================================================================
 	 * Termview GUI objects
 	 * ===================================================================== */
@@ -84,17 +149,16 @@ Eina_Bool gui_add(struct gui *gui, struct nvim *nvim)
 
 	gui->cmdline = cmdline_add(gui);
 
-	gui->termview = termview_add(gui->layout, nvim);
-	evas_object_smart_callback_add(gui->termview, "relayout", _termview_relayout_cb, gui);
-	evas_object_hide(gui->termview);
+	struct grid *const grid = grid_add(gui);
+	gui->grids = eina_list_append(gui->grids, grid);
 
 	gui->wildmenu = gui_wildmenu_add(gui);
 	if (EINA_UNLIKELY(!gui->wildmenu))
-		return EINA_FALSE;
+		goto fail;
 
 	gui->completion = gui_completion_add(gui);
 	if (EINA_UNLIKELY(!gui->completion))
-		return EINA_FALSE;
+		goto fail;
 
 	/* ========================================================================
 	 * Finalize GUI
@@ -121,7 +185,15 @@ void gui_del(struct gui *gui)
 	cmdline_del(gui->cmdline);
 	gui_wildmenu_del(gui->wildmenu);
 	gui_completion_del(gui->completion);
+	struct grid *grid;
+	EINA_LIST_FREE(gui->grids, grid)
+		grid_del(grid);
+
+	eina_hash_free(gui->style.hl_groups);
+	eina_hash_free(gui->style.cmdline_styles);
+	eina_hash_free(gui->style.kind_styles);
 	eina_inarray_free(gui->tabs);
+	evas_object_del(gui->sizing_textgrid);
 	evas_object_del(gui->win);
 }
 
@@ -133,7 +205,7 @@ static void _die_cb(void *data, Evas_Object *obj EINA_UNUSED, void *info EINA_UN
 
 void gui_die(struct gui *gui, const char *fmt, ...)
 {
-	/* Hide the termview */
+	/* Hide the grid */
 	Evas_Object *const view = elm_layout_content_unset(gui->layout, "eovim.main.view");
 	evas_object_hide(view);
 
@@ -162,24 +234,36 @@ void gui_font_set(struct gui *const gui, const char *const font_name, const unsi
 	EINA_SAFETY_ON_NULL_RETURN(font_name);
 	EINA_SAFETY_ON_FALSE_RETURN(font_size < INT_MAX);
 
-	const Eina_Bool name_changed = eina_stringshare_replace(&gui->font.name, font_name);
+	const Eina_Bool name_changed = eina_stringshare_replace(&gui->style.font_name, font_name);
 
 	DBG("Using font '%s' with size '%u'", font_name, font_size);
-	if (name_changed || (font_size != gui->font.size)) {
-		gui->font.size = font_size;
-		termview_font_set(gui->termview, gui->font.name, gui->font.size);
+	if (name_changed || (font_size != gui->style.font_size)) {
+		gui->style.font_size = font_size;
+		int cell_w, cell_h;
+		evas_object_textgrid_font_set(gui->sizing_textgrid, gui->style.font_name,
+					      (int)gui->style.font_size);
+		evas_object_textgrid_cell_size_get(gui->sizing_textgrid, &cell_w, &cell_h);
+		FOREACH_GRID(gui, grid)
+			grid_cell_size_set(grid, (unsigned)cell_w, (unsigned)cell_h);
+		gui_style_update_defer(gui);
+		gui_resize_defer(gui);
 	}
 }
 
 void gui_default_colors_set(struct gui *const gui, const union color fg, const union color bg,
 			    const union color sp)
 {
-	/* Change foreground and special (e.g. underline) colors */
-	termview_default_colors_set(gui->termview, fg, bg, sp);
+	const Eina_Bool changed = (gui->style.default_fg.value != fg.value) ||
+				  (gui->style.default_bg.value != bg.value) ||
+				  (gui->style.default_sp.value != sp.value);
 
-	/* TODO: mutualize this */
-	gui->default_fg.value = fg.value;
-	color_class_set("eovim.background", bg);
+	if (changed) {
+		gui->style.default_fg = fg;
+		gui->style.default_bg = bg;
+		gui->style.default_sp = sp;
+		gui_style_update_defer(gui);
+		color_class_set("eovim.background", bg);
+	}
 }
 
 void gui_busy_set(struct gui *gui, Eina_Bool busy)
@@ -229,8 +313,11 @@ static void _maximized_cb(void *const data, Evas_Object *const obj EINA_UNUSED,
 
 void gui_ready_set(struct gui *const gui)
 {
-	elm_layout_content_set(gui->layout, "eovim.main.view", gui->termview);
-	evas_object_show(gui->termview);
+	/* XXX This is transitional */
+	const struct grid *const grid = eina_list_data_get(gui->grids);
+	Evas_Object *const obj = grid_textblock_get(grid);
+	elm_layout_content_set(gui->layout, "eovim.main.view", obj);
+	evas_object_show(obj);
 
 	const struct options *const opts = gui->nvim->opts;
 
@@ -257,7 +344,8 @@ void gui_title_set(struct gui *gui, const char *title)
 
 void gui_mode_update(struct gui *gui, const struct mode *mode)
 {
-	termview_cursor_mode_set(gui->termview, mode);
+	FOREACH_GRID(gui, grid)
+		grid_cursor_mode_set(grid, mode);
 }
 
 /*============================================================================*
@@ -348,12 +436,10 @@ void gui_tabs_hide(struct gui *gui)
 
 void gui_tabs_add(struct gui *gui, const char *name, unsigned int id, Eina_Bool active)
 {
-	Evas *const evas = evas_object_evas_get(gui->layout);
-
 	/* Register the current tab */
 	eina_inarray_push(gui->tabs, &id);
 
-	Evas_Object *const edje = edje_object_add(evas);
+	Evas_Object *const edje = edje_object_add(gui->evas);
 	evas_object_data_set(edje, "tab_id", (void *)(uintptr_t)id);
 	edje_object_file_set(edje, main_edje_file_get(), "eovim/tab");
 	edje_object_signal_callback_add(edje, "tab,close", "eovim", _tab_close_cb, gui);
@@ -370,31 +456,6 @@ void gui_tabs_add(struct gui *gui, const char *name, unsigned int id, Eina_Bool 
 	edje_object_part_box_append(gui->edje, "eovim.tabline", edje);
 }
 
-void gui_caps_lock_alert(struct gui *gui)
-{
-	if (!gui->capslock_warning) {
-		/* Don't show the capslock alert in theme if deactivated */
-		if (gui->theme.react_to_caps_lock)
-			elm_layout_signal_emit(gui->layout, "eovim,capslock,on", "eovim");
-
-		/* Tell neovim we activated caps lock */
-		nvim_helper_autocmd_do(gui->nvim, "EovimCapsLockOn", NULL, NULL);
-		gui->capslock_warning = EINA_TRUE;
-	}
-}
-
-void gui_caps_lock_dismiss(struct gui *gui)
-{
-	if (gui->capslock_warning) {
-		/* Don't hide the capslock alert in theme if deactivated */
-		if (gui->theme.react_to_caps_lock)
-			elm_layout_signal_emit(gui->layout, "eovim,capslock,off", "eovim");
-
-		/* Tell neovim we deactivated caps lock */
-		nvim_helper_autocmd_do(gui->nvim, "EovimCapsLockOff", NULL, NULL);
-		gui->capslock_warning = EINA_FALSE;
-	}
-}
 
 Eina_Bool gui_caps_lock_warning_get(const struct gui *gui)
 {
@@ -415,4 +476,40 @@ Evas_Object *gui_layout_item_add(Evas_Object *const parent, const char *const gr
 		return NULL;
 	}
 	return o;
+}
+
+void gui_style_update_defer(struct gui *const gui)
+{
+	gui->pending_style_update = EINA_TRUE;
+}
+
+void gui_resize_defer(struct gui *const gui)
+{
+	gui->need_nvim_resize = EINA_TRUE;
+}
+
+void gui_linespace_set(struct gui *const gui, const unsigned int linespace)
+{
+	gui->style.line_gap = linespace;
+	gui_resize_defer(gui);
+	gui_style_update_defer(gui);
+}
+
+void gui_redraw_end(struct gui *const gui)
+{
+	FOREACH_GRID(gui, grid)
+		grid_redraw_end(grid);
+}
+
+void gui_flush(struct gui *const gui)
+{
+	FOREACH_GRID(gui, grid)
+		grid_flush(grid);
+}
+
+struct grid *gui_grid_get(const struct gui *const gui, const size_t index)
+{
+	// TODO
+	(void) index;
+	return eina_list_data_get(gui->grids);
 }

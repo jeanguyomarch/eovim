@@ -11,6 +11,7 @@ struct nvim;
 struct gui;
 struct wildmenu;
 struct options;
+struct grid;
 
 typedef int64_t t_int;
 typedef Eina_Bool (*f_event_cb)(struct nvim *nvim, const msgpack_object_array *args);
@@ -27,6 +28,7 @@ union color {
 	};
 	uint32_t value;
 };
+
 
 enum cursor_shape {
 	CURSOR_SHAPE_BLOCK = 0,
@@ -61,6 +63,18 @@ struct mode {
     * but do nothing with it. */
 	unsigned int hl_id;
 	unsigned int hl_lm;
+};
+
+struct style {
+	union color fg_color;
+	union color bg_color;
+	union color sp_color;
+	Eina_Bool reverse;
+	Eina_Bool italic;
+	Eina_Bool bold;
+	Eina_Bool underline;
+	Eina_Bool undercurl;
+	Eina_Bool strikethrough;
 };
 
 struct options {

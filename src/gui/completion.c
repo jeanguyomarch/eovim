@@ -196,11 +196,12 @@ static void completion_resize(struct popupmenu *const pop)
 		height = max_height;
 
 	/* Retrieve the geometry of the cell at which the completion must be displayed, and
-	 * the overall size of the termview */
+	 * the overall size of the grid */
 	int cx, cy, cw, ch;
-	termview_cell_geometry_get(gui->termview, cmpl->col, cmpl->row, &cx, &cy, &cw, &ch);
+	struct grid *const first_grid = eina_list_data_get(gui->grids); // XXX
+	grid_cell_geometry_get(first_grid, cmpl->col, cmpl->row, &cx, &cy, &cw, &ch);
 	unsigned int cols, rows;
-	termview_size_get(gui->termview, &cols, &rows);
+	grid_size_get(first_grid, &cols, &rows);
 
 	int xpos, ypos;
 
@@ -258,9 +259,8 @@ struct completion *gui_completion_add(struct gui *const gui)
 	const char *const edje_file = main_edje_file_get();
 
 	popupmenu_setup(pop, gui, &completion_iface, _completion_itc);
-	Evas *const evas = evas_object_evas_get(gui->win);
 
-	cmpl->edje = edje_object_add(evas);
+	cmpl->edje = edje_object_add(gui->evas);
 	edje_object_file_set(cmpl->edje, edje_file, "eovim/completion");
 	evas_object_smart_member_add(cmpl->edje, gui->layout);
 	edje_object_part_swallow(cmpl->edje, "eovim.completion", pop->table);

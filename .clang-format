@@ -68,8 +68,11 @@ ExperimentalAutoDetectBinPacking: false
 
 ForEachMacros:
   - 'EINA_ITERATOR_FOREACH'
+  - 'FOREACH_GRID'
   - 'EINA_INLIST_FOREACH'
   - 'EINA_INARRAY_FOREACH'
+  - 'EINA_LIST_FOREACH'
+  - 'EINA_LIST_FREE'
   - 'MPACK_MAP_ITER'
 
 

@@ -123,8 +123,7 @@ struct cursor *cursor_add(struct gui *const gui)
 		return NULL;
 	}
 
-	Evas *const evas = evas_object_evas_get(gui->win);
-	cur->edje = edje_object_add(evas);
+	cur->edje = edje_object_add(gui->evas);
 	cur->gui = gui;
 
 	edje_object_file_set(cur->edje, main_edje_file_get(), "eovim/cursor");
