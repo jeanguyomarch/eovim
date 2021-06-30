@@ -49,7 +49,6 @@ styles {
 collections {
    group { "eovim/main";
       images {
-         image: "preferences.png" COMP;
          image: "vertical_separated_bar_glow.png" COMP;
          image: "inset_shadow.png" COMP;
          image: "tab_other_m.png" COMP;
