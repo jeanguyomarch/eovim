@@ -84,7 +84,7 @@ logo. Eovim's logo should be understood as a tribute to Neovim.
 [1]: https://www.enlightenment.org
 [2]: https://neovim.io
 [3]: https://github.com/msgpack/msgpack-c
-
+[4]: https://www.enlightenment.org/about-terminology
 [5]: https://cmake.org/
 [6]: https://github.com/jeanguyomarch/eovim/wiki
 [7]: https://raw.githubusercontent.com/neovim/neovim.github.io/master/logos/neovim-logo-600x173.png
