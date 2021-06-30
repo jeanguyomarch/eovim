@@ -45,18 +45,19 @@ Eina_Bool nvim_event_popupmenu_show(struct nvim *const nvim, const msgpack_objec
 	 */
 	CHECK_BASE_ARGS_COUNT(args, ==, 1);
 	ARRAY_OF_ARGS_EXTRACT(args, params);
-	CHECK_ARGS_COUNT(params, >=, 5);
+	CHECK_ARGS_COUNT(params, >=, 4);
 
 	const msgpack_object *const data_obj = &(params->ptr[0]);
 	CHECK_TYPE(data_obj, MSGPACK_OBJECT_ARRAY, EINA_FALSE);
 	const msgpack_object_array *const data = &(data_obj->via.array);
 	struct gui *const gui = &nvim->gui;
 
-	t_int selected, row, col, grid;
+	t_int selected, row, col, grid = 0;
 	GET_ARG(params, 1, t_int, &selected);
 	GET_ARG(params, 2, t_int, &row);
 	GET_ARG(params, 3, t_int, &col);
-	GET_ARG(params, 4, t_int, &grid);
+	if (params->size >= 5)
+		GET_ARG(params, 4, t_int, &grid);
 
 	/* This is the wildmenu! We may render it differently */
 	if (grid == -1)
