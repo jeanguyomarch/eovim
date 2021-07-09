@@ -19,8 +19,7 @@ jobs:
 
     - name: install-deps
       run: |
-        sudo add-apt-repository --yes ppa:niko2040/e19
-        sudo apt-get install --yes libefl-dev
+        sudo apt-get install --yes libefl-all-dev
         sudo apt-get install --yes libmsgpack-dev
         sudo apt-get install --yes cmake
         sudo apt-get install --yes build-essential
