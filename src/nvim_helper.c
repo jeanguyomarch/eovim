@@ -32,11 +32,57 @@ static inline Eina_Bool parse_config_boolean(const msgpack_object *const res)
 	return (res->type == MSGPACK_OBJECT_POSITIVE_INTEGER) && (res->via.u64 != UINT64_C(0));
 }
 
-static void parse_theme_config(struct nvim *const nvim EINA_UNUSED, void *const data,
+static inline double parse_config_double(const msgpack_object *const res)
+{
+	if (res->type == MSGPACK_OBJECT_FLOAT32 || res->type == MSGPACK_OBJECT_FLOAT64)
+		return res->via.f64;
+	return NAN;
+}
+
+static void parse_theme_config_bool(struct nvim *const nvim EINA_UNUSED, void *const data,
 			       const msgpack_object *const result)
 {
 	Eina_Bool *const param = data;
 	*param = parse_config_boolean(result);
+}
+
+static void parse_theme_config_double(struct nvim *const nvim EINA_UNUSED, void *const data,
+			       const msgpack_object *const result)
+{
+	double *const param = data;
+	*param = parse_config_double(result);
+	/* TODO: make nvim_api_get_var() pass the var name to this function for better error handling */
+	const int fp_type = fpclassify(*param);
+	if (fp_type != FP_ZERO && fp_type != FP_NORMAL)
+		ERR("Invalid floating-point parameter");
+}
+
+static void parse_theme_config_animation_style(struct nvim *const nvim EINA_UNUSED, void *const data,
+			       const msgpack_object *const result)
+{
+	Ecore_Pos_Map *const param = data;
+	// TODO better error message (need exact var name as parameter)
+	if (result->type != MSGPACK_OBJECT_STR) {
+		ERR("Invalid parameter for cursor duration. Using linear as a default.");
+		*param = ECORE_POS_MAP_LINEAR;
+		return;
+	}
+	const msgpack_object_str *const str = &result->via.str;
+	assert(str->ptr);
+
+	if (!strncmp(str->ptr, "linear", str->size))
+		*param = ECORE_POS_MAP_LINEAR;
+	else if (!strncmp(str->ptr, "accelerate", str->size))
+		*param = ECORE_POS_MAP_ACCELERATE;
+	else if (!strncmp(str->ptr, "decelerate", str->size))
+		*param = ECORE_POS_MAP_DECELERATE;
+	else if (!strncmp(str->ptr, "sinusoidal", str->size))
+		*param = ECORE_POS_MAP_SINUSOIDAL;
+	else {
+
+		ERR("Invalid parameter for cursor duration. Using linear as a default.");
+		*param = ECORE_POS_MAP_LINEAR;
+	}
 }
 
 static void parse_ext_config(struct nvim *const nvim, void *const data,
@@ -74,15 +120,21 @@ Eina_Bool nvim_helper_config_reload(struct nvim *const nvim)
 	struct gui *const gui = &nvim->gui;
 
 	/* Retrive theme-oriented configuration */
-	nvim_api_get_var(nvim, "eovim_theme_bell_enabled", &parse_theme_config,
+	nvim_api_get_var(nvim, "eovim_theme_bell_enabled", &parse_theme_config_bool,
 			 &gui->theme.bell_enabled);
-	nvim_api_get_var(nvim, "eovim_theme_react_to_key_presses", &parse_theme_config,
+	nvim_api_get_var(nvim, "eovim_theme_react_to_key_presses", &parse_theme_config_bool,
 			 &gui->theme.react_to_key_presses);
-	nvim_api_get_var(nvim, "eovim_theme_react_to_caps_lock", &parse_theme_config,
+	nvim_api_get_var(nvim, "eovim_theme_react_to_caps_lock", &parse_theme_config_bool,
 			 &gui->theme.react_to_caps_lock);
 
-	nvim_api_get_var(nvim, "eovim_cursor_cuts_ligatures", &parse_theme_config,
+	nvim_api_get_var(nvim, "eovim_cursor_cuts_ligatures", &parse_theme_config_bool,
 			 &gui->theme.cursor_cuts_ligatures);
+	nvim_api_get_var(nvim, "eovim_cursor_animated", &parse_theme_config_bool,
+			 &gui->theme.cursor_animated);
+	nvim_api_get_var(nvim, "eovim_cursor_animation_duration", &parse_theme_config_double,
+			 &gui->theme.cursor_animation_duration);
+	nvim_api_get_var(nvim, "eovim_cursor_animation_style", &parse_theme_config_animation_style,
+			 &gui->theme.cursor_animation_style);
 
 	nvim_api_get_var(nvim, "eovim_ext_tabline", &parse_ext_config, "ext_tabline");
 	nvim_api_get_var(nvim, "eovim_ext_popupmenu", &parse_ext_config, "ext_popupmenu");
