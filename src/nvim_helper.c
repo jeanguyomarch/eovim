@@ -40,14 +40,14 @@ static inline double parse_config_double(const msgpack_object *const res)
 }
 
 static void parse_theme_config_bool(struct nvim *const nvim EINA_UNUSED, void *const data,
-			       const msgpack_object *const result)
+				    const msgpack_object *const result)
 {
 	Eina_Bool *const param = data;
 	*param = parse_config_boolean(result);
 }
 
 static void parse_theme_config_double(struct nvim *const nvim EINA_UNUSED, void *const data,
-			       const msgpack_object *const result)
+				      const msgpack_object *const result)
 {
 	double *const param = data;
 	*param = parse_config_double(result);
@@ -57,8 +57,8 @@ static void parse_theme_config_double(struct nvim *const nvim EINA_UNUSED, void 
 		ERR("Invalid floating-point parameter");
 }
 
-static void parse_theme_config_animation_style(struct nvim *const nvim EINA_UNUSED, void *const data,
-			       const msgpack_object *const result)
+static void parse_theme_config_animation_style(struct nvim *const nvim EINA_UNUSED,
+					       void *const data, const msgpack_object *const result)
 {
 	Ecore_Pos_Map *const param = data;
 	// TODO better error message (need exact var name as parameter)
@@ -79,7 +79,6 @@ static void parse_theme_config_animation_style(struct nvim *const nvim EINA_UNUS
 	else if (!strncmp(str->ptr, "sinusoidal", str->size))
 		*param = ECORE_POS_MAP_SINUSOIDAL;
 	else {
-
 		ERR("Invalid parameter for cursor duration. Using linear as a default.");
 		*param = ECORE_POS_MAP_LINEAR;
 	}

@@ -181,11 +181,11 @@ static Eina_Bool _style_foreach(const Eina_Hash *const hash EINA_UNUSED, const v
 
 	if (style->reverse) {
 		const uint32_t fg = (style->bg_color.value == COLOR_DEFAULT) ?
-					    sd->style.default_bg.value :
-					    style->bg_color.value;
+						  sd->style.default_bg.value :
+						  style->bg_color.value;
 		const uint32_t bg = (style->fg_color.value == COLOR_DEFAULT) ?
-					    sd->style.default_fg.value :
-					    style->fg_color.value;
+						  sd->style.default_fg.value :
+						  style->fg_color.value;
 		eina_strbuf_append_printf(buf,
 					  " color=#%06" PRIx32
 					  " backing=on backing_color=#%06" PRIx32,
@@ -214,7 +214,7 @@ static Eina_Bool _style_foreach(const Eina_Hash *const hash EINA_UNUSED, const v
 	}
 
 	const uint32_t sp = (style->sp_color.value == COLOR_DEFAULT) ? sd->style.default_sp.value :
-								       style->sp_color.value;
+									     style->sp_color.value;
 	if (style->underline)
 		eina_strbuf_append_printf(buf,
 					  " underline=on"
