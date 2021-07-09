@@ -4,11 +4,11 @@
 
 name: coverity-scan
 
-# We only run this when something is pushed on master
+# We only run this when something is pushed on main
 # We don't require this for each PR, because Coverity limits its service
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   latest:
