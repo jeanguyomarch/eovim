@@ -14,7 +14,47 @@ struct cursor {
 	Evas_Object *edje;
 	struct gui *gui;
 	const struct mode *mode;
+
+	struct {
+		int start_x;
+		int start_y;
+		int start_w;
+		int start_h;
+		int end_x;
+		int end_y;
+		int end_w;
+		int end_h;
+	} anim;
 };
+
+static Eina_Bool _animate_cursor_cb(void *const data, const double pos)
+{
+	struct gui *const gui = data;
+	struct cursor *const cur = gui->cursor;
+	const int x = cur->anim.start_x + (int)((double)(cur->anim.end_x - cur->anim.start_x) * pos);
+	const int y = cur->anim.start_y + (int)((double)(cur->anim.end_y - cur->anim.start_y) * pos);
+	const int w = cur->anim.start_w + (int)((double)(cur->anim.end_w - cur->anim.start_w) * pos);
+	const int h = cur->anim.start_h + (int)((double)(cur->anim.end_h - cur->anim.start_h) * pos);
+	evas_object_move(cur->edje, x, y);
+	evas_object_resize(cur->edje, w, h);
+	return ECORE_CALLBACK_RENEW;
+}
+
+static void cursor_update(struct gui *const gui, const int to_x, const int to_y, const int to_w, const int to_h)
+{
+	struct cursor *const cur = gui->cursor;
+	if (gui->theme.cursor_animated) {
+		evas_object_geometry_get(cur->edje, &cur->anim.start_x, &cur->anim.start_y, &cur->anim.start_w, &cur->anim.start_h);
+		cur->anim.end_x = to_x;
+		cur->anim.end_y = to_y;
+		cur->anim.end_w = to_w;
+		cur->anim.end_h = to_h;
+		ecore_animator_timeline_add(gui->theme.cursor_animation_duration, &_animate_cursor_cb, gui);
+	} else {
+		evas_object_move(cur->edje, to_x, to_y);
+		evas_object_resize(cur->edje, to_w, to_h);
+	}
+}
 
 void gui_cursor_calc(struct gui *const gui, const int x, const int y, const int w, const int h)
 {
@@ -29,25 +69,21 @@ void gui_cursor_calc(struct gui *const gui, const int x, const int y, const int 
 		int h2 = (h * (int)cur->mode->cell_percentage) / 100;
 		if (h2 <= 0)
 			h2 = 1; /* We don't want an invisible cursor */
-
-		evas_object_move(cur->edje, x, y + h - h2);
-		evas_object_resize(cur->edje, w, h2);
+		cursor_update(gui, x, y + h - h2, w, h2);
 	} break;
 
 	case CURSOR_SHAPE_VERTICAL: {
 		/* Place the cursor at (x,y) and set its width to mode->cell_percentage
 		 * of a cell's width */
-		evas_object_move(cur->edje, x, y);
 		int w2 = (w * (int)cur->mode->cell_percentage) / 100;
 		if (w2 <= 0)
 			w2 = 1; /* We don't want an invisible cursor */
-		evas_object_resize(cur->edje, w2, h);
+		cursor_update(gui, x, y, w2, h);
 	} break;
 
 	case CURSOR_SHAPE_BLOCK: /* Fallthrough */
 	default:
-		evas_object_move(cur->edje, x, y);
-		evas_object_resize(cur->edje, w, h);
+		cursor_update(gui, x, y, w, h);
 		break;
 	}
 }

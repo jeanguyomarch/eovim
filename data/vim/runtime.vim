@@ -16,6 +16,11 @@ let g:eovim_theme_react_to_key_presses = 1
 let g:eovim_theme_react_to_caps_lock = 1
 let g:eovim_cursor_cuts_ligatures = 1
 
+let g:eovim_cursor_animated = 1
+let g:eovim_cursor_animation_duration = 0.05
+let g:eovim_cursor_animation_style = 'accelerate'
+
+
 let g:eovim_theme_completion_styles = {
 	\ 'default': 'font_weight=bold color=#ffffff',
 	\ 'm': 'color=#ff00ff',
