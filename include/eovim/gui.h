@@ -33,6 +33,9 @@ struct gui {
 		Eina_Bool react_to_key_presses;
 		Eina_Bool react_to_caps_lock;
 		Eina_Bool cursor_cuts_ligatures;
+		Eina_Bool cursor_animated;
+		double cursor_animation_duration;
+		Ecore_Pos_Map cursor_animation_style;
 	} theme;
 
 	struct nvim *nvim;
