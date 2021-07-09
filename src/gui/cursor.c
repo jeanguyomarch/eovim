@@ -5,9 +5,10 @@
 #include <eovim/main.h>
 #include "gui_private.h"
 
-enum { THEME_MSG_BLINK_SET = 0,
-       THEME_MSG_COLOR_SET = 1,
-       THEME_MSG_MAY_BLINK_SET = 2,
+enum {
+	THEME_MSG_BLINK_SET = 0,
+	THEME_MSG_COLOR_SET = 1,
+	THEME_MSG_MAY_BLINK_SET = 2,
 };
 
 struct cursor {
@@ -31,25 +32,32 @@ static Eina_Bool _animate_cursor_cb(void *const data, const double pos)
 {
 	struct gui *const gui = data;
 	struct cursor *const cur = gui->cursor;
-	const int x = cur->anim.start_x + (int)((double)(cur->anim.end_x - cur->anim.start_x) * pos);
-	const int y = cur->anim.start_y + (int)((double)(cur->anim.end_y - cur->anim.start_y) * pos);
-	const int w = cur->anim.start_w + (int)((double)(cur->anim.end_w - cur->anim.start_w) * pos);
-	const int h = cur->anim.start_h + (int)((double)(cur->anim.end_h - cur->anim.start_h) * pos);
+	const int x =
+		cur->anim.start_x + (int)((double)(cur->anim.end_x - cur->anim.start_x) * pos);
+	const int y =
+		cur->anim.start_y + (int)((double)(cur->anim.end_y - cur->anim.start_y) * pos);
+	const int w =
+		cur->anim.start_w + (int)((double)(cur->anim.end_w - cur->anim.start_w) * pos);
+	const int h =
+		cur->anim.start_h + (int)((double)(cur->anim.end_h - cur->anim.start_h) * pos);
 	evas_object_move(cur->edje, x, y);
 	evas_object_resize(cur->edje, w, h);
 	return ECORE_CALLBACK_RENEW;
 }
 
-static void cursor_update(struct gui *const gui, const int to_x, const int to_y, const int to_w, const int to_h)
+static void cursor_update(struct gui *const gui, const int to_x, const int to_y, const int to_w,
+			  const int to_h)
 {
 	struct cursor *const cur = gui->cursor;
 	if (gui->theme.cursor_animated) {
-		evas_object_geometry_get(cur->edje, &cur->anim.start_x, &cur->anim.start_y, &cur->anim.start_w, &cur->anim.start_h);
+		evas_object_geometry_get(cur->edje, &cur->anim.start_x, &cur->anim.start_y,
+					 &cur->anim.start_w, &cur->anim.start_h);
 		cur->anim.end_x = to_x;
 		cur->anim.end_y = to_y;
 		cur->anim.end_w = to_w;
 		cur->anim.end_h = to_h;
-		ecore_animator_timeline_add(gui->theme.cursor_animation_duration, &_animate_cursor_cb, gui);
+		ecore_animator_timeline_add(gui->theme.cursor_animation_duration,
+					    &_animate_cursor_cb, gui);
 	} else {
 		evas_object_move(cur->edje, to_x, to_y);
 		evas_object_resize(cur->edje, to_w, to_h);
