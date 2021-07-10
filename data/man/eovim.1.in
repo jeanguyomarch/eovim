@@ -1,4 +1,4 @@
-.TH EOVIM "1" "May 2020" "eovim @PROJECT_VERSION@" "User Commands"
+.TH EOVIM "1" "Jul 2021" "eovim @PROJECT_VERSION@" "User Commands"
 
 .SH NAME
 \fBeovim\fR \- EFL Code Editor using Neovim
@@ -40,16 +40,9 @@ Show Eovim's version
 Additionnaly, eovim forwards options it has no knowledge of to Neovim.
 Run \fBnvim \-\-help\fR to learn more about Neovim's options.
 
-.SH VIM RUNTIME
+.SH NVIM RUNTIME
 .TP
-\fBeovim\fR adds its own overlay to the Vim runtime provided by Neovim:
-.IP
-\fBfunction\fR \fIEovim(...)\fR
-The communication channel for neovim to send events to Eovim.
-.IP
-\fBautocmd group\fR \fIEovim\fR
-Eovim creates this autocmd group to handle the autocmd User events
-\fIEovimReady\fR, \fIEovimCapsLockOn\fR and \fIEovimCapsLockOff\fR.
+\fBeovim\fR adds its own overlay to the Vim runtime provided by Neovim. Documentation is available within \fBeovim\fR after running the vim command \fI:help eovim\fR.
 
 
 .SH AUTHORS

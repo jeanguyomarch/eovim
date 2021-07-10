@@ -1,0 +1,145 @@
+*eovim* Enlightened GUI client for Neovim
+
+>
+              ________                   _
+             |_   __  |                 (_)
+               | |_ \_|  .--.   _   __  __   _ .--..--.
+               |  _| _ / .'`\ \[ \ [  ][  | [ `.-. .-. |
+              _| |__/ || \__. | \ \/ /  | |  | | | | | |
+             |________| '.__.'   \__/  [___][___||__||__]
+<
+
+
+================================================================================
+CONTENTS                                                        *eovim-contents*
+
+            1. Wiki Documentation....................|eovim-wiki|
+            2. Change the Font.......................|eovim-font|
+            3. Detecting Eovim in init.vim...........|eovim-running|
+            4. Theme configuration...................|eovim-theme|
+            4. Cursor options........................|eovim-cursor|
+
+
+================================================================================
+Wiki Documentation                                                  *eovim-wiki*
+
+Eovim's documentation is primarily written in its Wiki, which is hosted on
+GitHub. It comes along with nice illustrations. This manual page only
+summarizes how Eovim is configured.  Please visit the Wiki for details:
+  https://github.com/jeanguyomarch/eovim/wiki
+
+
+================================================================================
+Change the Font                                                     *eovim-font*
+
+Eovim enables to change the font through the 'guifont' option. The format is as
+follows:
+
+>
+  set guifont=FontName-FontSize[:ExtraOptions]
+<
+
+Where `FontName` and `FontSize` respectively are the name of the font and its
+size (in pt). Note that if `FontName` has spaces, they must be escaped with a
+backslash character.
+
+`ExtraOptions` are *fontconfig options*. Please consult |eovim-wiki| for details.
+
+Below are several examples to use *Fira Code* as the main font, with a size of 14 pts.
+
+>
+  set guifont=Fira\ Code-14
+  set guifont=Fira\ Code-14:style=Bold
+  set guifont=Fira\ Code-14:style=Light
+  set guifont=Fira\ Code-14:style=Medium
+  set guifont=Fira\ Code-14:style=Retina
+<
+
+Note that if you don't specify a font, Eovim tries to use a default one.
+
+
+
+
+================================================================================
+Detecting Eovim in init.vim                                      *eovim-running*
+
+When Eovim starts, and before any vim script file is loaded, it sets the
+variable `g:eovim_running` to an integer value (which content is unspecified).
+Its sole purpose is to enable users to detect whether Eovim is running or not,
+directly from vim scripts.
+
+>
+  if exists("g:eovim_running")
+    " write eovim-specific configuration
+  endif
+<
+
+
+================================================================================
+Theme Configuration                                                *eovim-theme*
+
+Eovim uses the EFL theme engine (edje). It is partially controlled through some
+vim script variables.
+
+
+Enable (1) or disable (0) the visual bell:
+
+>
+  let g:eovim_theme_bell_enabled = 0|1
+<
+
+
+Enable (1) or disable (0) reaction to key presses:
+
+>
+  let g:eovim_theme_react_to_key_presses = 0|1
+<
+
+
+Enable (1) or disable (0) reaction to caps lock:
+
+>
+  let g:eovim_theme_react_to_caps_lock = 0|1
+<
+
+
+Changing the completion styles. Please see |eovim-wiki| for details.
+
+>
+  let g:eovim_theme_completion_styles = {
+	\ 'default': 'font_weight=bold color=#ffffff',
+	\ 'm': 'color=#ff00ff',
+	\ 'v': 'color=#00ffff',
+	\ 'f': 'color=#ffff00',
+	\ 't': 'color=#0000ff',
+	\ 'd': 'color=#0000ff',
+	\}
+<
+
+
+================================================================================
+Cursor Options                                                    *eovim-cursor*
+
+The cursor can be configured separately from the theme (|eovim-theme|).
+
+Enable (1) or disable (0) the animations:
+
+>
+  let g:eovim_cursor_animated = 0|1
+<
+
+
+Configure the animation duration (in seconds)
+
+>
+  let g:eovim_cursor_animation_duration = 0.05
+<
+
+Change the cursor animation style
+
+>
+  let g:eovim_cursor_animation_style = 'linear'
+  let g:eovim_cursor_animation_style = 'accelerate'
+  let g:eovim_cursor_animation_style = 'decelerate'
+  let g:eovim_cursor_animation_style = 'sinusoidal'
+<

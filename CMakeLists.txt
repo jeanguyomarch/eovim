@@ -135,6 +135,11 @@ install(FILES
    "${CMAKE_SOURCE_DIR}/data/vim/runtime.vim"
    DESTINATION "share/${CMAKE_PROJECT_NAME}/vim"
 )
+install(FILES
+   "${CMAKE_SOURCE_DIR}/data/vim/doc/eovim.txt"
+   "${CMAKE_SOURCE_DIR}/data/vim/doc/tags"
+   DESTINATION "share/${CMAKE_PROJECT_NAME}/vim/doc"
+)
 install(
    FILES "${CMAKE_SOURCE_DIR}/data/desktop/eovim.desktop"
    DESTINATION "share/applications"
