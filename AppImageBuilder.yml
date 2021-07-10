@@ -10,7 +10,7 @@ AppDir:
     exec_args: $@
   runtime:
     env:
-      APPDIR_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/ecore_evas/engines/x/v-1.24:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu/evas/modules/engines/gl_x11/v-1.24:/usr/lib/x86_64-linux-gnu/ecore/system/upower/v-1.24:/usr/lib/x86_64-linux-gnu/ecore_imf/modules/xim/v-1.24:/usr/lib/x86_64-linux-gnu/eeze/modules/sensor/udev/v-1.24:/usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu/edje/modules/elm/v-1.24:/usr/lib/x86_64-linux-gnu/eeze/modules/sensor/fake/v-1.24:/usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu/elementary/modules/web/none/v-1.24:/usr/lib/x86_64-linux-gnu/evas/modules/engines/gl_generic/v-1.24:/usr/lib/x86_64-linux-gnu/ecore/system/systemd/v-1.24:/usr/lib/x86_64-linux-gnu/elementary/modules/prefs/v-1.24
+      APPDIR_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/ecore_evas/engines/x/v-1.23:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu/evas/modules/engines/gl_x11/v-1.23:/usr/lib/x86_64-linux-gnu/ecore/system/upower/v-1.23:/usr/lib/x86_64-linux-gnu/ecore_imf/modules/xim/v-1.23:/usr/lib/x86_64-linux-gnu/eeze/modules/sensor/udev/v-1.23:/usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu/edje/modules/elm/v-1.23:/usr/lib/x86_64-linux-gnu/eeze/modules/sensor/fake/v-1.23:/usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu/elementary/modules/web/none/v-1.23:/usr/lib/x86_64-linux-gnu/evas/modules/engines/gl_generic/v-1.23:/usr/lib/x86_64-linux-gnu/ecore/system/systemd/v-1.23:/usr/lib/x86_64-linux-gnu/elementary/modules/prefs/v-1.23
 
   apt:
     arch: amd64
