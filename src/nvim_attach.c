@@ -200,6 +200,7 @@ static void _nvim_runtime_load(struct nvim *const nvim)
 	/* Compose the path to the runtime file */
 	const char *const dir = (main_in_tree_is()) ? SOURCE_DATA_DIR : elm_app_data_dir_get();
 	eina_strbuf_append_printf(buf, "%s/vim/runtime.vim", dir);
+	eina_strbuf_append_printf(buf, "| let &rtp.=',%s/vim'", dir);
 
 	/* Send it to neovim */
 	nvim_api_command(nvim, eina_strbuf_string_get(buf),
