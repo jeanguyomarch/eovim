@@ -47,12 +47,8 @@ jobs:
         make DESTDIR="$src_dir/AppDir" install
 
     - name: generate AppImage
-      uses: AppImageCrafters/build-appimage-action@master
-      env:
-        PACKAGE_VERSION: nightly
-        UPDATE_INFO: gh-releases-zsync|jeanguyomarch|eovim|nightly|*.AppImage.zsync
-      with:
-        recipe: AppImageBuilder.yml
+      run: |
+        env LIBDIR=/usr/lib/x86_64-linux-gnu sh -x scripts/make-appimage.sh AppDir Eovim.appimage
 
     - name: upload artifacts
       uses: actions/upload-artifact@v2
