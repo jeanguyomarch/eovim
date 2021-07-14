@@ -126,8 +126,6 @@ install(
    DESTINATION "share/${CMAKE_PROJECT_NAME}/themes"
 )
 install(FILES
-   "${CMAKE_SOURCE_DIR}/data/images/led_dark.png"
-   "${CMAKE_SOURCE_DIR}/data/images/led_light.png"
    "${CMAKE_SOURCE_DIR}/data/images/neovim.png"
    DESTINATION "share/${CMAKE_PROJECT_NAME}/images"
 )
