@@ -27,6 +27,15 @@ club!  You are more than welcome to contribute. The file
 
 # Installation
 
+From 0.2.0, Eovim ships [AppImage][9] files with each release. To test stable
+versions, go to the [releases page][8] and download the `Eovim.AppImage`
+attached with the release you want to try out. You may need to make it
+executable (`chmod u+x Eovim.AppImage`) before being able to run it.  See
+[AppImage Documentation][9] for details.
+
+
+# Building from Sources
+
 Eovim requires the following components to be installed on your system before
 you can start hacking around. See [the Wiki][6] for details.
 
@@ -88,7 +97,7 @@ logo. Eovim's logo should be understood as a tribute to Neovim.
 [5]: https://cmake.org/
 [6]: https://github.com/jeanguyomarch/eovim/wiki
 [7]: https://raw.githubusercontent.com/neovim/neovim.github.io/master/logos/neovim-logo-600x173.png
-
-
+[8]: https://github.com/jeanguyomarch/eovim/releases
+[9]: https://appimage.org/
 [10]: https://github.com/jeanguyomarch/eovim/issues/new
 [11]: https://github.com/jeanguyomarch/eovim/wiki/Developing-Eovim
