@@ -72,20 +72,8 @@ done
 #==============================================================================#
 
 EFL_DATA_DIRS="
-ecore
-ecore_imf
-ecore_x
-edje
-eeze
-efreet
 elementary
-elua
-embryo
-emotion
-eo
-eolian
 ethumb
-ethumb_client
 evas
 "
 
