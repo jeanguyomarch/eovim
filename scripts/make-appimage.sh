@@ -78,3 +78,5 @@ fi
 export OUTPUT
 export UPDATE_INFORMATION='gh-releases-zsync|jeanguyomarch|eovim|nightly|*.AppImage.zsync'
 ./"$LINUXDEPLOY" --appdir "$APPDIR" -d "$APPDIR/usr/share/applications/eovim.desktop" -i "$APPDIR/usr/share/icons/eovim.png" --output appimage
+
+ls *
