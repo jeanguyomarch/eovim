@@ -6,6 +6,10 @@ if [ "$LIBDIR" = "" ]; then
   LIBDIR="/usr/lib"
 fi
 
+if [ "$SHAREDIR" = "" ]; then
+  SHAREDIR="/usr/share"
+fi
+
 set -u
 
 if [ $# -ne 2 ]; then
@@ -21,13 +25,12 @@ if [ ! -d "$APPDIR" ]; then
   exit 1
 fi
 
+EFL_VERSION=$(pkg-config --modversion elementary)
+echo "Found EFL version $EFL_VERSION"
+
 #==============================================================================#
 #                            Package the EFL Modules                           #
 #==============================================================================#
-
-EFL_VERSION=$(pkg-config --modversion elementary)
-
-echo "Found EFL version $EFL_VERSION"
 
 EFL_MODULES="
 ecore
@@ -63,6 +66,38 @@ for efl_mod in $EFL_MODULES; do
   cd - > /dev/null
 done
 
+
+#==============================================================================#
+#                             Package the EFL data                             #
+#==============================================================================#
+
+EFL_DATA_DIRS="
+ecore
+ecore_imf
+ecore_x
+edje
+eeze
+efreet
+elementary
+elua
+embryo
+emotion
+eo
+eolian
+ethumb
+ethumb_client
+evas
+"
+
+for efl_data_dir in $EFL_DATA_DIRS; do
+  dir="$SHAREDIR/$efl_data_dir"
+  if [ ! -d "$dir" ]; then
+    echo "E: failed to find '$dir'. You may change the data directory prefix by setting the environment variable 'SHAREDIR'" 1>&2
+    exit 1
+  fi
+  rm -rf "$APPDIR/usr/share/$efl_data_dir"
+  cp -r "$dir" "$APPDIR/usr/share/$efl_data_dir"
+done
 
 #==============================================================================#
 #                                  LinuxDeploy                                 #
