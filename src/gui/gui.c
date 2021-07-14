@@ -59,6 +59,10 @@ Eina_Bool gui_add(struct gui *gui, struct nvim *nvim)
 
 	/* Window setup */
 	gui->win = elm_win_util_standard_add("eovim", "Eovim");
+	if (!gui->win) {
+		CRI("Failed to create window");
+		goto fail;
+	}
 	elm_win_autodel_set(gui->win, EINA_TRUE);
 	evas_object_smart_callback_add(gui->win, "delete,request", _win_close_cb, nvim);
 
