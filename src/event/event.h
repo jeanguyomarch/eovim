@@ -119,4 +119,8 @@ Eina_Bool nvim_event_popupmenu_select(struct nvim *nvim, const msgpack_object_ar
 
 Eina_Bool nvim_event_eovim_reload(struct nvim *nvim, const msgpack_object_array *args);
 
+/*****************************************************************************/
+
+Eina_Bool nvim_event_tabline_update(struct nvim *nvim, const msgpack_object_array *args);
+
 #endif /* ! EOVIM_EVENT_H__ */

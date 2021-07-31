@@ -84,6 +84,7 @@ add_executable(eovim
    "${SRC_DIR}/event/mode.c"
    "${SRC_DIR}/event/cmdline.c"
    "${SRC_DIR}/event/popupmenu.c"
+   "${SRC_DIR}/event/tabline.c"
    "${SRC_DIR}/event/eovim.c"
    "${SRC_DIR}/event/linegrid.c"
    "${SRC_DIR}/event/util.c"
