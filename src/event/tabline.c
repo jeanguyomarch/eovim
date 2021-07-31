@@ -36,15 +36,19 @@ static Eina_Bool _tab_index_get(const msgpack_object *obj, uint8_t *index)
 Eina_Bool nvim_event_tabline_update(struct nvim *nvim, const msgpack_object_array *args)
 {
 	/*
-    * The tabline update message accepts an array of two arguments
-    * - the active tab of type EXT:2 (POSITIVE INT).
-    * - the complete list of tabs, with a key "tab" which is the index
-    *   and a key "name" which is the title of the tab
+    * The tabline update message accepts an array of four arguments
+    * 1. the active tab of type EXT:2 (POSITIVE INT).
+    * 2. the complete list of tabs, with a key "tab" which is the index
+    *    and a key "name" which is the title of the tab
+		* 3. the active buffer
+		* 4. the list of buffers
+		*
+		* We currently don't care of 3. and 4.
     */
 	//   [{"tab"=>(ext: 2)"\x02", "name"=>"b"}, {"tab"=>(ext: 2)"\x01", "name"=>"a"}]
 	CHECK_BASE_ARGS_COUNT(args, ==, 1);
 	ARRAY_OF_ARGS_EXTRACT(args, params);
-	CHECK_ARGS_COUNT(params, ==, 2);
+	CHECK_ARGS_COUNT(params, >=, 2);
 
 	struct gui *const gui = &nvim->gui;
 
@@ -52,7 +56,10 @@ Eina_Bool nvim_event_tabline_update(struct nvim *nvim, const msgpack_object_arra
 	const msgpack_object *const o_sel = &(params->ptr[0]);
 	const uint8_t current = TAB_INDEX_GET(o_sel);
 
-	ARRAY_OF_ARGS_EXTRACT(params, tabs);
+	const msgpack_object_array *const tabs = array_of_args_extract(params, 1);
+	if (EINA_UNLIKELY(!tabs)) {
+		return EINA_FALSE;
+	}
 
 	gui_tabs_reset(gui);
 
