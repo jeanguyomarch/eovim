@@ -171,6 +171,26 @@ void gui_font_set(struct gui *const gui, const char *const font_name, const unsi
 	}
 }
 
+void gui_font_size_update(struct gui *const gui, const long new_size)
+{
+	const long old_size = (long)gui->font.size;
+	const long size = old_size + new_size;
+
+	/* Make sure the size is somewhat meaningful */
+	if (EINA_UNLIKELY(size <= 0l || size >= INT_MAX)) {
+		ERR("Cannot update font size from %li to %li", old_size, size);
+		return;
+	}
+
+	/* Update the font size, if needed */
+	const unsigned int size_u = (unsigned)size;
+	DBG("Updating font size to '%u'", size_u);
+	if (size_u != gui->font.size) {
+		gui->font.size = size_u;
+		termview_font_set(gui->termview, gui->font.name, gui->font.size);
+	}
+}
+
 void gui_default_colors_set(struct gui *const gui, const union color fg, const union color bg,
 			    const union color sp)
 {
