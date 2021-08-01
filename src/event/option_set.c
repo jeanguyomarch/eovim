@@ -68,6 +68,14 @@ static Eina_Bool _guifont_set(struct nvim *const nvim, const msgpack_object *con
 	 *
 	 * We will pass to the textblock as the font name: font_name + fontconfig styles
 	 * The font size is silently extracted.
+	 *
+	 *
+	 * Additionally, we provide support for:
+	 *  1. set guifont=+N
+	 *  2. set guifont=-N
+	 *
+	 * where N is a positive integer. It updates the current font by adding (1.) or
+	 * subtracting (2.) N points to the current size.
 	 */
 	struct gui *const gui = &nvim->gui;
 	const msgpack_object_str *const val = MPACK_STRING_OBJ_EXTRACT(value, goto fail);
@@ -75,11 +83,25 @@ static Eina_Bool _guifont_set(struct nvim *const nvim, const msgpack_object *con
 		return EINA_TRUE;
 	}
 
-	/* Havind a NUL-terminating string would just be so much better */
+	/* Having a NUL-terminating string would just be so much better */
 	char *const str = strndup(val->ptr, val->size);
 	if (EINA_UNLIKELY(!str)) {
 		CRI("Alloc failed");
 		goto fail;
+	}
+
+	/* Are we using the +/- form (the one that just updates the font size)? */
+	if ((str[0] == '+') || (str[0] == '-')) {
+		char *end = NULL;
+		const long int fontsize = strtol(str, &end, 10);
+		if (*end != '\0') {
+			/* TODO: real message */
+			ERR("Invalid guifont parameter '%s'", str);
+			goto clean;
+		}
+		free(str);
+		gui_font_size_update(gui, fontsize);
+		return EINA_TRUE;
 	}
 
 	/* We are now trying to find a pattern such as: FontName-FontSize:Extra */

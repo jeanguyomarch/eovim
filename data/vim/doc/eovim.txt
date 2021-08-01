@@ -58,6 +58,13 @@ Below are several examples to use *Fira Code* as the main font, with a size of 1
 Note that if you don't specify a font, Eovim tries to use a default one.
 
 
+Additionally, you can increase or decrease the size of the current font, thanks
+to an alternate syntax to `guifont`:
+
+>
+  set guifont=+N " <-- Increase the font size by N points
+  set guifont=-N " <-- Decrease the font size by N points
+<
 
 
 ================================================================================

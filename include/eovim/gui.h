@@ -99,6 +99,7 @@ void gui_cmdline_cursor_pos_set(struct gui *gui, size_t pos);
 
 void gui_title_set(struct gui *gui, const char *title);
 void gui_font_set(struct gui *gui, const char *font_name, unsigned int font_size);
+void gui_font_size_update(struct gui *gui, long new_size);
 
 void gui_tabs_reset(struct gui *gui);
 void gui_tabs_add(struct gui *gui, const char *name, unsigned int id, Eina_Bool active);
