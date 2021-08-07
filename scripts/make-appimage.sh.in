@@ -83,8 +83,26 @@ for efl_data_dir in $EFL_DATA_DIRS; do
     echo "E: failed to find '$dir'." 1>&2
     exit 1
   fi
-  rm -rf "$APPDIR/$PREFIX/$SHAREDIR/$efl_data_dir"
-  cp -r "$dir" "$APPDIR/$PREFIX/$SHAREDIR/$efl_data_dir"
+  rm -rf "$APPDIR/$dir"
+  cp -r "$dir" "$APPDIR/$dir"
+done
+
+# Create empty files at paths `share/<name>/checkme`
+# This is used by eina_prefix. It seems that Debian does not keep them, and this
+# causes spurious warnings.
+
+EFL_MAGIC_CHECKME_DIRS="
+ecore
+ecore_con
+eeze
+evas
+ecore_imf
+"
+
+for checkme_dir in $EFL_MAGIC_CHECKME_DIRS; do
+  dest_dir="$APPDIR/$PREFIX/$SHAREDIR/$checkme_dir"
+  mkdir -p "$dest_dir"
+  touch "$dest_dir/checkme"
 done
 
 #==============================================================================#
