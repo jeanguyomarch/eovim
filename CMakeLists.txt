@@ -107,7 +107,7 @@ target_link_libraries(eovim
    ${MSGPACK_LIBRARIES}
 )
 add_dependencies(eovim themes)
-add_nazi_compiler_warnings(eovim)
+set_compiler_warnings(eovim)
 target_compile_definitions(eovim
    PRIVATE
    PACKAGE_BIN_DIR=\"${CMAKE_INSTALL_PREFIX}/bin\"
