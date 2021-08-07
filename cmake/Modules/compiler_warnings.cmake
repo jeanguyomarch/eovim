@@ -1,4 +1,4 @@
-function (add_nazi_compiler_warnings Target)
+function (set_compiler_warnings Target)
   if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
       list(APPEND warnings
         -Weverything
