@@ -18,6 +18,7 @@ option(WITH_WERROR "Treat compiler warnings as errors" OFF)
 
 include(compiler_warnings)
 include(git_commit)
+include(GNUInstallDirs)
 
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(THEMES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data/themes")
@@ -29,6 +30,11 @@ file(MAKE_DIRECTORY "${BUILD_INCLUDE_DIR}/eovim")
 configure_file(
    "${CMAKE_SOURCE_DIR}/cmake/Modules/version.h.in"
    "${BUILD_INCLUDE_DIR}/eovim/version.h"
+   @ONLY)
+
+configure_file(
+   "${CMAKE_SOURCE_DIR}/scripts/make-appimage.sh.in"
+   "${CMAKE_BINARY_DIR}/make-appimage.sh"
    @ONLY)
 
 # CPack configuration
@@ -108,14 +114,14 @@ target_link_libraries(eovim
    ${MSGPACK_LIBRARIES}
 )
 add_dependencies(eovim themes)
-add_nazi_compiler_warnings(eovim)
+set_compiler_warnings(eovim)
 target_compile_definitions(eovim
    PRIVATE
-   PACKAGE_BIN_DIR=\"${CMAKE_INSTALL_PREFIX}/bin\"
-   PACKAGE_LIB_DIR=\"${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}\"
-   PACKAGE_DATA_DIR=\"${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}\"
-   SOURCE_DATA_DIR=\"${CMAKE_SOURCE_DIR}/data\"
+   PACKAGE_BIN_DIR=\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
+   PACKAGE_LIB_DIR=\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\"
+   PACKAGE_DATA_DIR=\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}/${CMAKE_PROJECT_NAME}\"
    BUILD_DATA_DIR=\"${CMAKE_BINARY_DIR}\"
+   SOURCE_DATA_DIR=\"${CMAKE_SOURCE_DIR}/data\"
 )
 
 install(
@@ -127,8 +133,6 @@ install(
    DESTINATION "share/${CMAKE_PROJECT_NAME}/themes"
 )
 install(FILES
-   "${CMAKE_SOURCE_DIR}/data/images/led_dark.png"
-   "${CMAKE_SOURCE_DIR}/data/images/led_light.png"
    "${CMAKE_SOURCE_DIR}/data/images/neovim.png"
    DESTINATION "share/${CMAKE_PROJECT_NAME}/images"
 )

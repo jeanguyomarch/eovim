@@ -1,0 +1,124 @@
+#! /usr/bin/env sh
+
+set -e
+set -u
+
+if [ $# -ne 2 ]; then
+  echo "Usage: $0 <AppDir> <output.appimage>" 1>&2
+  exit 1
+fi
+
+APPDIR="$(realpath $1)"
+OUTPUT="$2"
+
+
+LIBDIR="@CMAKE_INSTALL_LIBDIR@"
+SHAREDIR="@CMAKE_INSTALL_DATAROOTDIR@"
+PREFIX="/usr"
+
+
+if [ ! -d "$APPDIR" ]; then
+  echo "E: Please provide the initial AppDir (ie. make install)" 1>&2
+  exit 1
+fi
+
+EFL_VERSION=$(pkg-config --modversion elementary)
+echo "Found EFL version $EFL_VERSION"
+
+#==============================================================================#
+#                            Package the EFL Modules                           #
+#==============================================================================#
+
+EFL_MODULES="
+ecore
+ecore_con
+ecore_evas
+ecore_imf
+ecore_wl2
+edje
+eeze
+efreet
+elementary
+emotion
+evas
+"
+
+for efl_mod in $EFL_MODULES; do
+  dir="$PREFIX/$LIBDIR/$efl_mod"
+  if [ ! -d "$dir" ]; then
+    echo "E: failed to find '$dir'" 1>&2
+    exit 1
+  fi
+
+  cd "$dir"
+  shared_objects=$(find . -type f -name "*.so" -print)
+  for shared_object in $shared_objects; do
+    dest_dir="$APPDIR/$PREFIX/$LIBDIR/$efl_mod/$(dirname "$shared_object")"
+    mkdir -p "$dest_dir"
+    name=$(basename "$shared_object")
+    so_file="$dest_dir/$name"
+    cp "$shared_object" "$so_file"
+
+    rel=$(realpath --relative-to="$so_file" "$APPDIR/$PREFIX/$LIBDIR")
+    patchelf --set-rpath "\$ORIGIN/$rel" "$so_file"
+    echo "Patching RPATH of shared object $so_file to '\$ORIGIN/$rel'"
+  done
+  cd - > /dev/null
+done
+
+
+#==============================================================================#
+#                             Package the EFL data                             #
+#==============================================================================#
+
+EFL_DATA_DIRS="
+elementary
+ethumb
+evas
+"
+
+for efl_data_dir in $EFL_DATA_DIRS; do
+  dir="$PREFIX/$SHAREDIR/$efl_data_dir"
+  if [ ! -d "$dir" ]; then
+    echo "E: failed to find '$dir'." 1>&2
+    exit 1
+  fi
+  rm -rf "$APPDIR/$dir"
+  cp -r "$dir" "$APPDIR/$dir"
+done
+
+# Create empty files at paths `share/<name>/checkme`
+# This is used by eina_prefix. It seems that Debian does not keep them, and this
+# causes spurious warnings.
+
+EFL_MAGIC_CHECKME_DIRS="
+ecore
+ecore_con
+eeze
+evas
+ecore_imf
+"
+
+for checkme_dir in $EFL_MAGIC_CHECKME_DIRS; do
+  dest_dir="$APPDIR/$PREFIX/$SHAREDIR/$checkme_dir"
+  mkdir -p "$dest_dir"
+  touch "$dest_dir/checkme"
+done
+
+#==============================================================================#
+#                                  LinuxDeploy                                 #
+#==============================================================================#
+
+LINUXDEPLOY=./linuxdeploy-x86_64.AppImage
+if [ ! -f "$LINUXDEPLOY" ]; then
+  wget "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/$LINUXDEPLOY"
+  chmod +x "$LINUXDEPLOY"
+fi
+
+export OUTPUT
+#export UPDATE_INFORMATION="gh-releases-zsync|jeanguyomarch|eovim|$TAG|$OUTPUT.zsync"
+"$LINUXDEPLOY" --appdir "$APPDIR" -d "$APPDIR/$PREFIX/$SHAREDIR/applications/eovim.desktop" -i "$APPDIR/$PREFIX/$SHAREDIR/icons/eovim.png" --output appimage
+
+ls *
+tree "$APPDIR"
+du -sh "$APPDIR"

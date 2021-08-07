@@ -497,7 +497,6 @@ struct nvim *nvim_new(const struct options *opts, const char *const args[])
 	}
 	ecore_exe_tag_set(nvim->exe, "neovim");
 	DBG("Running %s", eina_strbuf_string_get(cmdline));
-	eina_strbuf_free(cmdline);
 
 	/* Create the GUI window */
 	if (EINA_UNLIKELY(!gui_add(&nvim->gui, nvim))) {
@@ -505,6 +504,7 @@ struct nvim *nvim_new(const struct options *opts, const char *const args[])
 		goto del_process;
 	}
 
+	eina_strbuf_free(cmdline);
 	return nvim;
 
 del_process:

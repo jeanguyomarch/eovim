@@ -21,9 +21,17 @@ jobs:
         extensions: 'c,h'
         clangFormatVersion: 12
 
+    - name: Lint Additional Neovim Runtime
+      uses: reviewdog/action-vint@v1
+      with:
+        github_token: ${{ secrets.github_token }}
+        level: error
+        reporter: github-pr-review
+
     # Install compile-time dependencies
     - name: install-deps
       run: |
+        sudo apt-get update
         sudo apt-get install --yes libefl-all-dev
         sudo apt-get install --yes libmsgpack-dev
         sudo apt-get install --yes cmake
@@ -31,15 +39,19 @@ jobs:
 
     - name: compile
       run: |
-        mkdir -p build/_install
+        src_dir=$(pwd)
+        mkdir -p build
         cd build
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_install ..
-        cmake --build .
-        cmake --build . --target install
+        cmake -G "Unix Makefiles" -DWITH_WERROR=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr "$src_dir"
+        make -j$(nproc)
+        make DESTDIR="$src_dir/AppDir" install
 
-    - name: Lint Additional Neovim Runtime
-      uses: reviewdog/action-vint@v1
+    - name: generate AppImage
+      run: |
+        sh -x build/make-appimage.sh AppDir Eovim.appimage
+
+    - name: upload artifacts
+      uses: actions/upload-artifact@v2
       with:
-        github_token: ${{ secrets.github_token }}
-        level: error
-        reporter: github-pr-review
+        name: Eovim-Snapshot
+        path: './Eovim.appimage'
