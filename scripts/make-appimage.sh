@@ -12,13 +12,14 @@ fi
 
 set -u
 
-if [ $# -ne 2 ]; then
-  echo "Usage: $0 <AppDir> <output.appimage>" 1>&2
+if [ $# -ne 3 ]; then
+  echo "Usage: $0 <AppDir> <output.appimage> <release tag>" 1>&2
   exit 1
 fi
 
 APPDIR="$(realpath $1)"
 OUTPUT="$2"
+TAG="$3"
 
 if [ ! -d "$APPDIR" ]; then
   echo "E: Please provide the initial AppDir (ie. make install)" 1>&2
@@ -59,9 +60,15 @@ for efl_mod in $EFL_MODULES; do
     # FIXME - This is probably a very bad practice to hardcode usr/lib in the path.
     # This is easier for me now, but it will surely fail one day... sorry future
     # me...
-    dir2=usr/lib/$efl_mod/$(dirname "$shared_object")
-    mkdir -p "$APPDIR/$dir2"
-    cp "$shared_object" "$APPDIR/$dir2"
+    dest_dir=usr/lib/$efl_mod/$(dirname "$shared_object")
+    mkdir -p "$APPDIR/$dest_dir"
+    name=$(basename "$shared_object")
+    so_file="$APPDIR/$dest_dir/$name"
+    cp "$shared_object" "$so_file"
+
+    rel=$(realpath --relative-to="$so_file" "$APPDIR/usr/lib")
+    patchelf --set-rpath "\$ORIGIN/$rel" "$so_file"
+    echo "Patching RPATH of shared object $so_file to '\$ORIGIN/$rel'"
   done
   cd - > /dev/null
 done
@@ -99,7 +106,8 @@ if [ ! -f "$LINUXDEPLOY" ]; then
 fi
 
 export OUTPUT
-export UPDATE_INFORMATION='gh-releases-zsync|jeanguyomarch|eovim|nightly|*.AppImage.zsync'
+export UPDATE_INFORMATION="gh-releases-zsync|jeanguyomarch|eovim|$TAG|$OUTPUT.zsync"
 ./"$LINUXDEPLOY" --appdir "$APPDIR" -d "$APPDIR/usr/share/applications/eovim.desktop" -i "$APPDIR/usr/share/icons/eovim.png" --output appimage
 
 ls *
+tree "$APPDIR"
