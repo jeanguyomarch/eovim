@@ -10,6 +10,7 @@ cmake_minimum_required(VERSION 3.0.2)
 project(eovim LANGUAGES C VERSION 0.2.0.99)
 
 include(CheckTypeSize)
+include(GNUInstallDirs)
 
 set(CMAKE_MODULE_PATH
    "${CMAKE_MODULE_PATH}${CMAKE_SOURCE_DIR}/cmake/Modules")
@@ -111,9 +112,9 @@ add_dependencies(eovim themes)
 set_compiler_warnings(eovim)
 target_compile_definitions(eovim
    PRIVATE
-   PACKAGE_BIN_DIR=\"${CMAKE_INSTALL_PREFIX}/bin\"
-   PACKAGE_LIB_DIR=\"${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}\"
-   PACKAGE_DATA_DIR=\"${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}\"
+   PACKAGE_BIN_DIR=\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
+   PACKAGE_LIB_DIR=\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\"
+   PACKAGE_DATA_DIR=\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}/${CMAKE_PROJECT_NAME}\"
    SOURCE_DATA_DIR=\"${CMAKE_SOURCE_DIR}/data\"
    BUILD_DATA_DIR=\"${CMAKE_BINARY_DIR}\"
 )
