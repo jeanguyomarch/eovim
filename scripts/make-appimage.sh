@@ -106,8 +106,9 @@ if [ ! -f "$LINUXDEPLOY" ]; then
 fi
 
 export OUTPUT
-export UPDATE_INFORMATION="gh-releases-zsync|jeanguyomarch|eovim|$TAG|$OUTPUT.zsync"
+#export UPDATE_INFORMATION="gh-releases-zsync|jeanguyomarch|eovim|$TAG|$OUTPUT.zsync"
 ./"$LINUXDEPLOY" --appdir "$APPDIR" -d "$APPDIR/usr/share/applications/eovim.desktop" -i "$APPDIR/usr/share/icons/eovim.png" --output appimage
 
 ls *
 tree "$APPDIR"
+du -sh "$APPDIR"
