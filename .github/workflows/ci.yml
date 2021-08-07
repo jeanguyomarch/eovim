@@ -48,7 +48,7 @@ jobs:
 
     - name: generate AppImage
       run: |
-        sh -x scripts/make-appimage.sh AppDir Eovim.appimage
+        sh -x build/make-appimage.sh AppDir Eovim.appimage
 
     - name: upload artifacts
       uses: actions/upload-artifact@v2
