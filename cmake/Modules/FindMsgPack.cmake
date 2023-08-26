@@ -1,5 +1,5 @@
 find_package(PkgConfig REQUIRED)
-pkg_search_module(MSGPACK QUIET msgpack)
+pkg_search_module(MSGPACK QUIET msgpack-c msgpack)
 
 # No pkg-config was shipped? Hope for the best by trying to find where the
 # damn thing is located. That's our last resort.
